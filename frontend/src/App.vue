@@ -8,7 +8,7 @@ import HelloWorld from './components/HomePage.vue'
       <img src="/vite.svg" class="logo" alt="Vite logo" />
     </a>
   </div>
-  <HelloWorld msg="Vite + Vue" />
+  <router-view />
 </template>
 
 <style scoped>
