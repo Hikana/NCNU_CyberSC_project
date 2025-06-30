@@ -3,6 +3,7 @@
     <StatusBar />
     <img :src="npcImage" alt="NPC" class="npc" @click="showNpcMenu = !showNpcMenu"/>
     <NpcMenu :visible="showNpcMenu" />
+    <WallMenu :visible="showWallMenu" />
   </div>
 </template>
 

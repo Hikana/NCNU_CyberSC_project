@@ -1,17 +1,33 @@
 <template>
   <div class="top-bar">
+
+    <div class="wall-bar" @click="toggleWallMenu">
+      <div class="arrow-label">城牆防禦</div>
+      <div class="wall-info">
+        <span>{{ wallDefense }} 點</span>
+      </div>
+    </div>
+
     <div class="tech-bar">
       <div class="arrow-label">科技點</div>
       <div class="tech-info">
         <span>{{ techPoints }}個</span>
       </div>
     </div>
+
+    <WallMenu :visible="showWallMenu" />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import WallMenu from './WallMenu.vue'
 const techPoints = ref(100)
+const wallDefense = ref(75)
+const showWallMenu = ref(false)
+function toggleWallMenu() {
+  showWallMenu.value = !showWallMenu.value
+}
 </script>
 
 <style scoped>
@@ -24,6 +40,7 @@ const techPoints = ref(100)
   z-index: 1000;
 }
 
+.wall-bar,
 .tech-bar {
   display: flex;
   align-items: center;
@@ -32,6 +49,7 @@ const techPoints = ref(100)
   padding: 0 10px;
   height: 60px;
   position: relative;
+  cursor: pointer;
 }
 
 .arrow-label {
@@ -46,7 +64,8 @@ const techPoints = ref(100)
   line-height: 1.1;
 }
 
-.tech-info span {
+.tech-info span,
+.wall-info span {
   color: #ffffff;
   margin: 0 4px;
   font-size: 16px;
