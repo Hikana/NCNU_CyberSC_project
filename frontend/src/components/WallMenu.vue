@@ -2,11 +2,13 @@
   <div class="wall-menu" v-if="visible">
     <div class="menu-body">
       <div class="menu-left">
-        <button class="active">城牆升級</button>
-        <button>建築商店</button>
+        <button :class="{ active: currentView === 'upgrade' }" @click="currentView = 'upgrade'">城牆升級</button>
+        <button :class="{ active: currentView === 'shop' }" @click="currentView = 'shop'">建築商店</button>
       </div>
+
       <div class="menu-right">
-        <div class="walls-container">
+        <!-- 升級畫面 -->
+        <div v-if="currentView === 'upgrade'" class="walls-container">
           <div class="wall-item" v-for="(wall, index) in walls" :key="wall.name">
             <h3>{{ wall.name }}牆</h3>
             <p>當前防禦力 {{ wall.defense }}%</p>
@@ -22,14 +24,24 @@
             <button class="confirm-button" @click="applySingleAdjustment(index)">確認</button>
           </div>
         </div>
+
+        <!-- 建築商店畫面 -->
+        <div v-else-if="currentView === 'shop'" class="shop-container">
+          <div class="shop-item" v-for="n in 9" :key="n">
+            建築 {{ n }}
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
+
 <script setup>
 import { ref } from 'vue'
 defineProps({ visible: Boolean })
+
+const currentView = ref('upgrade')
 
 const walls = ref([
   { name: 'C', defense: 80, cost: 10, adjustment: 0 },
@@ -166,4 +178,28 @@ const applySingleAdjustment = (index) => {
 .confirm-button:hover {
   background-color: #198038;
 }
+
+/* shopstuff */
+.shop-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  width: 100%;
+  padding: 20px;
+  justify-items: center;
+}
+
+.shop-item {
+  width: 200px;
+  height: 150px;
+  background-color: #ffe4a8;
+  border: 2px solid #c18b00;
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 </style>
