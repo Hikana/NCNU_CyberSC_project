@@ -18,8 +18,11 @@
               <span class="adjust-value">{{ wall.adjustment }}</span>
               <button @click="increase(index)">＋</button>
             </div>
-
-            <p style="margin-top: 10px;">消耗 {{ wall.cost }} 城牆防禦力</p>
+            
+            <!-- NEW cost line -->
+            <p v-if="wall.showCostText && wall.adjustment !== 0">  
+              消耗 {{ wall.cost * Math.abs(wall.adjustment) }} 城牆防禦力 
+            </p>
 
             <button class="confirm-button" @click="applySingleAdjustment(index)">確認</button>
           </div>
@@ -44,15 +47,16 @@ defineProps({ visible: Boolean })
 const currentView = ref('upgrade')
 
 const walls = ref([
-  { name: 'C', defense: 80, cost: 10, adjustment: 0 },
-  { name: 'I', defense: 60, cost: 8, adjustment: 0 },
-  { name: 'A', defense: 90, cost: 12, adjustment: 0 }
+  { name: 'C', defense: 80, cost: 10, adjustment: 0, showCostText: false },
+  { name: 'I', defense: 60, cost: 8, adjustment: 0, showCostText: false },
+  { name: 'A', defense: 90, cost: 12, adjustment: 0, showCostText: false }
 ])
 
 const increase = (index) => {
   const wall = walls.value[index]
   if (wall.defense + wall.adjustment < 100) {
     wall.adjustment += 1
+    wall.showCostText = true
   }
 }
 
@@ -60,6 +64,7 @@ const decrease = (index) => {
   const wall = walls.value[index]
   if (wall.adjustment > -wall.defense) {
     wall.adjustment -= 1
+    wall.showCostText = true
   }
 }
 
@@ -67,6 +72,7 @@ const applySingleAdjustment = (index) => {
   const wall = walls.value[index]
   wall.defense += wall.adjustment
   wall.adjustment = 0
+  wall.showCostText = false
 }
 </script>
 
