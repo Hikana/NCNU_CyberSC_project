@@ -1,33 +1,30 @@
 <template>
   <div class="top-bar">
 
-    <div class="wall-bar" @click="toggleWallMenu">
+    <div class="wall-bar" @click="props.toggleWallMenu">
       <div class="arrow-label">城牆防禦</div>
       <div class="wall-info">
-        <span>{{ wallDefense }} 點</span>
+        <span>{{ props.wallDefense }} 點</span>
       </div>
     </div>
 
     <div class="tech-bar">
       <div class="arrow-label">科技點</div>
       <div class="tech-info">
-        <span>{{ techPoints }}個</span>
+        <span>{{ props.techPoints }}個</span>
       </div>
     </div>
-
-    <WallMenu :visible="showWallMenu" />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import WallMenu from './WallMenu.vue'
-const techPoints = ref(100)
-const wallDefense = ref(75)
-const showWallMenu = ref(false)
-function toggleWallMenu() {
-  showWallMenu.value = !showWallMenu.value
-}
+const props = defineProps({
+  techPoints: Number,
+  wallDefense: Number,
+  showWallMenu: Boolean,
+  toggleWallMenu: Function
+})
 </script>
 
 <style scoped>
