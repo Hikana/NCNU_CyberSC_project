@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>題目上傳工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: background-color 0.3s ease; /* 新增過渡效果 */
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .danger {
+            background-color: #f44336;
+        }
+        .danger:hover {
+            background-color: #da190b;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            opacity: 1; /* 初始不透明 */
+            transition: opacity 0.5s ease-out; /* 新增淡出效果 */
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .question-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+        .question-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 10px;
+            display: flex; /* 使用 flex 佈局 */
+            justify-content: space-between; /* 內容和按鈕兩端對齊 */
+            align-items: center; /* 垂直居中 */
+            flex-wrap: wrap; /* 內容過長時換行 */
+        }
+        .question-item:last-child {
+            border-bottom: none; /* 最後一個項目沒有底部邊框 */
+        }
+        .question-item strong {
+            flex-basis: 70%; /* 題目內容佔據大部分空間 */
+            word-break: break-word; /* 長單詞換行 */
+        }
+        .question-item small {
+            flex-basis: 100%; /* 詳細資訊佔據整行 */
+            color: #666;
+            margin-top: 5px;
+        }
+        .question-item .action-buttons {
+            flex-basis: 25%; /* 按鈕組佔據剩餘空間 */
+            text-align: right; /* 按鈕靠右對齊 */
+        }
+        .question-item .action-buttons button {
+            padding: 5px 10px;
+            font-size: 14px;
+            margin-left: 5px;
+            margin-right: 0; /* 移除右側 margin */
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px; /* 增加選項間距 */
+            margin-top: 10px;
+        }
+        .option-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .option-input input[type="text"] {
+            flex: 1;
+        }
+        /* 新增選項按鈕的樣式，使其更美觀 */
+        .add-option-button {
+            background-color: #007bff; /* 藍色 */
+            margin-top: 10px;
+        }
+        .add-option-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 遊戲題目上傳工具</h1>
+        
+        <div id="status" class="status"></div>
+        
+        <form id="questionForm">
+            <div class="form-group">
+                <label for="questionText">題目內容 *</label>
+                <textarea id="questionText" placeholder="請輸入題目..." required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="correctAnswer">正確答案 *</label>
+                <input type="text" id="correctAnswer" placeholder="請輸入正確答案..." required>
+            </div>
+            
+            <div class="form-group">
+                <label>選項 (可選)</label>
+                <div class="options-container" id="optionsContainer">
+                    <div class="option-input">
+                        <input type="text" placeholder="選項 1" class="option-input-field">
+                        <button type="button" class="danger" onclick="removeOption(this)">移除</button>
+                    </div>
+                </div>
+                <button type="button" class="add-option-button" onclick="addOption()">新增選項</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="level">等級 *</label>
+                <select id="level" required>
+                    <option value="1">等級 1 (簡單)</option>
+                    <option value="2">等級 2 (中等)</option>
+                    <option value="3">等級 3 (困難)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="category">分類</label>
+                <input type="text" id="category" placeholder="例如: javascript, html, css...">
+            </div>
+            
+            <div class="form-group">
+                <label for="difficulty">難度</label>
+                <select id="difficulty">
+                    <option value="easy">簡單</option>
+                    <option value="medium">中等</option>
+                    <option value="hard">困難</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="points">分數</label>
+                <input type="number" id="points" value="10" min="1" max="100">
+            </div>
+            
+            <button type="submit">新增題目</button>
+            <button type="button" onclick="clearForm()">清空表單</button>
+            <button type="button" class="danger" onclick="clearAllQuestions()">清空所有題目</button>
+        </form>
+        
+        <h2>📋 已上傳的題目</h2>
+        <div id="questionsList" class="question-list">
+            載入中...
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api/game';
+        
+        // 新增選項
+        function addOption() {
+            const container = document.getElementById('optionsContainer');
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'option-input';
+            optionDiv.innerHTML = `
+                <input type="text" placeholder="選項 ${container.children.length + 1}" class="option-input-field">
+                <button type="button" class="danger" onclick="removeOption(this)">移除</button>
+            `;
+            container.appendChild(optionDiv);
+        }
+        
+        // 移除選項
+        function removeOption(button) {
+            button.parentElement.remove();
+        }
+        
+        // 顯示狀態訊息
+        function showStatus(message, type = 'success') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            statusDiv.style.opacity = 1; // 確保訊息顯示時是不透明的
+
+            // 設置計時器在一段時間後淡出訊息
+            clearTimeout(statusDiv.fadeTimeout); // 清除任何之前的計時器
+            statusDiv.fadeTimeout = setTimeout(() => {
+                statusDiv.style.opacity = 0; // 開始淡出
+                // 在完全淡出後清空內容和類別，以便下次顯示新訊息
+                setTimeout(() => {
+                    statusDiv.textContent = '';
+                    statusDiv.className = 'status'; // 只保留基礎類別
+                }, 500); // 這裡的時間應與 CSS transition-duration 匹配
+            }, 3000); // 訊息顯示 3 秒
+        }
+        
+        // 清空表單
+        function clearForm() {
+            document.getElementById('questionForm').reset();
+            document.getElementById('optionsContainer').innerHTML = `
+                <div class="option-input">
+                    <input type="text" placeholder="選項 1" class="option-input-field">
+                    <button type="button" class="danger" onclick="removeOption(this)">移除</button>
+                </div>
+            `;
+            // 重置 select 到第一個選項
+            document.getElementById('level').value = "1";
+            document.getElementById('difficulty').value = "easy";
+            document.getElementById('points').value = "10";
+        }
+        
+        // 提交表單，新增題目
+        document.getElementById('questionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const questionData = {
+                question: document.getElementById('questionText').value, // 將 ID 從 'question' 改為 'questionText' 以匹配 input
+                correctAnswer: document.getElementById('correctAnswer').value,
+                level: parseInt(document.getElementById('level').value),
+                category: document.getElementById('category').value.trim() || null, // trim() 並處理空字串為 null
+                difficulty: document.getElementById('difficulty').value,
+                points: parseInt(document.getElementById('points').value)
+            };
+            
+            // 收集選項
+            const options = Array.from(document.querySelectorAll('.option-input-field'))
+                .map(input => input.value.trim()) // trim()
+                .filter(value => value !== ''); // 過濾掉空字串
+            
+            if (options.length > 0) {
+                questionData.options = options;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/questions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(questionData)
+                });
+                
+                const result = await response.json(); // 總是嘗試解析 JSON
+                
+                if (response.ok && result.success) { // 檢查 response.ok 和 result.success
+                    showStatus(`題目新增成功！題目 ID: ${result.questionId}`, 'success'); // 顯示返回的 ID
+                    clearForm();
+                    loadQuestions();
+                } else {
+                    showStatus(`錯誤: ${result.message || '新增題目失敗'}`, 'error');
+                    console.error('新增題目時後端返回錯誤:', result.message);
+                }
+            } catch (error) {
+                showStatus(`網路錯誤: ${error.message}`, 'error');
+                console.error('新增題目時發生網路錯誤:', error);
+            }
+        });
+        
+        // 載入題目列表
+        async function loadQuestions() {
+            try {
+                const questionsListDiv = document.getElementById('questionsList');
+                questionsListDiv.innerHTML = '<p>載入中...</p>'; // 初始顯示載入狀態
+                
+                console.log('--- 嘗試從後端獲取題目 ---'); // For debugging
+                const response = await fetch(`${API_BASE}/questions`);
+                console.log('接收到回應狀態:', response.status); // For debugging
+                const result = await response.json();
+                console.log('解析後的數據:', result); // For debugging
+                
+                if (response.ok && result.success) { // 檢查 response.ok 和 result.success
+                    if (result.data.length === 0) {
+                        questionsListDiv.innerHTML = '<p>目前沒有題目。</p>';
+                        return;
+                    }
+                    
+                    questionsListDiv.innerHTML = result.data.map((q) => `
+                        <div class="question-item">
+                            <div>
+                                <strong>${q.id}. ${q.question}</strong> <br>
+                                <small>
+                                    答案: ${q.correctAnswer} | 
+                                    等級: ${q.level} | 
+                                    分類: ${q.category || '無'} | 
+                                    難度: ${q.difficulty || '無'} | 
+                                    分數: ${q.points || 10}
+                                    ${q.options && q.options.length > 0 ? ` | 選項: ${q.options.join(', ')}` : ''}
+                                </small>
+                            </div>
+                            <div class="action-buttons">
+                                <button type="button" class="danger" onclick="deleteQuestion('${q.id}')">刪除</button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    questionsListDiv.innerHTML = `<p class="error">載入題目失敗: ${result.message || '未知錯誤'}</p>`;
+                    console.error('載入題目時後端返回錯誤:', result.message);
+                }
+            } catch (error) {
+                questionsListDiv.innerHTML = `<p class="error">無法連接到伺服器以載入題目: ${error.message}</p>`;
+                console.error('載入題目時發生網路錯誤:', error);
+            }
+        }
+
+        // 單獨刪除題目
+        async function deleteQuestion(questionId) {
+            if (!confirm(`確定要刪除題目 ID: ${questionId} 嗎？此操作無法復原！`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/questions/${questionId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showStatus(`題目 ${questionId} 已成功刪除`, 'success');
+                    loadQuestions(); // 刪除後重新載入列表
+                } else {
+                    showStatus(`刪除題目 ${questionId} 失敗: ${result.message || '未知錯誤'}`, 'error');
+                    console.error('刪除題目時後端返回錯誤:', result.message);
+                }
+            } catch (error) {
+                showStatus(`網路錯誤: 無法刪除題目 ${questionId}: ${error.message}`, 'error');
+                console.error('刪除題目時發生網路錯誤:', error);
+            }
+        }
+        
+        // 清空所有題目
+        async function clearAllQuestions() {
+            if (!confirm('確定要清空所有題目嗎？此操作無法復原！')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/questions/all`, { // 呼叫新的 /questions/all 端點
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showStatus('所有題目已成功清空', 'success');
+                    loadQuestions(); // 清空後重新載入列表
+                } else {
+                    showStatus(`清空所有題目失敗: ${result.message || '未知錯誤'}`, 'error');
+                    console.error('清空所有題目時後端返回錯誤:', result.message);
+                }
+            } catch (error) {
+                showStatus(`網路錯誤: 無法清空所有題目: ${error.message}`, 'error');
+                console.error('清空所有題目時發生網路錯誤:', error);
+            }
+        }
+        
+        // 頁面載入時執行
+        window.addEventListener('load', loadQuestions);
+    </script>
+</body>
+</html>
