@@ -66,3 +66,26 @@ export async function createPixiApp(container) {
     }
   };
 }
+
+import * as PIXI from 'pixi.js';
+import { IsoGrid } from './IsoGrid';
+
+export class GameApp {
+  constructor() {
+    this.app = new PIXI.Application({
+      width: window.innerWidth,
+      height: window.innerHeight,
+      backgroundColor: 0xf0f0f0,
+      antialias: true
+    });
+
+    document.body.appendChild(this.app.view);
+
+    this.init();
+  }
+
+  init() {
+    const grid = new IsoGrid(this.app, 20, 20, 64); // 20x20 格子，64 為格子大小
+    grid.drawGrid();
+  }
+}
