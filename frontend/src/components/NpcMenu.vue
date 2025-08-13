@@ -1,6 +1,5 @@
 <template>
   <div class="npc-menu" v-if="visible">
-
     <div class="menu-body">
       <div class="menu-left">
         <button class="active">背包</button>
@@ -32,9 +31,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue' 
-defineProps({ visible: Boolean })
-const currentView = ref('bag') 
+import { ref } from 'vue'
+import { useGameStore } from '../stores/buildings'
+
+const gameStore = useGameStore()
+
+defineProps({
+  visible: Boolean
+})
+
+const emit = defineEmits(['close'])
+
+const currentView = ref('shop') // 確保顯示商店
+
+// 建築圖片導入
 import buildingAImg from '../assets/b1.png'
 import buildingBImg from '../assets/b2.png'
 import buildingCImg from '../assets/b3.png'
@@ -54,14 +64,29 @@ const buildings = ref([
   { id: 6, name: '建築F', img: buildingFImg, techCost: 100 },
   { id: 7, name: '建築G', img: buildingGImg, techCost: 110 },
   { id: 8, name: '建築H', img: buildingHImg, techCost: 120 },
-  { id: 9, name: '建築I', img: buildingIImg, techCost: 130 },
+  { id: 9, name: '建築I', img: buildingIImg, techCost: 130 }
 ])
 
 function buy(item) {
-  // 這裡可以加購買邏輯，例如 emit('update-tech', ...) 或 alert
-  alert('購買 ' + item.name)
+  console.log('NpcMenu: 購買建築', item)
+  
+  // 設置放置模式
+  gameStore.setPlacementMode(true, item.id)
+  
+  console.log('NpcMenu: 放置模式設置完成', {
+    isPlacing: gameStore.isPlacing,
+    selectedBuildingId: gameStore.selectedBuildingId
+  })
+  
+  // 關閉選單
+  closeMenu()
+}
+
+function closeMenu() {
+  emit('close')
 }
 </script>
+
 
 <style scoped>
 .npc-menu {
@@ -173,9 +198,18 @@ function buy(item) {
   margin-bottom: 12px;
   cursor: pointer;
   transition: background 0.2s;
+  position: relative;
+  z-index: 100;
+  min-height: 40px;
+  width: 100%;
+  font-weight: bold;
 }
 .buy-btn:hover {
   background: #7fd36b;
+}
+.buy-btn:active {
+  background: #6bc25a;
+  transform: translateY(1px);
 }
 .tech-cost {
   margin: 8px 0 8px 0;
