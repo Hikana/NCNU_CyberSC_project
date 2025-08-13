@@ -7,7 +7,7 @@ import { onMounted, onUnmounted, ref, nextTick, watch } from 'vue'
 import { createPixiApp } from '../game/GameApp'
 // import { createMap } from '../game/Map'
 import { usePlayerStore } from '../stores/player'
-import { useGameStore } from '../stores/buildings'
+// import { useGameStore } from '../stores/buildings'
 import * as PIXI from 'pixi.js'
 
 const pixiContainer = ref(null)
