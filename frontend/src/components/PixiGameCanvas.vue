@@ -15,7 +15,7 @@ const playerStore = usePlayerStore()
 let playerSprite = null
 let playerContainer = null
 
-// 等角座標轉換
+//等角座標轉換
 function toIsometric(x, y) {
   const TILE_SIZE = 64
   const isoX = (x - y) * (TILE_SIZE / 2)
