@@ -5,14 +5,26 @@
       <div class="menu-left">
         <button class="active">背包</button>
         <button>小地圖</button>
-        <button>建築商店</button>
+        <button :class="{ active: currentView === 'shop' }" @click="currentView = 'shop'">建築商店</button>
         <button>資安事件紀錄</button>
         <button>答題紀錄</button>
         <button>成就</button>
       </div>
       <div class="menu-right">
-        <div class="grid">
+        <div class="grid" v-if="currentView !== 'shop'">
           <div class="cell" v-for="n in 20" :key="n"></div>
+        </div>
+        <!-- 建築商店畫面 -->
+        <div v-else class="shop-container">
+          <div class="shop-list">
+            <div class="shop-item" v-for="item in buildings" :key="item.id">
+              <div class="item-image">
+                <img :src="item.img" :alt="item.name" class="building-img" />
+              </div>
+              <div class="tech-cost">消耗科技點：{{ item.techCost }}</div>
+              <button class="buy-btn" @click="buy(item)">購買</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -20,7 +32,35 @@
 </template>
 
 <script setup>
+import { ref } from 'vue' 
 defineProps({ visible: Boolean })
+const currentView = ref('bag') 
+import buildingAImg from '../assets/b1.png'
+import buildingBImg from '../assets/b2.png'
+import buildingCImg from '../assets/b3.png'
+import buildingDImg from '../assets/b4.png'
+import buildingEImg from '../assets/b5.png'
+import buildingFImg from '../assets/b6.png'
+import buildingGImg from '../assets/b7.png'
+import buildingHImg from '../assets/b8.png'
+import buildingIImg from '../assets/b9.png'
+
+const buildings = ref([
+  { id: 1, name: '建築A', img: buildingAImg, techCost: 50 },
+  { id: 2, name: '建築B', img: buildingBImg, techCost: 60 },
+  { id: 3, name: '建築C', img: buildingCImg, techCost: 70 },
+  { id: 4, name: '建築D', img: buildingDImg, techCost: 80 },
+  { id: 5, name: '建築E', img: buildingEImg, techCost: 90 },
+  { id: 6, name: '建築F', img: buildingFImg, techCost: 100 },
+  { id: 7, name: '建築G', img: buildingGImg, techCost: 110 },
+  { id: 8, name: '建築H', img: buildingHImg, techCost: 120 },
+  { id: 9, name: '建築I', img: buildingIImg, techCost: 130 },
+])
+
+function buy(item) {
+  // 這裡可以加購買邏輯，例如 emit('update-tech', ...) 或 alert
+  alert('購買 ' + item.name)
+}
 </script>
 
 <style scoped>
@@ -28,7 +68,7 @@ defineProps({ visible: Boolean })
   position: absolute;
   bottom: 20px;
   left: 170px;
-  width: 70%;
+  width: 50%;
   height: 76%;
   background-color: #c5ffc5;
   border-radius: 20px;
@@ -74,5 +114,73 @@ defineProps({ visible: Boolean })
   height: 80px;
   background-color: rgba(53, 202, 7, 0.749);
   border-radius: 12px;
+}
+/* shopstuff */
+.shop-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+}
+.shop-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto; /* 讓內容可以滾動 */
+  padding: 20px;
+  box-sizing: border-box;
+}
+.shop-item {
+  background: #fff;
+  border-radius: 24px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 2px 8px #0001;
+  justify-content: space-between;
+  height: 220px; 
+}
+
+.item-image {
+  border-radius: 16px;
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.building-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.buy-btn {
+  background: #a5e887;
+  color: #222;
+  border: none;
+  border-radius: 16px;
+  padding: 8px 24px;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.buy-btn:hover {
+  background: #7fd36b;
+}
+.tech-cost {
+  margin: 8px 0 8px 0;
+  font-size: 1rem;
+  color: #226;
+  font-weight: 500;
 }
 </style>

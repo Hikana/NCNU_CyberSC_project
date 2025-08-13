@@ -1,6 +1,7 @@
 import { Application, Container } from 'pixi.js';
+import { IsoGrid } from './IsoGrid';
 
-export async function createPixiApp(container) {
+export async function createPixiApp(container, mapData = null) {
   const app = new Application();
   
   // 確保容器已渲染並有尺寸
@@ -11,7 +12,7 @@ export async function createPixiApp(container) {
   await app.init({
     width: width,
     height: height,
-    backgroundColor: 0x1a252f,
+    backgroundColor: 0xf0f0f0,
     antialias: true,
     resolution: window.devicePixelRatio || 1,
     autoDensity: true
@@ -42,9 +43,17 @@ export async function createPixiApp(container) {
   worldContainer.addChild(playerContainer);
   app.stage.addChild(worldContainer);
 
+  // 確保整個舞台可交互
+  app.stage.eventMode = 'static';
+  app.stage.hitArea = app.screen;
+
   // 將世界容器移動到螢幕中心 (統一在這裡處理定位)
   worldContainer.x = width / 2
   worldContainer.y = height / 2 - 100 // 稍微向上偏移
+
+  // 初始化等角網格，傳入地圖數據
+  const grid = new IsoGrid(app, 20, 20, 64, null, mapData); // 20x20 格子，64 為格子大小
+  grid.drawGrid();
 
   // 添加調試信息
   console.log('PixiJS 應用初始化完成:', {
@@ -60,32 +69,10 @@ export async function createPixiApp(container) {
     mapContainer, 
     playerContainer, 
     worldContainer,
+    grid,
     cleanup: () => {
       window.removeEventListener('resize', handleResize);
       app.destroy(true);
     }
   };
-}
-
-import * as PIXI from 'pixi.js';
-import { IsoGrid } from './IsoGrid';
-
-export class GameApp {
-  constructor() {
-    this.app = new PIXI.Application({
-      width: window.innerWidth,
-      height: window.innerHeight,
-      backgroundColor: 0xf0f0f0,
-      antialias: true
-    });
-
-    document.body.appendChild(this.app.view);
-
-    this.init();
-  }
-
-  init() {
-    const grid = new IsoGrid(this.app, 20, 20, 64); // 20x20 格子，64 為格子大小
-    grid.drawGrid();
-  }
 }
