@@ -7,7 +7,7 @@ import { onMounted, onUnmounted, ref, nextTick, watch } from 'vue'
 import { createPixiApp } from '../game/GameApp'
 // import { createMap } from '../game/Map'
 import { usePlayerStore } from '../stores/player'
-import { useGameStore } from '../stores/buildings'
+// import { useGameStore } from '../stores/buildings'
 import * as PIXI from 'pixi.js'
 
 const pixiContainer = ref(null)
@@ -21,7 +21,7 @@ let grid = null
 // 定義 emit 事件
 const emit = defineEmits(['closeNpcMenu'])
 
-// 等角座標轉換
+//等角座標轉換
 function toIsometric(x, y) {
   const TILE_SIZE = 64
   const isoX = (x - y) * (TILE_SIZE / 2)
