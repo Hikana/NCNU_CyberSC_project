@@ -1,6 +1,6 @@
 <template>
   <div class="game-wrapper">
-    <PixiGameCanvas />
+    <PixiGameCanvas @closeNpcMenu="showNpcMenu = false" />
     <div class="ui-layer">
       <StatusBar
         :techPoints="techPoints"
@@ -9,7 +9,12 @@
         :toggleWallMenu="toggleWallMenu"
       />
       <img :src="npcImage" alt="NPC" class="npc" @click="showNpcMenu = !showNpcMenu"/>
-      <NpcMenu :visible="showNpcMenu" />
+      
+      <NpcMenu 
+        :visible="showNpcMenu" 
+        @close="handleCloseNpcMenu" 
+      />
+      
       <WallMenu
         :visible="showWallMenu"
         :techPoints="techPoints"
@@ -51,17 +56,26 @@ onMounted(() => {
     showWallMenu.value = true
   })
 })
+
 onUnmounted(() => {
   if (intervalId) clearInterval(intervalId)
 })
+
+// 🔥 新增：處理 NpcMenu 關閉事件
+function handleCloseNpcMenu() {
+  console.log('父組件：關閉 NPC 選單')
+  showNpcMenu.value = false
+}
 
 // WallMenu 消耗點數時回傳
 function handleUpdateTech(val) {
   techPoints.value = val
 }
+
 function handleUpdateWall(val) {
   wallDefense.value = val
 }
+
 function toggleWallMenu() {
   showWallMenu.value = !showWallMenu.value
 }
