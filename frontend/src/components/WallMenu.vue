@@ -1,5 +1,5 @@
 <template>
-  <div class="wall-menu" v-if="visible">
+  <div class="wall-menu" v-if="uiStore.isWallMenuOpen">
     <div class="menu-body">
       <div class="menu-left">
         <button :class="{ active: currentView === 'upgrade' }" @click="currentView = 'upgrade'">城牆升級</button>
@@ -7,36 +7,34 @@
       </div>
 
       <div class="menu-right">
-        <!-- 升級畫面 -->
         <div v-if="currentView === 'upgrade'" class="walls-container">
-          <div class="wall-item" v-for="(wall, index) in walls" :key="wall.name">
+          <div class="wall-item" v-for="(wall, index) in buildingsStore.walls" :key="wall.name">
             <div class="wall-top">
               <h3>{{ wall.name }}牆</h3>
               <p class="wall-defense">當前防禦力 {{ wall.defense }}%</p>
               <div class="controls">
-                <button @click="decrease(index)">−</button>
+                <button @click="wall.adjustment > 1 ? wall.adjustment-- : null">−</button>
                 <span class="adjust-value">{{ wall.adjustment }}</span>
-                <button @click="increase(index)">＋</button>
+                <button @click="wall.adjustment++">＋</button>
               </div>
             </div>
             <div class="wall-bottom">
               <p class="wall-cost">
-                消耗 {{ wall.cost * wall.adjustment }} 城牆防禦力
+                消耗 {{ wall.cost * wall.adjustment }} 科技點
               </p>
-              <button class="confirm-button" @click="applySingleAdjustment(index)">確認</button>
+              <button class="confirm-button" @click="buildingsStore.confirmWallUpgrade(index)">確認</button>
             </div>
           </div>
         </div>
 
-        <!-- 建築商店畫面 -->
         <div v-else-if="currentView === 'shop'" class="shop-container">
           <div class="shop-list">
-            <div class="shop-item" v-for="item in buildings" :key="item.id">
+            <div class="shop-item" v-for="item in buildingsStore.shopBuildings" :key="item.id">
               <div class="item-image">
                 <img :src="item.img" :alt="item.name" class="building-img" />
               </div>
               <div class="tech-cost">消耗科技點：{{ item.techCost }}</div>
-              <button class="buy-btn" @click="buy(item)">購買</button>
+              <button class="buy-btn" @click="buildingsStore.buyBuilding(item)">購買</button>
             </div>
           </div>
         </div>
@@ -45,84 +43,24 @@
   </div>
 </template>
 
-
 <script setup>
-import { ref } from 'vue'
-import { defineProps, defineEmits } from 'vue'
-import buildingAImg from '../assets/b1.png'
-import buildingBImg from '../assets/b2.png'
-import buildingCImg from '../assets/b3.png'
-import buildingDImg from '../assets/b4.png'
-import buildingEImg from '../assets/b5.png'
-import buildingFImg from '../assets/b6.png'
-import buildingGImg from '../assets/b7.png'
-import buildingHImg from '../assets/b8.png'
-import buildingIImg from '../assets/b9.png'
+import { ref } from 'vue';
+// 移除 props 和 emits，引入需要的 stores
+import { useUiStore } from '@/stores/ui';
+import { useBuildingsStore } from '@/stores/buildings';
 
-const props = defineProps({
-  visible: Boolean,
-  techPoints: Number,
-  wallDefense: Number
-})
-const emit = defineEmits(['update-tech', 'update-wall'])
+const uiStore = useUiStore();
+const buildingsStore = useBuildingsStore();
 
-const currentView = ref('upgrade')
+// `currentView` 是這個元件自己的內部狀態，所以保留
+const currentView = ref('upgrade');
 
-const walls = ref([
-  { name: 'C', defense: 80, cost: 10, adjustment: 1, showCostText: false },
-  { name: 'I', defense: 60, cost: 8, adjustment: 1, showCostText: false },
-  { name: 'A', defense: 90, cost: 12, adjustment: 1, showCostText: false }
-])
-
-const buildings = ref([
-  { id: 1, name: '建築A', img: buildingAImg, techCost: 50 },
-  { id: 2, name: '建築B', img: buildingBImg, techCost: 60 },
-  { id: 3, name: '建築C', img: buildingCImg, techCost: 70 },
-  { id: 4, name: '建築D', img: buildingDImg, techCost: 80 },
-  { id: 5, name: '建築E', img: buildingEImg, techCost: 90 },
-  { id: 6, name: '建築F', img: buildingFImg, techCost: 100 },
-  { id: 7, name: '建築G', img: buildingGImg, techCost: 110 },
-  { id: 8, name: '建築H', img: buildingHImg, techCost: 120 },
-  { id: 9, name: '建築I', img: buildingIImg, techCost: 130 },
-])
-
-
-const increase = (index) => {
-  const wall = walls.value[index]
-  const totalCost = wall.cost * (Math.abs(wall.adjustment) + 1)
-  if (wall.defense + wall.adjustment < 100 && props.wallDefense >= totalCost) {
-    wall.adjustment = Math.max(1, wall.adjustment + 1)
-    wall.showCostText = true
-  }
-}
-
-const decrease = (index) => {
-  const wall = walls.value[index]
-  if (wall.adjustment > 1) { // 最小只能到 1
-    wall.adjustment -= 1
-    wall.showCostText = true
-  }
-}
-
-const applySingleAdjustment = (index) => {
-  const wall = walls.value[index]
-  // 消耗城牆防禦點，emit 給父層
-  const totalCost = wall.cost * Math.abs(wall.adjustment)
-  if (wall.adjustment >= 1 && props.wallDefense >= totalCost) {
-    emit('update-wall', props.wallDefense - totalCost)
-    wall.defense += wall.adjustment
-    wall.adjustment = 1 // 重設為 1
-    wall.showCostText = false
-  }
-}
-
-function buy(item) {
-  // 這裡可以加購買邏輯，例如 emit('update-tech', ...) 或 alert
-  alert('購買 ' + item.name)
-}
+// 所有本地的數據和邏輯 (walls, buildings, increase, decrease, etc.) 都被移除
+// 因為它們現在都由 Pinia store 統一管理
 </script>
 
 <style scoped>
+/* 樣式維持不變 */
 .wall-menu {
   position: absolute;
   top: 120px;
@@ -133,6 +71,7 @@ function buy(item) {
   border-radius: 20px;
   padding: 20px;
   z-index: 1001;
+  pointer-events: auto;
 }
 
 .menu-body {

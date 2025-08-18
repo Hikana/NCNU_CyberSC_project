@@ -1,89 +1,64 @@
 <template>
   <div class="game-wrapper">
     <PixiGameCanvas />
+    
     <div class="ui-layer">
-      <StatusBar
-        :techPoints="techPoints"
-        :wallDefense="wallDefense"
-        :showWallMenu="showWallMenu"
-        :toggleWallMenu="toggleWallMenu"
-      />
-      <img :src="npcImage" alt="NPC" class="npc" @click="showNpcMenu = !showNpcMenu"/>
-      <NpcMenu :visible="showNpcMenu" />
-      <WallMenu
-        :visible="showWallMenu"
-        :techPoints="techPoints"
-        :wallDefense="wallDefense"
-        @update-tech="handleUpdateTech"
-        @update-wall="handleUpdateWall"
-      />
-      <UIOverlay />
-    </div>
+      <StatusBar />
+      <img :src="npcImage" alt="NPC" class="npc" @click="uiStore.toggleNpcMenu()" />
+      <ControlsHint /> <NpcMenu />
+      <WallMenu />
+      <QuestionModal />
+      
+      </div>
   </div>
 </template>
 
 <script setup>
-import StatusBar from './StatusBar.vue'
-import npcImage from '../assets/npc.png'
-import { ref, onMounted, onUnmounted } from 'vue'
-import NpcMenu from './NpcMenu.vue'
-import WallMenu from './WallMenu.vue'
-import PixiGameCanvas from '../components/PixiGameCanvas.vue'
-import UIOverlay from '../components/UIOverlay.vue'
+import { onMounted } from 'vue';
+import PixiGameCanvas from '@/components/PixiGameCanvas.vue';
+import StatusBar from '@/components/StatusBar.vue';
+import NpcMenu from '@/components/NpcMenu.vue';
+import WallMenu from '@/components/WallMenu.vue';
+import QuestionModal from '@/components/QuestionModal.vue';
+import ControlsHint from '@/components/ControlsHint.vue'; // 引入新元件
 
-const showNpcMenu = ref(false)
-const showWallMenu = ref(false)
+import { usePlayerStore } from '@/stores/player';
+import { useUiStore } from '@/stores/ui';
 
-// 集中管理點數
-const techPoints = ref(100)
-const wallDefense = ref(75)
+import npcImage from '@/assets/npc.png';
 
-// 每分鐘自動加一點科技點
-let intervalId = null
+const playerStore = usePlayerStore();
+const uiStore = useUiStore();
+
 onMounted(() => {
-  intervalId = setInterval(() => {
-    techPoints.value += 1
-  }, 60000)
-  window.addEventListener('npc-click', () => {
-    showNpcMenu.value = true
-  })
-  window.addEventListener('wall-bar-click', () => {
-    showWallMenu.value = true
-  })
-})
-onUnmounted(() => {
-  if (intervalId) clearInterval(intervalId)
-})
-
-// WallMenu 消耗點數時回傳
-function handleUpdateTech(val) {
-  techPoints.value = val
-}
-function handleUpdateWall(val) {
-  wallDefense.value = val
-}
-function toggleWallMenu() {
-  showWallMenu.value = !showWallMenu.value
-}
+  playerStore.startResourceGeneration();
+});
 </script>
 
 <style scoped>
 .game-wrapper {
   width: 100vw;
   height: 100vh;
-  position: relative;
+  position: relative; /* 成為所有絕對定位子元素的基準 */
   overflow: hidden;
-  margin: 0;
-  padding: 0;
+  background-color: #1a252f; /* 給一個底色，防止閃爍 */
 }
 
+/* UI 圖層本身是透明的，並且會覆蓋整個畫面 */
 .ui-layer {
-  position: relative;
+  position: absolute;
   top: 0;
   left: 0;
-  z-index: 10;
   width: 100%;
   height: 100%;
+  z-index: 10;
+  /* 關鍵：讓滑鼠點擊可以穿透此圖層，點到下面的 PixiJS canvas */
+  pointer-events: none; 
+}
+
+/* UI 圖層內的具體元件，需要自己設定為可以被點擊 */
+.npc, .controls-hint /* 以及所有選單和按鈕 */ {
+  pointer-events: auto;
 }
 
 .npc {
@@ -93,5 +68,10 @@ function toggleWallMenu() {
   width: 120px;
   height: auto;
   cursor: pointer;
+  z-index: 11;
+  transition: transform 0.2s ease-in-out;
+}
+.npc:hover {
+    transform: scale(1.1);
 }
 </style>

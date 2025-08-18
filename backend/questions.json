@@ -1,0 +1,29 @@
+[
+  {
+    "question": "JavaScript 中用來宣告變數的關鍵字有哪些？",
+    "correctAnswer": "var, let, const",
+    "options": ["var, let, const", "int, string, bool", "public, private", "if, else, for"],
+    "level": 1,
+    "category": "javascript",
+    "difficulty": "easy",
+    "points": 10
+  },
+  {
+    "question": "什麼是 CSS 的全名？",
+    "correctAnswer": "Cascading Style Sheets",
+    "options": ["Cascading Style Sheets", "Computer Style System", "Creative Style Solutions"],
+    "level": 1,
+    "category": "css",
+    "difficulty": "easy",
+    "points": 10
+  },
+  {
+    "question": "what is CSS 的全名？",
+    "correctAnswer": "Cascading Style Sheets",
+    "options": ["Cascading Style Sheets", "Computer Style System", "Creative Style Solutions"],
+    "level": 1,
+    "category": "css",
+    "difficulty": "hard",
+    "points": 1
+  }
+]

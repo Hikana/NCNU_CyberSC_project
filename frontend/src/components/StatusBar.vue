@@ -1,33 +1,39 @@
 <template>
   <div class="top-bar">
 
-    <div class="wall-bar" @click="props.toggleWallMenu">
+    <div class="wall-bar" @click="uiStore.toggleWallMenu">
       <div class="arrow-label">城牆防禦</div>
       <div class="wall-info">
-        <span>{{ props.wallDefense }} 點</span>
+        <span>{{ buildingsStore.ciaDefense }} 點</span>
       </div>
     </div>
 
     <div class="tech-bar">
       <div class="arrow-label">科技點</div>
       <div class="tech-info">
-        <span>{{ props.techPoints }}個</span>
+        <span>{{ playerStore.techPoints }} 個</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import WallMenu from './WallMenu.vue'
-const props = defineProps({
-  techPoints: Number,
-  wallDefense: Number,
-  showWallMenu: Boolean,
-  toggleWallMenu: Function
-})
+// No longer need props, so we can remove the import for WallMenu
+// and defineProps.
+
+// 1. Import the stores you need
+import { usePlayerStore } from '@/stores/player';
+import { useBuildingsStore } from '@/stores/buildings';
+import { useUiStore } from '@/stores/ui';
+
+// 2. Create instances of the stores
+const playerStore = usePlayerStore();
+const buildingsStore = useBuildingsStore();
+const uiStore = useUiStore();
 </script>
 
 <style scoped>
+/* Your styles remain exactly the same */
 .top-bar {
   display: flex;
   gap: 20px;
@@ -68,4 +74,4 @@ const props = defineProps({
   font-size: 16px;
   font-weight: bold;
 }
-</style> 
+</style>
