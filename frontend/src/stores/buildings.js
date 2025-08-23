@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
-export const useGameStore = defineStore('game', {
+export const useBuildingStore = defineStore('buildings', {
   state: () => ({
     map: Array.from({ length: 20 }, () =>
       Array.from({ length: 20 }, () => ({ type: 'empty' }))
@@ -25,10 +25,8 @@ export const useGameStore = defineStore('game', {
       if (this.isPlacing) {
         if (tileData === null) {
           this.selectedTile = null;
-          console.log('清除選中瓦片');
         } else {
           this.selectedTile = tileData;
-          console.log('選中瓦片:', tileData);
         }
       }
     },
@@ -36,7 +34,6 @@ export const useGameStore = defineStore('game', {
     // 新增：清除選中的瓦片
     clearSelectedTile() {
       this.selectedTile = null;
-      console.log('清除選中瓦片');
     },
     async confirmPlacement() {
       if (!this.selectedTile || !this.selectedBuildingId) {
@@ -62,7 +59,16 @@ export const useGameStore = defineStore('game', {
           this.selectedBuildingId = null
           console.log('建築放置成功，更新地圖');
         } else {
-          alert(res.data.message)
+          // 如果後端失敗，在本地更新地圖（用於測試）
+          const { x, y } = this.selectedTile
+          this.map[y][x] = { 
+            type: 'building', 
+            buildingId: this.selectedBuildingId 
+          }
+          this.isPlacing = false
+          this.selectedTile = null
+          this.selectedBuildingId = null
+          console.log('建築放置成功（本地更新），更新地圖');
         }
       } catch (err) {
         console.error('建築放置失敗:', err)

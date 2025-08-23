@@ -25,7 +25,7 @@
   top: 0; left: 0;
   width: 100%; height: 100%;
   pointer-events: none;
-  z-index: 900;
+  z-index: 5; /* 降低 z-index，確保不會覆蓋遊戲畫布 */
 }
 /* .top-ui {
   position: absolute;

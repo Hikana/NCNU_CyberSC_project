@@ -43,26 +43,22 @@ export async function createPixiApp(container, mapData = null) {
   worldContainer.addChild(playerContainer);
   app.stage.addChild(worldContainer);
 
-  // 確保整個舞台可交互
-  app.stage.eventMode = 'static';
-  app.stage.hitArea = app.screen;
-
   // 將世界容器移動到螢幕中心 (統一在這裡處理定位)
   worldContainer.x = width / 2
   worldContainer.y = height / 2 - 100 // 稍微向上偏移
 
   // 初始化等角網格，傳入地圖數據
-  const grid = new IsoGrid(app, 20, 20, 64, null, mapData); // 20x20 格子，64 為格子大小
-  grid.drawGrid();
+  const grid = new IsoGrid(app, 20, 20, 120, null, mapData); 
 
-  // 添加調試信息
-  console.log('PixiJS 應用初始化完成:', {
-    width,
-    height,
-    canvasWidth: app.canvas.width,
-    canvasHeight: app.canvas.height,
-    worldPosition: { x: worldContainer.x, y: worldContainer.y }
-  });
+  // 把網格容器移到 worldContainer（很關鍵）
+  app.stage.removeChild(grid.gridContainer);
+  worldContainer.addChildAt(grid.gridContainer, 0);
+
+  // 明確啟用 zIndex 並設定繪製層級，確保 player 顯示在地圖上方
+  worldContainer.sortableChildren = true;
+  grid.gridContainer.zIndex = 1;      // 地圖置底
+  mapContainer.zIndex = 2;            // 其他地圖元素（預留）
+  playerContainer.zIndex = 10;        // 玩家置頂
 
   return { 
     app, 

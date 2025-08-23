@@ -153,8 +153,8 @@ const applySingleAdjustmentOwasp = (index) => {
   position: absolute;
   top: 120px;
   right: 40px;
-  width: 940px;
-  height: 500px;
+  width: 920px;
+  height: 470px;
   background-color: #c5ffc5;
   border-radius: 20px;
   padding: 20px;
@@ -195,7 +195,7 @@ const applySingleAdjustmentOwasp = (index) => {
 
 .menu-right {
   flex: 1;
-  padding: 20px 10px 20px 20px;
+  padding: 10px 10px 20px 20px;
   display: flex;
   align-items: stretch;
   justify-content: flex-start; 
@@ -216,7 +216,7 @@ const applySingleAdjustmentOwasp = (index) => {
 .wall-item {
   background-color: #fff;
   border-radius: 12px;
-  padding: 15px 20px;
+  padding: 12px 18px;
   text-align: center;
   font-weight: bold;
   font-size: 22px;

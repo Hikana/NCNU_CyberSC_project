@@ -2,9 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const usePlayerStore = defineStore('player', () => {
-  // 主角地圖座標
-  const x = ref(0)
-  const y = ref(0)
+  const x = ref(18)
+  const y = ref(5)
 
   // 移動方法
   function moveUp() { y.value -= 1 }

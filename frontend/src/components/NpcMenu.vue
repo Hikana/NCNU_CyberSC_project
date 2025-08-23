@@ -32,9 +32,9 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useGameStore } from '../stores/buildings'
+import { useBuildingStore } from '../stores/buildings'
 
-const gameStore = useGameStore()
+const buildingStore = useBuildingStore()
 
 defineProps({
   visible: Boolean
@@ -71,11 +71,11 @@ function buy(item) {
   console.log('NpcMenu: 購買建築', item)
   
   // 設置放置模式
-  gameStore.setPlacementMode(true, item.id)
+  buildingStore.setPlacementMode(true, item.id)
   
   console.log('NpcMenu: 放置模式設置完成', {
-    isPlacing: gameStore.isPlacing,
-    selectedBuildingId: gameStore.selectedBuildingId
+    isPlacing: buildingStore.isPlacing,
+    selectedBuildingId: buildingStore.selectedBuildingId
   })
   
   // 關閉選單
@@ -87,7 +87,6 @@ function closeMenu() {
 }
 </script>
 
-
 <style scoped>
 .npc-menu {
   position: absolute;
@@ -98,18 +97,21 @@ function closeMenu() {
   background-color: #c5ffc5;
   border-radius: 20px;
   padding: 20px;
-  z-index: 10;
+  z-index: 30; /* 提高層級 */
+  pointer-events: auto; /* 明確設置 */
 }
 
 .menu-body {
   display: flex;
   height: 100%;
+  pointer-events: auto; /* 確保內容可以點擊 */
 }
 
 .menu-left {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  pointer-events: auto; /* 確保按鈕可以點擊 */
 }
 
 .menu-left button {
@@ -120,6 +122,7 @@ function closeMenu() {
   border-radius: 20px;
   background-color: rgb(136, 186, 255);
   cursor: pointer;
+  pointer-events: auto; /* 明確設置按鈕可點擊 */
 }
 
 .menu-left .active {
@@ -132,6 +135,7 @@ function closeMenu() {
   grid-template-columns: repeat(5, 60px);
   gap: 30px;
   padding: 30px;
+  pointer-events: auto;
 }
 
 .cell {
@@ -139,7 +143,9 @@ function closeMenu() {
   height: 80px;
   background-color: rgba(53, 202, 7, 0.749);
   border-radius: 12px;
+  pointer-events: auto;
 }
+
 /* shopstuff */
 .shop-container {
   width: 100%;
@@ -149,7 +155,9 @@ function closeMenu() {
   align-items: center;
   justify-content: flex-start;
   padding: 0;
+  pointer-events: auto; /* 確保商店容器可以交互 */
 }
+
 .shop-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -159,7 +167,9 @@ function closeMenu() {
   overflow-y: auto; /* 讓內容可以滾動 */
   padding: 20px;
   box-sizing: border-box;
+  pointer-events: auto; /* 確保列表可以交互 */
 }
+
 .shop-item {
   background: #fff;
   border-radius: 24px;
@@ -169,7 +179,8 @@ function closeMenu() {
   align-items: center;
   box-shadow: 0 2px 8px #0001;
   justify-content: space-between;
-  height: 220px; 
+  height: 220px;
+  pointer-events: auto; /* 確保商品項目可以點擊 */
 }
 
 .item-image {
@@ -181,13 +192,16 @@ function closeMenu() {
   justify-content: center;
   margin-bottom: 12px;
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .building-img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  pointer-events: none; /* 圖片本身不需要點擊 */
 }
+
 .buy-btn {
   background: #a5e887;
   color: #222;
@@ -203,18 +217,23 @@ function closeMenu() {
   min-height: 40px;
   width: 100%;
   font-weight: bold;
+  pointer-events: auto; /* 明確設置按鈕可點擊 */
 }
+
 .buy-btn:hover {
   background: #7fd36b;
 }
+
 .buy-btn:active {
   background: #6bc25a;
   transform: translateY(1px);
 }
+
 .tech-cost {
   margin: 8px 0 8px 0;
   font-size: 1rem;
   color: #226;
   font-weight: 500;
+  pointer-events: auto;
 }
 </style>
