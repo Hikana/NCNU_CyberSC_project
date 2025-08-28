@@ -2,19 +2,15 @@
   <div class="npc-menu" v-if="visible">
     <div class="menu-body">
       <div class="menu-left">
-        <button class="active">背包</button>
-        <button>小地圖</button>
+        <button>背包</button>
         <button :class="{ active: currentView === 'shop' }" @click="currentView = 'shop'">建築商店</button>
         <button>資安事件紀錄</button>
         <button>答題紀錄</button>
-        <button>成就</button>
+        <button :class="{ active: currentView === 'achievement' }" @click="currentView = 'achievement'">成就</button>
       </div>
       <div class="menu-right">
-        <div class="grid" v-if="currentView !== 'shop'">
-          <div class="cell" v-for="n in 20" :key="n"></div>
-        </div>
         <!-- 建築商店畫面 -->
-        <div v-else class="shop-container">
+        <div v-if="currentView === 'shop'" class="shop-container">
           <div class="shop-list">
             <div class="shop-item" v-for="item in buildings" :key="item.id">
               <div class="item-image">
@@ -25,6 +21,13 @@
             </div>
           </div>
         </div>
+        <!-- 成就頁面 -->
+        <div v-else-if="currentView === 'achievement'" class="achievement-container">
+          <AchievementMenu 
+            :isVisible="true" 
+            @close="currentView = 'shop'" 
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -33,6 +36,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useBuildingStore } from '../stores/buildings'
+import AchievementMenu from './AchievementMenu.vue'
 
 const buildingStore = useBuildingStore()
 
@@ -93,7 +97,7 @@ function closeMenu() {
   bottom: 20px;
   left: 170px;
   width: 50%;
-  height: 76%;
+  height: 65%;
   background-color: #c5ffc5;
   border-radius: 20px;
   padding: 20px;
@@ -104,22 +108,22 @@ function closeMenu() {
 .menu-body {
   display: flex;
   height: 100%;
-  pointer-events: auto; /* 確保內容可以點擊 */
 }
 
 .menu-left {
-  display: flex;
+  display: flex; 
   flex-direction: column;
   gap: 10px;
-  pointer-events: auto; /* 確保按鈕可以點擊 */
+  width: 120px;
+  flex-shrink: 0;
 }
 
 .menu-left button {
   min-height: 40px; 
   flex: 1; 
-  padding: 10px;
+  padding: 1px;
   border: none;
-  border-radius: 20px;
+  border-radius: 16px;
   background-color: rgb(136, 186, 255);
   cursor: pointer;
   pointer-events: auto; /* 明確設置按鈕可點擊 */
@@ -130,20 +134,11 @@ function closeMenu() {
   color: #fff;
 }
 
-.menu-right .grid {
-  display: grid;
-  grid-template-columns: repeat(5, 60px);
-  gap: 30px;
-  padding: 30px;
-  pointer-events: auto;
-}
-
-.cell {
-  width: 80px;
-  height: 80px;
-  background-color: rgba(53, 202, 7, 0.749);
-  border-radius: 12px;
-  pointer-events: auto;
+.menu-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* shopstuff */
@@ -167,7 +162,7 @@ function closeMenu() {
   overflow-y: auto; /* 讓內容可以滾動 */
   padding: 20px;
   box-sizing: border-box;
-  pointer-events: auto; /* 確保列表可以交互 */
+  pointer-events: auto; 
 }
 
 .shop-item {
@@ -192,14 +187,13 @@ function closeMenu() {
   justify-content: center;
   margin-bottom: 12px;
   overflow: hidden;
-  pointer-events: auto;
 }
 
 .building-img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  pointer-events: none; /* 圖片本身不需要點擊 */
+  pointer-events: none; 
 }
 
 .buy-btn {
@@ -217,7 +211,7 @@ function closeMenu() {
   min-height: 40px;
   width: 100%;
   font-weight: bold;
-  pointer-events: auto; /* 明確設置按鈕可點擊 */
+  pointer-events: auto;
 }
 
 .buy-btn:hover {
@@ -235,5 +229,31 @@ function closeMenu() {
   color: #226;
   font-weight: 500;
   pointer-events: auto;
+}
+
+.achievement-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.achievement-container .achievement-menu {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.achievement-container .achievement-content {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 </style>
