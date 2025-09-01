@@ -14,7 +14,21 @@
     <header class="w-screen bg-wordcolor py-64"></header>
 
     <!-- Top10 -->
-     <TOP10 />
+    <TOP10 />
+
+    <!-- 連線按鈕 -->
+    <div class="flex items-center justify-center h-screen w-screen bg-gray-100">
+      <button
+      class="inline-flex items-center justify-center rounded-xl px-36 py-12
+      font-medium shadow-sm ring-1 ring-black/5 transition
+      hover:shadow-md hover:-translate-y-0.5 active:translate-y-0
+      focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+      focus-visible:ring-indigo-500 bg-indigo-600 text-white
+      disabled:opacity-50 disabled:cursor-not-allowed">
+      進入資安小鎮
+      </button>
+    </div>
+    
   </div>
 </template>
 
