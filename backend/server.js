@@ -1,11 +1,16 @@
-// backend/server.js
-const app = require('./app');
+const express = require('express')
+const cors = require('cors')
+const bodyParser = require('body-parser')
 
-const PORT = process.env.PORT || 3000;
+const gameRoutes = require('./routes/gameRoutes')
+const buildingRoutes = require('./routes/buildingRoutes')
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-  console.log(`📍 Health check: http://localhost:${PORT}/health`);
-  console.log(`🎮 Game API: http://localhost:${PORT}/api/game`);
-  console.log(`upload:http://localhost:${PORT}/upload`)
-});
+const app = express()
+app.use(cors())
+app.use(bodyParser.json())
+
+app.use('/api', gameRoutes)
+app.use('/api', buildingRoutes)
+
+const PORT = 3000
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`))

@@ -1,6 +1,7 @@
 import { Application, Container } from 'pixi.js';
+import { IsoGrid } from './IsoGrid';
 
-export async function createPixiApp(container) {
+export async function createPixiApp(container, mapData = null) {
   const app = new Application();
   
   // 確保容器已渲染並有尺寸
@@ -11,7 +12,7 @@ export async function createPixiApp(container) {
   await app.init({
     width: width,
     height: height,
-    backgroundColor: 0x1a252f,
+    backgroundColor: 0xf0f0f0,
     antialias: true,
     resolution: window.devicePixelRatio || 1,
     autoDensity: true
@@ -46,20 +47,25 @@ export async function createPixiApp(container) {
   worldContainer.x = width / 2
   worldContainer.y = height / 2 - 100 // 稍微向上偏移
 
-  // 添加調試信息
-  console.log('PixiJS 應用初始化完成:', {
-    width,
-    height,
-    canvasWidth: app.canvas.width,
-    canvasHeight: app.canvas.height,
-    worldPosition: { x: worldContainer.x, y: worldContainer.y }
-  });
+  // 初始化等角網格，傳入地圖數據
+  const grid = new IsoGrid(app, 20, 20, 120, null, mapData); 
+
+  // 把網格容器移到 worldContainer（很關鍵）
+  app.stage.removeChild(grid.gridContainer);
+  worldContainer.addChildAt(grid.gridContainer, 0);
+
+  // 明確啟用 zIndex 並設定繪製層級，確保 player 顯示在地圖上方
+  worldContainer.sortableChildren = true;
+  grid.gridContainer.zIndex = 1;      // 地圖置底
+  mapContainer.zIndex = 2;            // 其他地圖元素（預留）
+  playerContainer.zIndex = 10;        // 玩家置頂
 
   return { 
     app, 
     mapContainer, 
     playerContainer, 
     worldContainer,
+    grid,
     cleanup: () => {
       window.removeEventListener('resize', handleResize);
       app.destroy(true);
