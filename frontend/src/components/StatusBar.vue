@@ -1,30 +1,31 @@
 <template>
-  <div class="top-bar">
+  <div class="top-bar status-bar">
 
-    <div class="wall-bar" @click="props.toggleWallMenu">
+    <div class="wall-bar"  @click="uiStore.toggleWallMenu()">
       <div class="arrow-label">城牆防禦</div>
       <div class="wall-info">
-        <span>{{ props.wallDefense }} 點</span>
+        <span>{{ wallStore.totalDefensePoints }} 點</span>
       </div>
     </div>
 
     <div class="tech-bar">
       <div class="arrow-label">科技點</div>
       <div class="tech-info">
-        <span>{{ props.techPoints }}個</span>
+        <span>{{ playerStore.techPoints }} 個</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import WallMenu from './WallMenu.vue'
-const props = defineProps({
-  techPoints: Number,
-  wallDefense: Number,
-  showWallMenu: Boolean,
-  toggleWallMenu: Function
-})
+import { usePlayerStore } from '@/stores/player';
+import { useWallStore } from '@/stores/wall';
+import { useUiStore } from '@/stores/ui';
+
+
+const playerStore = usePlayerStore();
+const wallStore = useWallStore();
+const uiStore = useUiStore();
 </script>
 
 <style scoped>
@@ -68,4 +69,4 @@ const props = defineProps({
   font-size: 16px;
   font-weight: bold;
 }
-</style> 
+</style>

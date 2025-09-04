@@ -1,7 +1,12 @@
-const express = require('express')
-const router = express.Router()
-const { placeBuilding } = require('../controllers/buildingController')
+const express = require('express');
+const router = express.Router();
+const BuildingController = require('../controllers/buildingController');
+const buildingController = new BuildingController();
 
-router.post('/buildings', placeBuilding)
+// 獲取地圖數據
+router.get('/map', buildingController.getMap);
 
-module.exports = router
+// 放置建築
+router.post('/', buildingController.placeBuilding);
+
+module.exports = router;

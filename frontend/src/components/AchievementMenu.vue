@@ -1,5 +1,6 @@
 <template>
   <div class="achievement-menu" v-if="isVisible">
+    <h2 class="page-title">🎉 成就列表</h2>
     <div class="achievement-content">
       <!-- 成就統計 -->
       <div class="achievement-stats">
@@ -20,40 +21,32 @@
           :key="achievement.id"
           class="achievement-item"
           :class="{ 
-            'completed': achievement.completed, 
-            'claimed': achievement.claimed,
-            'ready-to-claim': achievement.completed && !achievement.claimed
+            'unlocked': achievement.unlocked,
+            'locked': !achievement.unlocked
           }"
         >
           <div class="achievement-icon">
-            {{ achievement.completed ? (achievement.claimed ? '✅' : '🎁') : '🔒' }}
+            {{ achievement.unlocked ? '🏆' : '🔒' }}
           </div>
           <div class="achievement-info">
-            <h3 class="achievement-title">{{ achievement.title }}</h3>
+            <h3 class="achievement-title">{{ achievement.name }}</h3>
             <p class="achievement-description">{{ achievement.description }}</p>
-            <div class="achievement-progress" v-if="achievement.progress && !achievement.completed">
+            <div class="achievement-progress" v-if="!achievement.unlocked">
               <div class="progress-bar">
                 <div 
                   class="progress-fill" 
-                  :style="{ width: Math.round((achievement.progress.current / achievement.progress.total) * 100) + '%' }"
+                  :style="{ width: Math.round((achievement.progress / achievement.maxProgress) * 100) + '%' }"
                 ></div>
               </div>
-              <span class="progress-text">{{ achievement.progress.current }}/{{ achievement.progress.total }}</span>
+              <span class="progress-text">{{ achievement.progress }}/{{ achievement.maxProgress }}</span>
             </div>
           </div>
           <div class="achievement-actions">
-            <div class="achievement-reward" v-if="achievement.reward">
-              <span class="reward-text">獎勵: {{ achievement.reward }}</span>
+            <div class="achievement-reward">
+              <span class="reward-text">💰 {{ achievement.reward }}</span>
             </div>
-            <button 
-              v-if="achievement.completed && !achievement.claimed" 
-              @click="claimReward(achievement.id)"
-              class="claim-btn"
-            >
-              領取獎勵
-            </button>
-            <div v-else-if="achievement.claimed" class="claimed-text">
-              已領取
+            <div v-if="achievement.unlocked" class="unlocked-text">
+              已解鎖
             </div>
           </div>
         </div>
@@ -63,7 +56,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useAchievementStore } from '@/stores/achievement'
 
 // Props
 const props = defineProps({
@@ -76,128 +70,48 @@ const props = defineProps({
 // Emits
 const emit = defineEmits(['close'])
 
-// 成就數據
-const achievements = ref([
-  {
-    id: 1,
-    title: '初來乍到',
-    description: '完成遊戲教學',
-    completed: true,
-    progress: {
-      current: 1,
-      total: 1
-    },
-    reward: '100 科技點',
-    claimed: true
-  },
-  {
-    id: 2,
-    title: '建築大師',
-    description: '建造 10 座建築',
-    completed: false,
-    progress: {
-      current: 3,
-      total: 10
-    },
-    reward: '500 科技點',
-    claimed: false
-  },
-  {
-    id: 3,
-    title: '探索者',
-    description: '探索 150 個未開發土地',
-    completed: false,
-    progress: {
-      current: 45,
-      total: 150
-    },
-    reward: '1000 科技點',
-    claimed: false
-  },
-  {
-    id: 4,
-    title: '防禦專家',
-    description: '建造 5 座防禦建築力達 100%',
-    completed: false,
-    progress: {
-      current: 1,
-      total: 5
-    },
-    reward: '800 科技點',
-    claimed: false
-  },
-  {
-    id: 5,
-    title: '資源收集者',
-    description: '收集 10 個資源',
-    completed: true,
-    progress: {
-      current: 10,
-      total: 10
-    },
-    reward: '200 科技點',
-    claimed: false
-  },
-  {
-    id: 6,
-    title: '資安專家',
-    description: '完成答題數 100 題',
-    completed: false,
-    progress: {
-      current: 0,
-      total: 100
-    },
-    reward: '300 科技點',
-    claimed: false
-  }
-])
+// 使用成就 store
+const achievementStore = useAchievementStore()
+
+// 在元件掛載時檢查成就
+onMounted(() => {
+  achievementStore.checkAllAchievements()
+})
 
 // 計算屬性
 const completedCount = computed(() => {
-  return achievements.value.filter(a => a.claimed).length // 只有已領取獎勵的才算完成
+  return achievementStore.unlockedAchievements.length
 })
 
 const totalCount = computed(() => {
-  return achievements.value.length
+  return achievementStore.achievements.length
 })
 
 const completionRate = computed(() => {
-  return Math.round((completedCount.value / totalCount.value) * 100)
+  return achievementStore.totalProgress
 })
 
 // 排序後的成就列表
 const sortedAchievements = computed(() => {
-  return [...achievements.value].sort((a, b) => {
-    // 第一優先級：未完成的排在最後
-    if (!a.completed && b.completed) return 1
-    if (a.completed && !b.completed) return -1
+  return [...achievementStore.achievements].sort((a, b) => {
+    // 第一優先級：已解鎖的排在前面
+    if (!a.unlocked && b.unlocked) return 1
+    if (a.unlocked && !b.unlocked) return -1
     
-    // 第二優先級：已完成的但未領取獎勵的排在最前面
-    if (a.completed && !a.claimed && b.completed && b.claimed) return -1
-    if (a.completed && a.claimed && b.completed && !b.claimed) return 1
-    
-    // 第三優先級：已領取獎勵的排在最後
-    if (a.claimed && !b.claimed) return 1
-    if (!a.claimed && b.claimed) return -1
-    
-    // 最後按 ID 排序
-    return a.id - b.id
+    // 第二優先級：按進度排序
+    const aProgress = a.progress / a.maxProgress
+    const bProgress = b.progress / b.maxProgress
+    return bProgress - aProgress
   })
 })
 
-// 領取獎勵功能
+// 領取獎勵功能（簡化版，因為 store 中沒有獎勵系統）
 const claimReward = (achievementId) => {
-  const achievement = achievements.value.find(a => a.id === achievementId);
-  if (achievement) {
-    achievement.claimed = true;
-    
-    // 顯示獎勵提示
-    showRewardNotification(achievement.reward);
-    
-    // 可以觸發一個事件來更新玩家的資源
-    // emit('rewardClaimed', { type: 'achievement', reward: achievement.reward });
-  }
+  // 這裡可以加入獎勵邏輯，比如給玩家科技點
+  console.log(`成就 ${achievementId} 獎勵已領取`);
 };
+
+
 
 // 顯示獎勵提示
 const showRewardNotification = (reward) => { 
@@ -231,11 +145,21 @@ const showRewardNotification = (reward) => {
 </script>
 
 <style scoped>
+.page-title {
+  margin: 0px 0px 10px 0px;
+  font-size: 24px;
+  font-weight: 600;
+  color: #2c3e50;
+  text-align: left;
+  align-self: flex-start;
+}
+
 .achievement-menu {
   width: 100%;
   height: 100%;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-start;
   align-items: center;
 }
 
@@ -245,7 +169,7 @@ const showRewardNotification = (reward) => {
   width: 100%;
   height: 100%;
   max-height: 100%;
-  overflow-y: auto;
+  overflow-y: scroll; /* 改為 scroll 強制顯示滾動條 */
   box-sizing: border-box;
 }
 
@@ -370,40 +294,18 @@ const showRewardNotification = (reward) => {
   font-weight: 500;
 }
 
-.claim-btn {
-  padding: 8px 12px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+.unlocked-text {
   font-size: 12px;
-  font-weight: 500;
-  transition: background-color 0.3s ease;
-}
-
-.claim-btn:hover {
-  background-color: #218838;
-}
-
-.claimed-text {
-  font-size: 12px;
-  color: #6c757d;
+  color: #28a745;
   font-weight: 500;
 }
 
-.achievement-item.completed {
+.achievement-item.unlocked {
   border-color: #28a745;
   background: #f8fff9;
 }
 
-.achievement-item.ready-to-claim {
-  border-color: #ffc107;
-  background: #fffbf0;
-  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
-}
-
-.achievement-item.claimed {
+.achievement-item.locked {
   border-color: #6c757d;
   background: #f0f0f0;
   opacity: 0.8;
@@ -481,3 +383,4 @@ const showRewardNotification = (reward) => {
   }
 }
 </style>
+

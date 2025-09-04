@@ -1,6 +1,7 @@
+/*
 import * as PIXI from 'pixi.js'
 
-const TILE_SIZE = 64
+const TILE_SIZE = 64 
 const MAP_SIZE = 21
 const CENTER = Math.floor(MAP_SIZE / 2)
 
@@ -27,7 +28,7 @@ export function createMap(mapContainer) {
         color = 0xf1c40f
         tile.rect(0, 0, TILE_SIZE, TILE_SIZE)
           .fill({color, alpha})
-          .stroke({ width: 3, color: 0xe67e22 })
+          .stroke({ width: 3, color: 0xe67e22 }) 
 
         const castleText = new PIXI.Text({
           text: '🏰',
@@ -127,3 +128,4 @@ export function createMap(mapContainer) {
 
   return mapContainer
 }
+*/

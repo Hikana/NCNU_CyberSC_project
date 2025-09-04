@@ -1,5 +1,5 @@
 <template>
-  <div class="wall-menu" v-if="visible">
+  <div class="wall-menu" v-if="uiStore.isWallMenuOpen">
     <div class="menu-body">
       <div class="menu-left">
         <button :class="{ active: currentView === 'upgrade' }" @click="currentView = 'upgrade'">CIA<br/>城牆升級</button>
@@ -9,42 +9,42 @@
       <div class="menu-right">
         <!-- CIA 升級畫面 -->
         <div v-if="currentView === 'upgrade'" class="walls-container">
-          <div class="wall-item" v-for="(wall, index) in ciaWalls" :key="wall.name">
+          <div class="wall-item" v-for="(wall, index) in wallStore.ciaWalls" :key="wall.name">
             <div class="wall-top">
               <h3>{{ wall.name }}牆</h3>
               <p class="wall-defense">當前防禦力 {{ wall.defense }}%</p>
               <div class="controls">
-                <button @click="decreaseCia(index)">−</button>
+                <button @click="wallStore.decreaseCiaAdjustment(index)">−</button>
                 <span class="adjust-value">{{ wall.adjustment }}</span>
-                <button @click="increaseCia(index)">＋</button>
+                <button @click="wallStore.increaseCiaAdjustment(index)">＋</button>
               </div>
             </div>
             <div class="wall-bottom">
               <p class="wall-cost">
-                消耗 {{ wall.cost * wall.adjustment }} 城牆防禦力
+                消耗 {{ wall.cost * wall.adjustment }} 防禦點數
               </p>
-              <button class="confirm-button" @click="applySingleAdjustmentCia(index)">確認</button>
+              <button class="confirm-button" @click="wallStore.applyCiaUpgrade(index)">確認</button>
             </div>
           </div>
         </div>
         
         <!-- OWASP 升級畫面 -->
         <div v-if="currentView === 'owasp'" class="walls-container">
-          <div class="wall-item" v-for="(wall, index) in owaspWalls" :key="wall.name">
+          <div class="wall-item" v-for="(wall, index) in wallStore.owaspWalls" :key="wall.name">
             <div class="wall-top">
               <h3>{{ wall.name }}牆</h3>
               <p class="wall-defense">當前防禦力 {{ wall.defense }}%</p>
               <div class="controls">
-                <button @click="decreaseOwasp(index)">−</button>
+                <button @click="wallStore.decreaseOwaspAdjustment(index)">−</button>
                 <span class="adjust-value">{{ wall.adjustment }}</span>
-                <button @click="increaseOwasp(index)">＋</button>
+                <button @click="wallStore.increaseOwaspAdjustment(index)">＋</button>
               </div>
             </div>
             <div class="wall-bottom">
               <p class="wall-cost">
-                消耗 {{ wall.cost * wall.adjustment }} 城牆防禦力
+                消耗 {{ wall.cost * wall.adjustment }} 防禦點數
               </p>
-              <button class="confirm-button" @click="applySingleAdjustmentOwasp(index)">確認</button>
+              <button class="confirm-button" @click="wallStore.applyOwaspUpgrade(index)">確認</button>
             </div>
           </div>
         </div>
@@ -53,102 +53,25 @@
   </div>
 </template>
 
-
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
+// 移除 props 和 emits，引入需要的 stores
+import { useUiStore } from '@/stores/ui';
+import { useWallStore } from '@/stores/wall';
 
-const props = defineProps({
-  visible: Boolean,
-  techPoints: Number,
-  wallDefense: Number
-})
-const emit = defineEmits(['update-tech', 'update-wall'])
+const uiStore = useUiStore();
+const wallStore = useWallStore();
 
-const currentView = ref('upgrade')
+// `currentView` 是這個元件自己的內部狀態，所以保留
+const currentView = ref('upgrade');
 
-// CIA 城牆
-const ciaWalls = ref([
-  { name: 'C', defense: 80, cost: 10, adjustment: 1, showCostText: false },
-  { name: 'I', defense: 60, cost: 8, adjustment: 1, showCostText: false },
-  { name: 'A', defense: 90, cost: 12, adjustment: 1, showCostText: false }
-])
+// 直接使用 store 的數據，不需要本地 ref
 
-// OWASP 城牆 1-10
-const owaspWalls = ref([
-  { name: 'A01', defense: 70, cost: 10, adjustment: 1, showCostText: false },
-  { name: 'A02', defense: 65, cost: 10, adjustment: 1, showCostText: false },
-  { name: 'A03', defense: 75, cost: 10, adjustment: 1, showCostText: false },
-  { name: 'A04', defense: 60, cost: 10, adjustment: 1, showCostText: false },
-  { name: 'A05', defense: 80, cost: 10, adjustment: 1, showCostText: false },
-  { name: 'A06', defense: 70, cost: 10, adjustment: 1, showCostText: false },
-  { name: 'A07', defense: 65, cost: 10, adjustment: 1, showCostText: false },
-  { name: 'A08', defense: 75, cost: 10, adjustment: 1, showCostText: false },
-  { name: 'A09', defense: 70, cost: 10, adjustment: 1, showCostText: false },
-  { name: 'A10', defense: 80, cost: 10, adjustment: 1, showCostText: false }
-])
-
-// CIA 城牆控制函數
-const increaseCia = (index) => {
-  const wall = ciaWalls.value[index]
-  const totalCost = wall.cost * (Math.abs(wall.adjustment) + 1)
-  if (wall.defense + wall.adjustment < 100 && props.wallDefense >= totalCost) {
-    wall.adjustment = Math.max(1, wall.adjustment + 1)
-    wall.showCostText = true
-  }
-}
-
-const decreaseCia = (index) => {
-  const wall = ciaWalls.value[index]
-  if (wall.adjustment > 1) { // 最小只能到 1
-    wall.adjustment -= 1
-    wall.showCostText = true
-  }
-}
-
-const applySingleAdjustmentCia = (index) => {
-  const wall = ciaWalls.value[index]
-  // 消耗城牆防禦點，emit 給父層
-  const totalCost = wall.cost * Math.abs(wall.adjustment)
-  if (wall.adjustment >= 1 && props.wallDefense >= totalCost) {
-    emit('update-wall', props.wallDefense - totalCost)
-    wall.defense += wall.adjustment
-    wall.adjustment = 1 // 重設為 1
-    wall.showCostText = false
-  }
-}
-
-// OWASP 城牆控制函數
-const increaseOwasp = (index) => {
-  const wall = owaspWalls.value[index]
-  const totalCost = wall.cost * (Math.abs(wall.adjustment) + 1)
-  if (wall.defense + wall.adjustment < 100 && props.wallDefense >= totalCost) {
-    wall.adjustment = Math.max(1, wall.adjustment + 1)
-    wall.showCostText = true
-  }
-}
-
-const decreaseOwasp = (index) => {
-  const wall = owaspWalls.value[index]
-  if (wall.adjustment > 1) { // 最小只能到 1
-    wall.adjustment -= 1
-    wall.showCostText = true
-  }
-}
-
-const applySingleAdjustmentOwasp = (index) => {
-  const wall = owaspWalls.value[index]
-  // 消耗城牆防禦點，emit 給父層
-  const totalCost = wall.cost * Math.abs(wall.adjustment)
-  if (wall.adjustment >= 1 && props.wallDefense >= totalCost) {
-    emit('update-wall', props.wallDefense - totalCost)
-    wall.defense += wall.adjustment
-    wall.adjustment = 1 // 重設為 1
-    wall.showCostText = false
-  }
-}
+// 所有控制函數都移到 store 了，這裡不需要
 </script>
 
 <style scoped>
+/* 樣式維持不變 */
 .wall-menu {
   position: absolute;
   top: 120px;
@@ -159,6 +82,7 @@ const applySingleAdjustmentOwasp = (index) => {
   border-radius: 20px;
   padding: 20px;
   z-index: 1001;
+  pointer-events: auto;
 }
 
 .menu-body {
