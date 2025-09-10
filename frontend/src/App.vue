@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useEventStore } from './stores/eventStore'
-import RandomEventModal from './components/RandomEventModal.vue'
+
 
 const eventStore = useEventStore()
 
@@ -12,7 +12,7 @@ onMounted(() => {
 
 <template>
   <RouterView />
-  <RandomEventModal />
+  
 </template>
 
 

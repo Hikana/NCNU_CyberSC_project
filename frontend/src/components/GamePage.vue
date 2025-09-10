@@ -32,6 +32,20 @@
     />
     
     <UIOverlay />
+
+
+    <!-- ✅ 新增：隨機事件彈窗 (只在遊戲裡出現) -->
+    <RandomEventModal />
+
+    <!--  [新增] 開始答題按鈕 -->
+    <button class="quiz-btn" @click="openQuiz">
+      開始答題
+    </button>
+
+    <!-- ✅[新增] 答題面板 -->
+    <QuizPanel ref="quizPanelRef" />
+
+
   </div>
 </template>
 
@@ -44,12 +58,34 @@ import WallMenu from './WallMenu.vue'
 import PixiGameCanvas from '../components/PixiGameCanvas.vue'
 import UIOverlay from '../components/UIOverlay.vue'
 
+import RandomEventModal from './RandomEventModal.vue'
+
+
+/* ✅ [新增] 引入 QuizPanel */
+import QuizPanel from './QuizPanel.vue' 
+
 const showNpcMenu = ref(false)
 const showWallMenu = ref(false)
 
 // 集中管理點數
 const techPoints = ref(100)
 const wallDefense = ref(75)
+
+
+/* ✅ [新增] 建立 ref，控制 QuizPanel */
+const quizPanelRef = ref(null)            
+
+
+
+  
+
+  
+
+/* ✅ [新增] 啟動答題方法 */
+function openQuiz() {
+  quizPanelRef.value.startQuiz("html")   // Firestore 的 category
+}
+
 
 // 每分鐘自動加一點科技點
 let intervalId = null
@@ -104,6 +140,22 @@ function toggleWallMenu() {
   z-index: 25; /* 確保在遊戲畫布之上 */
   pointer-events: auto;
 }
+
+
+/* ✅ [新增] 答題按鈕樣式 */
+.quiz-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 40;       /* 確保在遊戲畫布之上 */
+  padding: 8px 16px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
 
 /* 確保 StatusBar 有正確的層級 */
 :deep(.status-bar) {
