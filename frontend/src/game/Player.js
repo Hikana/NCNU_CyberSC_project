@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+// 圖片暫不使用，恢復紅色人頭
 
 const TILE_SIZE = 120; // 與 Game.js 和 IsoGrid 保持一致
 
@@ -24,12 +25,12 @@ export class Player {
    */
   create(container) {
     this.sprite = new PIXI.Graphics();
-    this.sprite.circle(0, 0, 18).fill({ color: 0xe74c3c }); // 紅色圓形
-    
+    this.sprite.circle(0, 0, 18).fill({ color: 0xe74c3c });
+
     const playerIcon = new PIXI.Text({ text: '👤', style: { fontSize: 20 }});
     playerIcon.anchor.set(0.5);
     this.sprite.addChild(playerIcon);
-    
+
     container.addChild(this.sprite);
     
     // 根據 store 的初始位置，設定 sprite 的初始位置

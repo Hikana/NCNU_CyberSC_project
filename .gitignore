@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
+# Firebase Admin SDK
+backend/firebase/
+firebase-adminsdk.json
+*.json
+

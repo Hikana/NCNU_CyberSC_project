@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js'
 
 export class IsoGrid {
-  constructor(app, rows, cols, tileSize = 120, onTileClick, mapData = null) {
+  constructor(app, rows, cols, tileSize = 150, onTileClick, mapData = null) {
     console.log('IsoGrid 構造器:', { rows, cols, tileSize, onTileClick: !!onTileClick })
     
     this.app = app

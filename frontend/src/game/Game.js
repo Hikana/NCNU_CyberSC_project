@@ -15,7 +15,7 @@ export class Game {
     this.keys = {};
     this.isDragging = false;
     this.dragStart = { x: 0, y: 0 };
-    this.TILE_SIZE = 120;
+    this.TILE_SIZE = 150;
   }
 
   async init() {
@@ -126,7 +126,7 @@ export class Game {
       this.app, 
       20, // rows
       20, // cols
-      120, // tileSize
+      150, // tileSize
       this._handleTileClick.bind(this), // onTileClick callback
       null // mapData (使用預設)
     );

@@ -7,7 +7,7 @@
       <img :src="npcImage" alt="NPC" class="npc" @click="uiStore.toggleNpcMenu()" />
       <ControlsHint /> 
       <NpcMenu @close="uiStore.closeAllMenus()" />
-      <WallMenu />
+      <!-- <WallMenu /> -->
       <QuestionModal />
       </div>
   </div>
@@ -18,14 +18,14 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import PixiGameCanvas from '@/components/PixiGameCanvas.vue';
 import StatusBar from '@/components/StatusBar.vue';
 import NpcMenu from '@/components/NpcMenu.vue';
-import WallMenu from '@/components/WallMenu.vue';
+// import WallMenu from '@/components/WallMenu.vue';
 import QuestionModal from '@/components/QuestionModal.vue';
 import ControlsHint from '@/components/ControlsHint.vue';
 
 import { usePlayerStore } from '@/stores/player';
 import { useUiStore } from '@/stores/ui';
 
-import npcImage from '@/assets/npc.png';
+import npcImage from '@/assets/NPCmoved.gif';
 
 const playerStore = usePlayerStore();
 const uiStore = useUiStore();
@@ -62,7 +62,7 @@ const uiStore = useUiStore();
   position: absolute;
   bottom: 20px;
   left: 30px;
-  width: 120px;
+  width: 180px;
   height: auto;
   cursor: pointer;
   z-index: 25; /* 確保在遊戲畫布之上 */
@@ -81,12 +81,12 @@ const uiStore = useUiStore();
   pointer-events: auto;
 }
 
-/* 確保 WallMenu 有正確的層級 */
+/* 確保 WallMenu 有正確的層級
 :deep(.wall-menu) {
   z-index: 25;
   pointer-events: auto;
   transition: transform 0.2s ease-in-out;
-}
+} */
 .npc:hover {
     transform: scale(1.1);
 }
