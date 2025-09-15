@@ -79,20 +79,29 @@ export class IsoGrid {
   createDefaultMap() {
     console.log('創建默認地圖:', this.rows, 'x', this.cols)
     const map = []
+    const center = Math.floor(this.rows / 2)
+
     for (let row = 0; row < this.rows; row++) {
       map[row] = []
       for (let col = 0; col < this.cols; col++) {
-        map[row][col] = { type: 'empty' }
+        const distanceFromCenter = Math.max(Math.abs(row - center), Math.abs(col - center))
+
+        map[row][col] = { 
+          type: 'empty',
+          explored: distanceFromCenter <= 6  // 內圈預設可開發，外圈未知
+        }
       }
     }
     return map
   }
+
 
   updateMapData(newMapData) {
     console.log('更新地圖數據:', newMapData)
     this.mapData = newMapData
     this.drawGrid()
   }
+
 
   setSelectedTile(x, y) {
     this.selectedTile = { x, y };
@@ -104,6 +113,14 @@ export class IsoGrid {
     this.drawGrid();
   }
 
+
+  revealTile(row, col) {
+    if (this.mapData[row] && this.mapData[row][col]) {
+      this.mapData[row][col].explored = true
+      this.drawGrid()
+    }
+  }
+  
   drawGrid() {
     
     // 清除現有網格
@@ -128,6 +145,7 @@ export class IsoGrid {
 
         let color = 0xffffff
         let alpha = 0.3
+        
         
         // 檢查是否為選中的瓦片
         const isSelected = this.selectedTile && this.selectedTile.x === col && this.selectedTile.y === row;
@@ -207,14 +225,24 @@ export class IsoGrid {
         tileContainer.addChild(tile);
 
         // 簡化事件處理，只使用 pointertap
+
         tileContainer.on('pointertap', () => {
-          
-          if (this.onTileClick) {
-            this.onTileClick(row, col);
+          if (!cell.explored) {
+            tileContainer.on('pointerover', () => { tile.tint = 0xdddddd })
+            tileContainer.on('pointerout', () => { tile.tint = 0xffffff })
+            // 如果這格是未知 → 觸發題目（交給 Vue）
+            if (this.onTileClick) {
+              this.onTileClick(row, col, false) // false = 未探索
+            }
           } else {
-            console.log('❌ onTileClick 回調函數不存在');
+            // 已探索 → 可以正常觸發其他事件
+            if (this.onTileClick) {
+              this.onTileClick(row, col, true) // true = 已探索
+            }
           }
         });
+
+
 
 
         tileContainer.on('pointerover', () => { //懸停
@@ -229,4 +257,7 @@ export class IsoGrid {
       }
     }
   }
+
+  
+
 }
