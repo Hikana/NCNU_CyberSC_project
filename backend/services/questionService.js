@@ -18,32 +18,9 @@ class QuestionService {
 
   // --- 遊戲核心邏輯 ---
   async getRandomQuestion(level, userId) {
-    if (!userId) {
-      // 無用戶ID的基礎邏輯
-      const question = await gameData.findRandomQuestion({ level });
-      if (!question) throw new Error(`找不到等級 ${level} 的題目`);
-      const { correctAnswer, ...data } = question;
-      return data;
-    }
-
-    const user = await gameData.getUser(userId);
-    const excludeIds = user.correctlyAnsweredIds || [];
-    console.log(`[Service] 從 DB 取得玩家 ${userId} 的已答對列表 (excludeIds):`, excludeIds);
-    let question = await gameData.findRandomQuestion({ level, excludeIds });
-    
-    // 只有在真的撈不到題目時 (代表該等級題目已全部答對)，才觸發後備機制
-    if (!question) {
-      console.warn(`玩家 ${userId} 已答完所有等級 ${level} 的題目，重置列表並重新抽題`);
-      // 在這裡可以決定後備邏輯，例如：
-      // 1. 清空該玩家的已答對列表 (下面採用此方案)
-      // 2. 提示玩家已完成所有題目
-      // 3. 抽一題舊題目
-      await gameData.usersCollection.doc(userId).update({ correctlyAnsweredIds: [] });
-      question = await gameData.findRandomQuestion({ level }); // 重新抽題
-    }
-    console.log(`[Service] 最終選出的題目 ID: ${question ? question.id : '無'}`);
-    if (!question) throw new Error(`資料庫中沒有等級 ${level} 的題目`);
-
+    // 專案暫不使用登入/用戶排除機制，統一走無用戶模式
+    const question = await gameData.findRandomQuestion({ level });
+    if (!question) throw new Error(`找不到等級 ${level} 的題目`);
     const { correctAnswer, ...data } = question;
     return data;
   }
@@ -57,7 +34,21 @@ class QuestionService {
 
   async validateAnswer(questionId, userAnswer) {
     const question = await gameData.getQuestionById(questionId);
-    if (!question) throw new Error('無法驗證答案：找不到題目');
+    if (!question) {
+      const err = new Error('無法驗證答案：找不到題目');
+      err.status = 404;
+      throw err;
+    }
+    if (typeof question.correctAnswer !== 'string') {
+      const err = new Error('題目資料不完整：缺少正確答案');
+      err.status = 422;
+      throw err;
+    }
+    if (typeof userAnswer !== 'string') {
+      const err = new Error('請提供有效的字串答案');
+      err.status = 400;
+      throw err;
+    }
 
     const isCorrect = question.correctAnswer.toLowerCase().trim() === userAnswer.toLowerCase().trim();
     return {

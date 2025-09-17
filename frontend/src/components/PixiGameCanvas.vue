@@ -8,7 +8,7 @@
       <p v-if="buildingStore.selectedTile">
         已選中: ({{ buildingStore.selectedTile.x }}, {{ buildingStore.selectedTile.y }})
       </p>
-      <p style="color: orange;">請點擊地圖上的瓦片來選擇位置</p>
+      <p style="color: orange;">點選地圖選擇位置</p>
     </div>
     
     <div class="placement-controls">

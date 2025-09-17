@@ -20,12 +20,10 @@ class GameController {
 
   getRandomQuestion = asyncHandler(async (req, res) => {
     const { level } = req.query;
-    const userId = 'test-user'; 
-    
-    // --- 間諜日誌 1 ---
-    console.log(`[Controller] 收到請求: level=${level}, userId=${userId}`);
+    // 專案目前無登入流程，走無用戶模式，避免依賴 getUser
+    console.log(`[Controller] 收到請求: level=${level}`);
 
-    const data = await questionService.getRandomQuestion(parseInt(level || 1), userId);
+    const data = await questionService.getRandomQuestion(parseInt(level || 1));
     res.status(200).json({ success: true, data });
   });
 

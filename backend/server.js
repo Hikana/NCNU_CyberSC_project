@@ -22,6 +22,19 @@ app.use('/api/buildings', buildingRoutes);
 // 伺服器健康檢查
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
+// 404 處理：未匹配的路由回傳 JSON
+app.use((req, res, next) => {
+  res.status(404).json({ success: false, message: 'Not Found' });
+});
+
+// 全域錯誤處理：確保一律回傳 JSON 而非 HTML
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  const status = err.status || 500;
+  res.status(status).json({ success: false, message: err.message || 'Server Error' });
+});
+
 // 啟動伺服器
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);

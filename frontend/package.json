@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@pixi/gif": "^3.0.1",
     "axios": "^1.11.0",
     "firebase": "^12.2.1",
     "pinia": "^3.0.3",

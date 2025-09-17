@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js'
+import grassImg from '@/assets/grass.png'
 
 export class IsoGrid {
   constructor(app, rows, cols, tileSize = 150, onTileClick, mapData = null) {
@@ -12,6 +13,8 @@ export class IsoGrid {
     this.mapData = mapData || this.createDefaultMap()
     this.selectedTile = null
     this.gridContainer = new PIXI.Container()
+    // 允許依據 zIndex 排序，確保地圖元素可正確分層
+    this.gridContainer.sortableChildren = true
     
     // 確保容器可以接收交互事件
     this.gridContainer.interactive = true
@@ -19,10 +22,24 @@ export class IsoGrid {
     
     this.app.stage.addChild(this.gridContainer)
     
-    // 預載入建築圖片
+    // 預載入建築與草地圖片
     this.loadBuildingTextures()
+    this.loadGrassTextures() // 內部載入完成後會自動觸發重繪
   }
   
+  // 從 Graphics 對象創建紋理 (PixiJS v8 兼容)
+  createTextureFromGraphics(graphics) {
+    const renderTexture = PIXI.RenderTexture.create({
+      width: this.tileSize,
+      height: this.tileSize
+    })
+    
+    // 使用應用程序的渲染器來渲染圖形到紋理
+    this.app.renderer.render(graphics, { renderTexture })
+    
+    return new PIXI.Texture(renderTexture)
+  }
+
   // 預載入建築圖片
   loadBuildingTextures() {
     this.buildingTextures = {}
@@ -31,7 +48,7 @@ export class IsoGrid {
     const importBuildingImage = async (id) => {
       try {
         // 使用 Vite 的動態導入，獲取正確的資源 URL
-        const module = await import(`../assets/b${id}.png`)
+        const module = await import(`../assets/B${id}.png`)
         const imageUrl = module.default
         
         // 創建 Image 對象來預載入
@@ -45,7 +62,7 @@ export class IsoGrid {
            console.log(`✅ 建築圖片 ${id} 載入成功:`, {
              url: imageUrl,
              size: `${img.naturalWidth}x${img.naturalHeight}`,
-             texture: texture.baseTexture ? `${texture.baseTexture.width}x${texture.baseTexture.height}` : 'unknown'
+             texture: texture ? `${texture.width}x${texture.height}` : 'unknown'
            })
          }
         
@@ -55,7 +72,7 @@ export class IsoGrid {
           const graphics = new PIXI.Graphics()
           graphics.rect(0, 0, this.tileSize, this.tileSize)
             .fill({ color: 0x00ff00 + (id * 0x111111) })
-          this.buildingTextures[id] = graphics.generateTexture()
+          this.buildingTextures[id] = this.createTextureFromGraphics(graphics)
         }
         
         img.src = imageUrl
@@ -66,13 +83,32 @@ export class IsoGrid {
         const graphics = new PIXI.Graphics()
         graphics.rect(0, 0, this.tileSize, this.tileSize)
           .fill({ color: 0x00ff00 + (id * 0x111111) })
-        this.buildingTextures[id] = graphics.generateTexture()
+        this.buildingTextures[id] = this.createTextureFromGraphics(graphics)
       }
     }
     
     // 並行載入所有建築圖片
     for (let i = 1; i <= 9; i++) {
       importBuildingImage(i)
+    }
+  }
+
+  // 預載入草地圖片（放入 Assets 快取，避免警告）
+  async loadGrassTextures() {
+    this.grassTextures = {}
+    try {
+      const texture = await PIXI.Assets.load(grassImg)
+      this.grassTextures.grass = texture
+      // 紋理就緒後重繪，讓草地立即顯示
+      if (this.mapData) {
+        this.drawGrid()
+      }
+    } catch (e) {
+      // 後備：若載入失敗，仍以 Texture.from 建立
+      this.grassTextures.grass = PIXI.Texture.from(grassImg)
+      if (this.mapData) {
+        this.drawGrid()
+      }
     }
   }
 
@@ -86,8 +122,16 @@ export class IsoGrid {
       for (let col = 0; col < this.cols; col++) {
         const distanceFromCenter = Math.max(Math.abs(row - center), Math.abs(col - center))
 
+        // 預設為空地
+        let tileType = 'empty'
+        
+        // 在特定位置放置草地
+        if ((row === 1 && col === 1) || (row === 1 && col === 2) || (row === 1 && col === 3) || (row === 2 && col === 1) || (row === 2 && col === 2) || (row === 2 && col === 3) || (row === 3 && col === 1) || (row === 3 && col === 2) || (row === 3 && col === 3)) {
+          tileType = 'grass'
+        }
+
         map[row][col] = { 
-          type: 'empty',
+          type: tileType,
           explored: distanceFromCenter <= 6  // 內圈預設可開發，外圈未知
         }
       }
@@ -139,6 +183,9 @@ export class IsoGrid {
         const tileContainer = new PIXI.Container()
         tileContainer.x = x
         tileContainer.y = y
+        // 等角深度：row+col 越大越靠下；讓子元素可排序
+        tileContainer.zIndex = row + col
+        tileContainer.sortableChildren = true
 
         const tile = new PIXI.Graphics()
         const cell = this.mapData[row][col]
@@ -150,6 +197,34 @@ export class IsoGrid {
         // 檢查是否為選中的瓦片
         const isSelected = this.selectedTile && this.selectedTile.x === col && this.selectedTile.y === row;
         
+        // 檢查是否為草地瓦片
+        if (cell.type === 'grass') {
+          const tex = this.grassTextures && this.grassTextures.grass;
+          if (!tex) { this.gridContainer.addChild(tileContainer); continue; }
+        
+         const grass1 = new PIXI.Sprite(tex);
+          grass1.anchor.set(0.5, 0.5);
+          const coverageScale = 2.0; // 確保完全覆蓋
+          grass1.width = this.tileSize * coverageScale;
+          grass1.height = this.tileSize * coverageScale;
+
+          const mask1 = new PIXI.Graphics();
+          mask1
+            .moveTo(0, -halfH)
+            .lineTo(halfW, 0)
+            .lineTo(0, halfH)
+            .lineTo(-halfW, 0)
+            .closePath()
+            .fill(0xffffff);
+
+          tileContainer.addChild(grass1);
+          tileContainer.addChild(mask1);
+          grass1.mask = mask1;
+        
+          this.gridContainer.addChild(tileContainer);
+          continue;
+        }
+        
         // 檢查是否為建築瓦片
         if (cell.type === 'building') {
           // 建築瓦片：顯示建築圖片
@@ -158,10 +233,11 @@ export class IsoGrid {
           
           if (buildingTexture) {
             const buildingSprite = new PIXI.Sprite(buildingTexture)
+            buildingSprite.zIndex = 5
             
             // 計算合適的尺寸，保持比例
-            const originalWidth = buildingTexture.baseTexture.width
-            const originalHeight = buildingTexture.baseTexture.height
+            const originalWidth = buildingTexture.width
+            const originalHeight = buildingTexture.height
             const scale = Math.min(this.tileSize / originalWidth, this.tileSize / originalHeight)
             
             buildingSprite.width = originalWidth * scale
@@ -203,11 +279,11 @@ export class IsoGrid {
           .stroke({ width: 1, color: 0xcccccc, alpha: 0.6 })
           .fill({ color: color, alpha: alpha });
 
-        // 簡化 hitArea 設置，使用矩形區域
-        tileContainer.hitArea = new PIXI.Rectangle(-halfW, -halfH, this.tileSize, this.tileSize);
-        tileContainer.eventMode = 'static';  // 使用 static 模式
-        tileContainer.interactive = true;    // 確保可交互
-        tileContainer.cursor = 'pointer';
+          tileContainer.hitArea = new PIXI.Rectangle(-halfW, -halfH, this.tileSize, this.tileSize)
+          tileContainer.eventMode = 'static'
+          tileContainer.interactive = true
+          tileContainer.cursor = 'pointer'
+        
 
         // 如果是選中的瓦片，添加邊框
         if (isSelected) {
@@ -224,34 +300,30 @@ export class IsoGrid {
 
         tileContainer.addChild(tile);
 
-        // 簡化事件處理，只使用 pointertap
-
-        tileContainer.on('pointertap', () => {
-          if (!cell.explored) {
-            tileContainer.on('pointerover', () => { tile.tint = 0xdddddd })
-            tileContainer.on('pointerout', () => { tile.tint = 0xffffff })
-            // 如果這格是未知 → 觸發題目（交給 Vue）
-            if (this.onTileClick) {
-              this.onTileClick(row, col, false) // false = 未探索
+        // 滑鼠事件：僅在允許滑鼠時綁定
+        
+          tileContainer.on('pointertap', () => {
+            if (!cell.explored) {
+              tileContainer.on('pointerover', () => { tile.tint = 0xdddddd })
+              tileContainer.on('pointerout', () => { tile.tint = 0xffffff })
+              if (this.onTileClick) {
+                this.onTileClick(row, col, false)
+              }
+            } else {
+              if (this.onTileClick) {
+                this.onTileClick(row, col, true)
+              }
             }
-          } else {
-            // 已探索 → 可以正常觸發其他事件
-            if (this.onTileClick) {
-              this.onTileClick(row, col, true) // true = 已探索
-            }
-          }
-        });
+          })
+        
 
 
 
 
-        tileContainer.on('pointerover', () => { //懸停
-          tile.tint = 0xdddddd;
-        });
-
-        tileContainer.on('pointerout', () => { //離開
-          tile.tint = 0xffffff;
-        });
+        
+          tileContainer.on('pointerover', () => { tile.tint = 0xdddddd })
+          tileContainer.on('pointerout', () => { tile.tint = 0xffffff })
+        
 
         this.gridContainer.addChild(tileContainer);
       }

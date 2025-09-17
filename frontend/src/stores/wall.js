@@ -3,134 +3,60 @@ import { usePlayerStore } from './player';
 
 export const useWallStore = defineStore('wall', {
   state: () => ({
-    // CIA 城牆
-    ciaWalls: [
-      { name: 'C', defense: 80, cost: 10, adjustment: 1, showCostText: false },
-      { name: 'I', defense: 60, cost: 8, adjustment: 1, showCostText: false },
-      { name: 'A', defense: 90, cost: 12, adjustment: 1, showCostText: false }
-    ],
-    
-    // OWASP 城牆 1-10
-    owaspWalls: [
-      { name: 'A01', defense: 70, cost: 10, adjustment: 1, showCostText: false },
-      { name: 'A02', defense: 65, cost: 10, adjustment: 1, showCostText: false },
-      { name: 'A03', defense: 75, cost: 10, adjustment: 1, showCostText: false },
-      { name: 'A04', defense: 60, cost: 10, adjustment: 1, showCostText: false },
-      { name: 'A05', defense: 80, cost: 10, adjustment: 1, showCostText: false },
-      { name: 'A06', defense: 70, cost: 10, adjustment: 1, showCostText: false },
-      { name: 'A07', defense: 65, cost: 10, adjustment: 1, showCostText: false },
-      { name: 'A08', defense: 75, cost: 10, adjustment: 1, showCostText: false },
-      { name: 'A09', defense: 70, cost: 10, adjustment: 1, showCostText: false },
-      { name: 'A10', defense: 80, cost: 10, adjustment: 1, showCostText: false }
-    ],
-    
     // 總防禦點數
     totalDefensePoints: 30,
     
     // 城堡等級
-    castleLevel: 1
+    castleLevel: 0
   }),
 
   getters: {
     // 計算總防禦力
     totalDefense: (state) => {
-      const ciaTotal = state.ciaWalls.reduce((sum, wall) => sum + wall.defense, 0);
-      const owaspTotal = state.owaspWalls.reduce((sum, wall) => sum + wall.defense, 0);
-      return ciaTotal + owaspTotal;
+      return state.totalDefensePoints;
+    },
+    // 下一個升級門檻（每 150 點）
+    nextDefenseThreshold: (state) => {
+      const block = 150;
+      const levelIndex = Math.floor(state.totalDefensePoints / block) + 1;
+      return levelIndex * block;
+    },
+    // 顯示用進度文字，例如 45/150、190/300
+    defenseProgressText: (state) => {
+      const block = 150;
+      const next = (Math.floor(state.totalDefensePoints / block) + 1) * block;
+      return `${state.totalDefensePoints}/${next}`;
     }
   },
 
   actions: {
-    // CIA 城牆控制函數
-    increaseCiaAdjustment(index) {
-      const wall = this.ciaWalls[index];
-      const totalCost = wall.cost * (Math.abs(wall.adjustment) + 1);
-      
-      if (wall.defense + wall.adjustment < 100 && this.totalDefensePoints >= totalCost) {
-        wall.adjustment = Math.max(1, wall.adjustment + 1);
-        wall.showCostText = true;
-      }
-    },
-
-    decreaseCiaAdjustment(index) {
-      const wall = this.ciaWalls[index];
-      if (wall.adjustment > 1) {
-        wall.adjustment -= 1;
-        wall.showCostText = true;
-      }
-    },
-
-    applyCiaUpgrade(index) {
-      const wall = this.ciaWalls[index];
-      const totalCost = wall.cost * Math.abs(wall.adjustment);
-      
-      if (wall.adjustment >= 1 && this.totalDefensePoints >= totalCost) {
-        this.totalDefensePoints -= totalCost;
-        wall.defense += wall.adjustment;
-        wall.adjustment = 1;
-        wall.showCostText = false;
-        console.log(`${wall.name}牆升級成功，目前防禦: ${wall.defense}%`);
-      }
-    },
-
-    // OWASP 城牆控制函數
-    increaseOwaspAdjustment(index) {
-      const wall = this.owaspWalls[index];
-      const totalCost = wall.cost * (Math.abs(wall.adjustment) + 1);
-      
-      if (wall.defense + wall.adjustment < 100 && this.totalDefensePoints >= totalCost) {
-        wall.adjustment = Math.max(1, wall.adjustment + 1);
-        wall.showCostText = true;
-      }
-    },
-
-    decreaseOwaspAdjustment(index) {
-      const wall = this.owaspWalls[index];
-      if (wall.adjustment > 1) {
-        wall.adjustment -= 1;
-        wall.showCostText = true;
-      }
-    },
-
-    applyOwaspUpgrade(index) {
-      const wall = this.owaspWalls[index];
-      const totalCost = wall.cost * Math.abs(wall.adjustment);
-      
-      if (wall.adjustment >= 1 && this.totalDefensePoints >= totalCost) {
-        this.totalDefensePoints -= totalCost;
-        wall.defense += wall.adjustment;
-        wall.adjustment = 1;
-        wall.showCostText = false;
-        console.log(`${wall.name}牆升級成功，目前防禦: ${wall.defense}%`);
-      }
-    },
-
-    // 城堡升級
+    // 城堡升級 - 當城牆防禦力達到150倍數時自動升級
     upgradeCastle() {
-      const playerStore = usePlayerStore();
-      const cost = this.castleLevel * 100;
+      const requiredDefense = (this.castleLevel + 1) * 150;
       
-      if (playerStore.spendTechPoints(cost)) {
+      if (this.totalDefensePoints >= requiredDefense) {
         this.castleLevel++;
-        this.totalDefensePoints += 20; // 升級城堡獲得防禦點數
-        console.log(`城堡升級成功！目前等級: ${this.castleLevel}`);
+        console.log(`城堡自動升級成功！目前等級: ${this.castleLevel}，需要防禦力: ${requiredDefense}`);
+        return true;
+      } else {
+        console.log(`防禦力不足！需要 ${requiredDefense} 防禦力才能升級，目前有 ${this.totalDefensePoints}`);
+        return false;
       }
     },
 
-    // 強化防禦
-    reinforceDefense() {
-      const playerStore = usePlayerStore();
-      const cost = 50;
-      
-      if (playerStore.spendTechPoints(cost)) {
-        this.totalDefensePoints += 10;
-        console.log(`防禦強化成功！目前防禦點數: ${this.totalDefensePoints}`);
-      }
-    },
-
-    // 更新防禦點數
+    // 更新防禦點數並檢查是否可以升級城堡
     updateDefensePoints(newValue) {
       this.totalDefensePoints = newValue;
+      // 檢查是否可以升級城堡
+      this.checkCastleUpgrade();
+    },
+
+    // 檢查城堡是否可以升級
+    checkCastleUpgrade() {
+      const requiredDefense = (this.castleLevel + 1) * 150;
+      if (this.totalDefensePoints >= requiredDefense) {
+        this.upgradeCastle();
+      }
     }
   }
 });

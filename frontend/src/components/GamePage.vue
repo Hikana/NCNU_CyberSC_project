@@ -13,12 +13,6 @@
 
     <!-- ✅ 新增：隨機事件彈窗 (只在遊戲裡出現) -->
     <RandomEventModal />
-    <!--  [新增] 開始答題按鈕 -->
-    <button class="quiz-btn" @click="openQuiz">
-      開始答題
-    </button>
-    <!-- ✅[新增] 答題面板 -->
-    <QuizPanel ref="quizPanelRef" />
   </div>
 </template>
 
@@ -36,7 +30,7 @@ import { useUiStore } from '@/stores/ui';
 import RandomEventModal from './RandomEventModal.vue'
 /* ✅ [新增] 引入 QuizPanel */
 import QuizPanel from './QuizPanel.vue' 
-import npcImage from '@/assets/NPCmoved.gif';
+import npcImage from '@/assets/NPC.gif';
 
 const playerStore = usePlayerStore();
 const uiStore = useUiStore();

@@ -4,7 +4,7 @@
     <div class="wall-bar"  @click="uiStore.toggleWallMenu()">
       <div class="arrow-label">城牆防禦</div>
       <div class="wall-info">
-        <span>{{ wallStore.totalDefensePoints }} 點</span>
+        <span>{{ wallStore.defenseProgressText }}</span>
       </div>
     </div>
 
@@ -14,6 +14,14 @@
         <span>{{ playerStore.techPoints }} 個</span>
       </div>
     </div>
+    <!--
+    <div class="clear-bar" @click="clearAllBuildings">
+      <div class="arrow-label">清除建築</div>
+      <div class="clear-info">
+        <span>🗑️</span>
+      </div>
+    </div>
+    -->
   </div>
 </template>
 
@@ -21,11 +29,24 @@
 import { usePlayerStore } from '@/stores/player';
 import { useWallStore } from '@/stores/wall';
 import { useUiStore } from '@/stores/ui';
-
+import { useBuildingStore } from '@/stores/buildings';
 
 const playerStore = usePlayerStore();
 const wallStore = useWallStore();
 const uiStore = useUiStore();
+const buildingStore = useBuildingStore();
+
+// 清除所有建築
+async function clearAllBuildings() {
+  if (confirm('確定要清除地圖上的所有建築嗎？')) {
+    const success = await buildingStore.clearAllBuildings();
+    if (success) {
+      alert('已清除所有建築！');
+    } else {
+      alert('清除建築時發生錯誤，但本地狀態已清除');
+    }
+  }
+}
 </script>
 
 <style scoped>
@@ -39,7 +60,8 @@ const uiStore = useUiStore();
 }
 
 .wall-bar,
-.tech-bar {
+.tech-bar,
+.clear-bar {
   display: flex;
   align-items: center;
   background: #3947c2;
@@ -48,6 +70,14 @@ const uiStore = useUiStore();
   height: 60px;
   position: relative;
   cursor: pointer;
+}
+
+.clear-bar {
+  background: #c23939; /* 紅色背景表示危險操作 */
+}
+
+.clear-bar:hover {
+  background: #a02d2d; /* 懸停時更深的紅色 */
 }
 
 .arrow-label {
@@ -63,7 +93,8 @@ const uiStore = useUiStore();
 }
 
 .tech-info span,
-.wall-info span {
+.wall-info span,
+.clear-info span {
   color: #ffffff;
   margin: 0 4px;
   font-size: 16px;

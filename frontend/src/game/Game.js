@@ -29,13 +29,24 @@ export class Game {
     });
     this.container.appendChild(this.app.canvas); 
     this.world = new PIXI.Container();
+    // 依 zIndex 排序，確保玩家/建築在地圖之上
+    this.world.sortableChildren = true;
     this.app.stage.addChild(this.world);
 
     this._createMap();
-    this._createPlayer();
+    await this._createPlayer();
     this._setupControls();
     
     this.app.ticker.add((ticker) => this._gameLoop(ticker.deltaTime));
+  }
+
+  // 將網格索引轉為世界座標（像素）
+  _gridToWorld(gx, gy) {
+    const halfW = this.TILE_SIZE / 2;
+    const halfH = this.TILE_SIZE / 4;
+    const isoX = (gx - gy) * halfW + (this.grid ? this.grid.gridContainer.x : 0);
+    const isoY = (gx + gy) * halfH + (this.grid ? this.grid.gridContainer.y : 0);
+    return { x: isoX, y: isoY };
   }
 
   destroy() {
@@ -63,9 +74,19 @@ export class Game {
     if (this.keys['ArrowRight'] || this.keys['KeyD']) { x += speed; hasMoved = true; }
     
     if (hasMoved) {
+      // 暫時關閉邊界限制，允許自由移動
       this.playerStore.updatePosition({ x, y });
+      // 原本的邊界檢查：
+      // const { gx, gy } = this._worldToGrid(x, y);
+      // if (this._isInsideGrid(gx, gy)) {
+      //   this.playerStore.updatePosition({ x, y });
+      // }
     }
-    
+    // 切換玩家動畫狀態
+    if (this.player && typeof this.player.setMoving === 'function') {
+      this.player.setMoving(hasMoved);
+    }
+
     this.player.update();
     this._updateCamera();
   }
@@ -134,8 +155,8 @@ export class Game {
     // 將網格容器添加到世界容器中
     this.world.addChild(this.grid.gridContainer);
     
-    // 設定網格的 zIndex
-    this.grid.gridContainer.zIndex = 1;
+    // 設定網格的 zIndex（地圖在底層）
+    this.grid.gridContainer.zIndex = 0;
     
     // 將網格置中於畫布
     const halfW = this.TILE_SIZE / 2;
@@ -151,14 +172,27 @@ export class Game {
     console.log('✅ 網格位置:', this.grid.gridContainer.x, this.grid.gridContainer.y);
   }
 
-  _createPlayer() {
+  async _createPlayer() {
     this.player = new Player(this.playerStore);
-    this.player.create(this.world);
+    await this.player.create(this.world);
+    
+    // 設定玩家的 zIndex（玩家在地圖之上）
+    this.player.sprite.zIndex = 5;
+    
+    // 將玩家放到地圖中心附近（有效格）
+    const startGrid = { gx: Math.floor(this.grid.cols / 2), gy: Math.floor(this.grid.rows / 2) };
+    const startWorld = this._gridToWorld(startGrid.gx, startGrid.gy);
+    this.playerStore.updatePosition({ x: startWorld.x, y: startWorld.y });
   }
 
   _handleTileClick(row, col) {
     if (this.isDragging) return;
-    console.log(`點擊了網格位置: (${row}, ${col})`);
+    // 僅在合法格內處理互動
+    if (!this._isInsideGrid(col, row)) {
+      console.log('超出網格，忽略互動');
+      return;
+    }
+    console.log(`觸發網格互動: (${row}, ${col})`);
     
     const mapCenter = 10;
     const distanceFromCenter = Math.max(
@@ -177,13 +211,38 @@ export class Game {
     const playerPos = this.playerStore.position;
     const isoX = playerPos.x;
     const isoY = playerPos.y;
-    const gridY = (isoY / (this.TILE_SIZE / 4) + isoX / (this.TILE_SIZE / 2)) / 2;
-    const gridX = gridY + (isoX / (this.TILE_SIZE / 2));
-    const mapCenter = 10;
-    const finalGridX = Math.round(gridX + mapCenter);
-    const finalGridY = Math.round(gridY + mapCenter);
+    const { gx, gy } = this._worldToGrid(isoX, isoY);
+    const finalGridX = gx;
+    const finalGridY = gy;
     console.log(`按下 Enter，檢視座標 (${finalGridX}, ${finalGridY})`);
     
+    if (!this._isInsideGrid(finalGridX, finalGridY)) {
+      console.log('不在網格範圍內，無法互動/答題');
+      return;
+    }
     this._handleTileClick(finalGridX, finalGridY);
+  }
+
+  // 將世界座標轉為網格索引（整數）
+  _worldToGrid(worldX, worldY) {
+    if (!this.grid) return { gx: -1, gy: -1 };
+    const halfW = this.TILE_SIZE / 2;
+    const halfH = this.TILE_SIZE / 4;
+    // 轉成網格容器的本地座標
+    const localX = worldX - this.grid.gridContainer.x;
+    const localY = worldY - this.grid.gridContainer.y;
+    // 反變換：由等角像素座標 -> 網格索引（浮點）
+    const gridYf = (localY / halfH + localX / halfW) / 2;
+    const gridXf = gridYf + (localX / halfW);
+    // 四捨五入到最近的格
+    const gx = Math.round(gridXf);
+    const gy = Math.round(gridYf);
+    return { gx, gy };
+  }
+
+  // 是否在網格有效範圍
+  _isInsideGrid(gx, gy) {
+    if (!this.grid) return false;
+    return gx >= 0 && gx < this.grid.cols && gy >= 0 && gy < this.grid.rows;
   }
 }

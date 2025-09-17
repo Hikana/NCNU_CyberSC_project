@@ -16,5 +16,13 @@ class BuildingService {
     await buildingData.updateMap(map);
     return map;
   }
+
+  async clearAllBuildings() {
+    const emptyMap = Array.from({ length: 20 }, () =>
+      Array.from({ length: 20 }, () => ({ type: 'empty' }))
+    );
+    await buildingData.updateMap(emptyMap);
+    return emptyMap;
+  }
 }
 module.exports = new BuildingService();

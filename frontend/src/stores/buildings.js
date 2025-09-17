@@ -3,15 +3,25 @@ import axios from 'axios'
 import { usePlayerStore } from './player'
 
 // 從 assets 引入圖片資源
-import buildingAImg from '@/assets/b1.png'
-import buildingBImg from '@/assets/b2.png'
-import buildingCImg from '@/assets/b3.png'
-import buildingDImg from '@/assets/b4.png'
-import buildingEImg from '@/assets/b5.png'
-import buildingFImg from '@/assets/b6.png'
-import buildingGImg from '@/assets/b7.png'
-import buildingHImg from '@/assets/b8.png'
-import buildingIImg from '@/assets/b9.png'
+import buildingAImg from '@/assets/B1.png'
+import buildingBImg from '@/assets/B2.png'
+import buildingCImg from '@/assets/B3.png'
+import buildingDImg from '@/assets/B4.png'
+import buildingEImg from '@/assets/B5.png'
+import buildingFImg from '@/assets/B6.png'
+import buildingGImg from '@/assets/B7.png'
+import buildingHImg from '@/assets/B8.png'
+import buildingIImg from '@/assets/B9.png'
+import buildingJImg from '@/assets/B10.png'
+import buildingKImg from '@/assets/B11.png'
+import buildingLImg from '@/assets/B12.png'
+import buildingMImg from '@/assets/B13.png'
+import buildingNImg from '@/assets/B14.png'
+import buildingOImg from '@/assets/B15.png'
+import buildingPImg from '@/assets/B16.png'
+import buildingQImg from '@/assets/B17.png'
+import buildingRImg from '@/assets/B18.png'
+import buildingSImg from '@/assets/B19.png'
 
 export const useBuildingStore = defineStore('buildings', {
   state: () => ({
@@ -30,10 +40,20 @@ export const useBuildingStore = defineStore('buildings', {
       { id: 3, name: '建築C', img: buildingCImg, techCost: 70 },
       { id: 4, name: '建築D', img: buildingDImg, techCost: 80 },
       { id: 5, name: '建築E', img: buildingEImg, techCost: 90 },
-      { id: 6, name: '建築F', img: buildingFImg, techCost: 100 },
-      { id: 7, name: '建築G', img: buildingGImg, techCost: 110 },
-      { id: 8, name: '建築H', img: buildingHImg, techCost: 120 },
-      { id: 9, name: '建築I', img: buildingIImg, techCost: 130 }
+      { id: 6, name: '建築F', img: buildingFImg, techCost: 90 },
+      { id: 7, name: '建築G', img: buildingGImg, techCost: 90 },
+      { id: 8, name: '建築H', img: buildingHImg, techCost: 100 },
+      { id: 9, name: '建築I', img: buildingIImg, techCost: 110 },
+      { id: 10, name: '建築J', img: buildingJImg, techCost: 110 },
+      { id: 11, name: '建築K', img: buildingKImg, techCost: 120 },
+      { id: 12, name: '建築L', img: buildingLImg, techCost: 120 },
+      { id: 13, name: '建築M', img: buildingMImg, techCost: 140 },
+      { id: 14, name: '建築N', img: buildingNImg, techCost: 150 },
+      { id: 15, name: '建築O', img: buildingOImg, techCost: 160 },
+      { id: 16, name: '建築P', img: buildingPImg, techCost: 180 },
+      { id: 17, name: '建築Q', img: buildingQImg, techCost: 200 },
+      { id: 18, name: '建築R', img: buildingRImg, techCost: 220 },
+      { id: 19, name: '建築S', img: buildingSImg, techCost: 230 }
     ]
   }),
   actions: {
@@ -122,6 +142,45 @@ export const useBuildingStore = defineStore('buildings', {
       } else {
         console.warn('科技點不足，無法購買！')
         return false
+      }
+    },
+
+    // 清除地圖上的所有建築（重置為空狀態）
+    async clearAllBuildings() {
+      try {
+        // 先清除後端數據
+        const res = await axios.delete('http://localhost:3000/api/buildings/clear')
+        
+        if (res.data.success) {
+          // 後端清除成功，更新本地狀態
+          this.map = res.data.map
+          this.isPlacing = false
+          this.selectedTile = null
+          this.selectedBuildingId = null
+          console.log('已清除地圖上的所有建築（後端同步）')
+          return true
+        } else {
+          throw new Error('後端清除失敗')
+        }
+      } catch (error) {
+        console.error('清除建築失敗:', error)
+        // 如果後端失敗，至少清除本地狀態
+        this.map = Array.from({ length: 20 }, () =>
+          Array.from({ length: 20 }, () => ({ type: 'empty' }))
+        )
+        this.isPlacing = false
+        this.selectedTile = null
+        this.selectedBuildingId = null
+        console.log('已清除地圖上的所有建築（僅本地）')
+        return false
+      }
+    },
+
+    // 清除特定位置的建築
+    clearBuildingAt(x, y) {
+      if (x >= 0 && x < 20 && y >= 0 && y < 20) {
+        this.map[y][x] = { type: 'empty' }
+        console.log(`已清除位置 (${x}, ${y}) 的建築`)
       }
     }
   }

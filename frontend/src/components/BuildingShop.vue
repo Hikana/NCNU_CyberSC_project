@@ -1,13 +1,21 @@
 <template>
   <div class="shop-container">
-    <h2 class="page-title">🏢 建築商店</h2>
+    <h2 class="page-title"> 💰 商店</h2>
     <div class="shop-list">
       <div class="shop-item" v-for="item in buildingStore.shopBuildings" :key="item.id">
         <div class="item-image">
           <img :src="item.img" :alt="item.name" class="building-img" />
         </div>
         <div class="tech-cost">消耗科技點：{{ item.techCost }}</div>
-        <button class="buy-btn" @click="buy(item)">購買</button>
+        <button 
+          class="buy-btn" 
+          :class="{ disabled: !canAfford(item) }"
+          @click="buy(item)"
+          :disabled="!canAfford(item)"
+        >
+          <span v-if="!canAfford(item)">科技點不足</span>
+          <span v-else>購買</span>
+        </button>
       </div>
     </div>
   </div>
@@ -15,10 +23,21 @@
 
 <script setup>
 import { useBuildingStore } from '@/stores/buildings'
+import { usePlayerStore } from '@/stores/player'
 
 const buildingStore = useBuildingStore()
+const playerStore = usePlayerStore()
+
+function canAfford(item) {
+  return playerStore.techPoints >= item.techCost
+}
 
 function buy(item) {
+  // 如果科技點不足，直接返回
+  if (!canAfford(item)) {
+    return
+  }
+  
   console.log('BuildingShop: 購買建築', item)
   // 使用 store 的購買方法
   if (buildingStore.buyBuilding(item)) {
@@ -128,6 +147,23 @@ const emit = defineEmits(['purchaseSuccess'])
 .buy-btn:active {
   background: #6bc25a;
   transform: translateY(1px);
+}
+
+.buy-btn.disabled {
+  background: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.buy-btn.disabled:hover {
+  background: #cccccc;
+  transform: none;
+}
+
+.buy-btn.disabled:active {
+  background: #cccccc;
+  transform: none;
 }
 
 .tech-cost {
