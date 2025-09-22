@@ -13,7 +13,7 @@ export const usePlayerStore = defineStore('player', () => {
   /**
    * 玩家擁有的科技點
    */
-  const techPoints = ref(100);
+  const techPoints = ref(500);
 
   /**
    * 玩家在遊戲世界中的邏輯座標

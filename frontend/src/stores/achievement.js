@@ -14,7 +14,6 @@ export const useAchievementStore = defineStore('achievement', {
         unlocked: false,
         progress: 0,
         maxProgress: 1,
-        icon: '🎯'
       },
       {
         id: 'question_master',
@@ -24,7 +23,6 @@ export const useAchievementStore = defineStore('achievement', {
         unlocked: false,
         progress: 0,
         maxProgress: 10,
-        icon: '🏆'
       },
       {
         id: 'question_expert',
@@ -34,7 +32,6 @@ export const useAchievementStore = defineStore('achievement', {
         unlocked: false,
         progress: 0,
         maxProgress: 50,
-        icon: '👑'
       },
       
       // 建築相關成就
@@ -46,7 +43,6 @@ export const useAchievementStore = defineStore('achievement', {
         unlocked: false,
         progress: 0,
         maxProgress: 1,
-        icon: '🏗️'
       },
       {
         id: 'building_master',
@@ -56,7 +52,6 @@ export const useAchievementStore = defineStore('achievement', {
         unlocked: false,
         progress: 0,
         maxProgress: 10,
-        icon: '🏢'
       },
       {
         id: 'city_builder',
@@ -66,7 +61,6 @@ export const useAchievementStore = defineStore('achievement', {
         unlocked: false,
         progress: 0,
         maxProgress: 20,
-        icon: '🌆'
       },
       
       // 土地開發相關成就
@@ -78,7 +72,6 @@ export const useAchievementStore = defineStore('achievement', {
         unlocked: false,
         progress: 0,
         maxProgress: 5,
-        icon: '🗺️'
       },
       {
         id: 'land_developer',
@@ -88,7 +81,6 @@ export const useAchievementStore = defineStore('achievement', {
         unlocked: false,
         progress: 0,
         maxProgress: 15,
-        icon: '🏞️'
       },
       {
         id: 'land_tycoon',
@@ -98,7 +90,6 @@ export const useAchievementStore = defineStore('achievement', {
         unlocked: false,
         progress: 0,
         maxProgress: 25,
-        icon: '💎'
       },
       
       // 綜合成就
@@ -110,7 +101,6 @@ export const useAchievementStore = defineStore('achievement', {
         unlocked: false,
         progress: 0,
         maxProgress: 1,
-        icon: '⚖️'
       }
     ],
     

@@ -14,14 +14,6 @@
         <span>{{ playerStore.techPoints }} 個</span>
       </div>
     </div>
-    <!--
-    <div class="clear-bar" @click="clearAllBuildings">
-      <div class="arrow-label">清除建築</div>
-      <div class="clear-info">
-        <span>🗑️</span>
-      </div>
-    </div>
-    -->
   </div>
 </template>
 
