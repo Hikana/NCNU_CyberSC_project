@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "crypto-js": "^4.2.0",
     "gsap": "^3.13.0",
     "vue": "^3.5.17"
   },

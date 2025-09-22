@@ -1,9 +1,9 @@
 <template>
-    <section class="w-screen min-h-screen bg-bggray relative">
+    <section class="w-screen min-h-screen bg-grass relative">
       <!-- 動畫圓環容器 -->
       <div
         ref="animationContainer"
-        class="absolute inset-0 flex items-center justify-center bg-bggray opacity-0 pointer-events-none z-20"
+        class="absolute inset-0 flex items-center justify-center bg-grass opacity-0 pointer-events-none z-20"
       >
         <svg class="w-full h-full" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
           <!-- 背景圓圈 -->
@@ -85,7 +85,7 @@ export default {
   props: {
     ciaElements: Array
   },
-  setup() {
+  setup(props, { emit }) {   // ← 拿到 emit
     const countText = ref(null)
     const progressCircle = ref(null)
     const animationContainer = ref(null)
@@ -119,6 +119,10 @@ export default {
         onStart: () => {
           ciaSection.value.classList.remove("pointer-events-none")
         },
+        onComplete: () => {
+          // 🚀 動畫完全結束後，通知父元件
+          emit("ciaFinished")
+        },
       })
 
       const observer = new IntersectionObserver((entries) => {
@@ -143,7 +147,7 @@ export default {
       countText,
       progressCircle,
       animationContainer,
-      ciaSection
+      ciaSection,
     }
   }
 }

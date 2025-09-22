@@ -32,19 +32,22 @@ export default {
       ZoomInAnimation()
     })
 
+    // 👇 顛倒版文字動畫
     function TitleAnimate() {
       const title = "#title"
       const subtitle = "#subtitle"
       const spans = document.querySelectorAll(`${title} span`)
       const tl = gsap.timeline()
 
+      // 一開始就顯示完整標題 & subtitle
       gsap.set(title, { opacity: 1 })
-      gsap.set(spans, { opacity: 0, x: -50 })
+      gsap.set(spans, { opacity: 1, x: 0, color: "var(--tw-text-wordcolor)" })
+      gsap.set(subtitle, { opacity: 1 })
 
       tl.to(spans, {
         opacity: 0.3,
         color: "#F2F0F0",
-        x: 0,
+        x: -50,
         stagger: 0.3,
         duration: 1,
         ease: "power2.inOut",
@@ -55,16 +58,9 @@ export default {
           stagger: 0.3,
           duration: 1,
           ease: "power2.in",
-          delay: 0.5,
-        })
-        .to(spans, {
-          opacity: 1,
-          color: "var(--tw-text-wordcolor)",
-          duration: 1,
-          ease: "power2.inOut",
         })
         .to(subtitle, {
-          opacity: 1,
+          opacity: 0,
           duration: 1,
           delay: 0.3,
         })
@@ -73,6 +69,7 @@ export default {
         })
     }
 
+    // 👇 顛倒版縮放動畫
     function ZoomInAnimation() {
       const container = "#titleContainer"
       const focusZi = "#focus_zi"
@@ -85,7 +82,11 @@ export default {
       const originX = ziRect.left + ziRect.width / 2 - containerRect.left
       const originY = ziRect.top + ziRect.height / 2 - containerRect.top
 
-      gsap.set(container, { transformOrigin: `${originX}px ${originY}px` })
+      // 一開始就是放大狀態
+      gsap.set(container, {
+        transformOrigin: `${originX}px ${originY}px`,
+        scale: 350,
+      })
 
       gsap.timeline({
         scrollTrigger: {
@@ -96,12 +97,8 @@ export default {
           pin: true,
         },
       })
-        .to(container, { scale: 350, ease: "power3.inOut" })
-        .to(container, { opacity: 0, duration: 0 })
-        .add(() => {
-          // 👇 動畫結束後禁用滑鼠事件，避免擋住主畫面
-          gsap.set(container, { pointerEvents: "none" })
-        })
+        .to(container, { scale: 1, ease: "power3.inOut" }) // 縮小回原位
+        .to(container, { opacity: 0, duration: 0 })        // 再消失
     }
   },
 }

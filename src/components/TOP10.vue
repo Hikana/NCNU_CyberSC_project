@@ -1,5 +1,5 @@
 <template>
-  <div class="w-screen min-h-screen bg-grass relative overflow-x-hidden">
+  <div class="w-screen bg-grass relative overflow-x-hidden" style="height: 500vh;">
     <!-- A01 -->
     <div 
       :class="['absolute bg-A01 bg-contain bg-no-repeat bg-center rounded-lg']"
@@ -59,15 +59,15 @@
     <!-- A09 -->
     <div 
       :class="['absolute bg-A09 bg-contain bg-no-repeat bg-center rounded-lg']"
-      style="top: 385vh; left: 4vw; width: 35vw; height: 35vw;"
-      @mouseenter="changeImagesA04"
+      style="top: 390vh; left: 7vw; width: 35vw; height: 35vw;"
+      @mouseenter="changeImagesA09"
       @mouseleave="resetImages"
     ></div>
     <!-- A10 -->
     <div 
       :class="['absolute bg-A10 bg-contain bg-no-repeat bg-center rounded-lg']"
-      style="top: 420vh; left: 35vw; width: 50vw; height: 50vw;"
-      @mouseenter="changeImagesA04"
+      style="top: 412vh; right: 5vw; width: 50vw; height: 50vw;"
+      @mouseenter="changeImagesA10"
       @mouseleave="resetImages"
     ></div>
 
@@ -121,12 +121,59 @@
       :class="['absolute bg-contain bg-no-repeat bg-center rounded-lg rotate-[150deg]', imageOrigin10]"
       style="top: 250vh; left: 2vw; width: 38vw; height: 38vw;"
     ></div>
+    <!-- 石頭11 -->
+    <div 
+      :class="['absolute bg-contain bg-no-repeat bg-center rounded-lg rotate-[150deg]', imageOrigin11]"
+      style="top: 288vh; left: 34vw; width: 30vw; height: 30vw;"
+    ></div>
+    <!-- 石頭12 -->
+    <div 
+      :class="['absolute bg-contain bg-no-repeat bg-center rounded-lg rotate-[275deg]', imageOrigin12]"
+      style="top: 282vh; right: 5vw; width: 35vw; height: 35vw;"
+    ></div>
+    <!-- 石頭13 -->
+    <div 
+      :class="['absolute bg-contain bg-no-repeat bg-center rounded-lg rotate-[155deg]', imageOrigin13]"
+      style="top: 332vh; right: 35vw; width: 35vw; height: 35vw;"
+    ></div>
+    <!-- 石頭14 -->
+    <div 
+      :class="['absolute bg-contain bg-no-repeat bg-center rounded-lg rotate-[288deg]', imageOrigin14]"
+      style="top: 350vh; left: 5vw; width: 34vw; height: 34vw;"
+    ></div>
+    <!-- 石頭15 -->
+    <div 
+      :class="['absolute bg-contain bg-no-repeat bg-center rounded-lg rotate-[180deg]', imageOrigin15]"
+      style="top: 380vh; right: 10vw; width: 33vw; height: 33vw;"
+    ></div>
+    <!-- 石頭16 -->
+    <div 
+      :class="['absolute bg-contain bg-no-repeat bg-center rounded-lg rotate-[277deg]', imageOrigin16]"
+      style="top: 398vh; left: 32vw; width: 32vw; height: 32vw;"
+    ></div>
+    <!-- 石頭17 -->
+    <div 
+      :class="['absolute bg-contain bg-no-repeat bg-center rounded-lg rotate-[313deg]', imageOrigin17]"
+      style="top: 439vh; left: 12vw; width: 33vw; height: 33vw;"
+    ></div>
+    <!-- 石頭18 -->
+    <div 
+      :class="['absolute bg-contain bg-no-repeat bg-center rounded-lg rotate-[23deg]', imageOrigin18]"
+      style="top: 468vh; left: 27vw; width: 33vw; height: 33vw;"
+    ></div>
 
     <!-- 裝飾性小石頭 -->
-    <!--<div class="absolute bg-gray-700 rounded-full transform rotate-12" style="top: 156vh; left: 30vw; width: 5vw; height: 6vw;"></div>-->
     <div 
       :class="['absolute bg-contain bg-no-repeat bg-center rounded-lg bg-石頭1']"
       style="top: 210vh; left: 5vw; width: 15vw; height: 15vw;"
+    ></div>
+    <div 
+      :class="['absolute bg-contain bg-no-repeat bg-center rounded-lg bg-石頭3']"
+      style="top: 480vh; right: 5vw; width: 18vw; height: 18vw;"
+    ></div>
+    <div 
+      :class="['absolute bg-contain bg-no-repeat bg-center rounded-lg rotate-[125deg] bg-石頭4']"
+      style="top: 480vh; left: 7vw; width: 21vw; height: 21vw;"
     ></div>
   </div>
 </template>
@@ -144,8 +191,14 @@ const imageOrigin7 = ref('bg-石頭2')
 const imageOrigin8 = ref('bg-石頭4')
 const imageOrigin9 = ref('bg-石頭1')
 const imageOrigin10 = ref('bg-石頭3')
-const imageOrigin11 = ref('bg-石頭5')
-const imageOrigin12 = ref('bg-石頭6') 
+const imageOrigin11 = ref('bg-石頭2')
+const imageOrigin12 = ref('bg-石頭5') 
+const imageOrigin13 = ref('bg-石頭3') 
+const imageOrigin14 = ref('bg-石頭4') 
+const imageOrigin15 = ref('bg-石頭6') 
+const imageOrigin16 = ref('bg-石頭2') 
+const imageOrigin17 = ref('bg-石頭1') 
+const imageOrigin18 = ref('bg-石頭3') 
 
 const changeImagesA01 = () => {
   imageOrigin1.value = 'bg-石1(A01)'  
@@ -163,9 +216,41 @@ const changeImagesA03 = () => {
   imageOrigin6.value = 'bg-石6(A03)'
 }
 const changeImagesA04 = () => {  
-  imageOrigin4.value = 'bg-石4(A04)'
   imageOrigin5.value = 'bg-石5(A04)'
   imageOrigin6.value = 'bg-石6(A04)'
+}
+const changeImagesA05 = () => {  
+  imageOrigin6.value = 'bg-石6(A05)'
+  imageOrigin7.value = 'bg-石2(A05)'
+  imageOrigin8.value = 'bg-石3(A05)'
+}
+const changeImagesA06 = () => {  
+  imageOrigin7.value = 'bg-石2(A06)'
+  imageOrigin8.value = 'bg-石4(A06)'
+  imageOrigin9.value = 'bg-石1(A06)'
+  imageOrigin10.value = 'bg-石3(A06)'
+}
+const changeImagesA07 = () => {  
+  imageOrigin11.value = 'bg-石2(A07)'
+  imageOrigin12.value = 'bg-石5(A07)'
+  imageOrigin13.value = 'bg-石3(A07)'
+}
+const changeImagesA08 = () => {  
+  imageOrigin11.value = 'bg-石2(A08)'
+  imageOrigin14.value = 'bg-石4(A08)'
+  imageOrigin13.value = 'bg-石3(A08)'
+}
+const changeImagesA09 = () => {  
+  imageOrigin14.value = 'bg-石4(A09)'
+  imageOrigin13.value = 'bg-石3(A09)'
+  imageOrigin15.value = 'bg-石6(A09)'
+  imageOrigin16.value = 'bg-石2(A09)'
+}
+const changeImagesA10 = () => {  
+  imageOrigin17.value = 'bg-石1(A10)'
+  imageOrigin18.value = 'bg-石3(A10)'
+  imageOrigin15.value = 'bg-石6(A10)'
+  imageOrigin16.value = 'bg-石2(A10)'
 }
 
 const resetImages = () => {
@@ -175,5 +260,17 @@ const resetImages = () => {
   imageOrigin4.value = 'bg-石頭4'  
   imageOrigin5.value = 'bg-石頭5'  
   imageOrigin6.value = 'bg-石頭6'  
+  imageOrigin7.value = 'bg-石頭2'
+  imageOrigin8.value = 'bg-石頭4'
+  imageOrigin9.value = 'bg-石頭1'
+  imageOrigin10.value = 'bg-石頭3'
+  imageOrigin11.value = 'bg-石頭2'
+  imageOrigin12.value = 'bg-石頭5'
+  imageOrigin13.value = 'bg-石頭3'
+  imageOrigin14.value = 'bg-石頭4'
+  imageOrigin15.value = 'bg-石頭6'
+  imageOrigin16.value = 'bg-石頭2'
+  imageOrigin17.value = 'bg-石頭1'
+  imageOrigin18.value = 'bg-石頭3'
 }
 </script>
