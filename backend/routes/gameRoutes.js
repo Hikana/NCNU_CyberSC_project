@@ -3,33 +3,38 @@ const express = require('express');
 const router = express.Router();
 const gameController = require('../controllers/gameController');
 
-// --- 規則：把最具体的路由放在最前面 ---
+// --- 答題相關 ---
+// GET /api/game/random-question (遊戲主程式用)
+router.get('/random-question', gameController.getRandomQuestion);
 
-// --- 特殊查詢 (比 /:id 更具体) ---
-router.get('/questions/random', gameController.getRandomQuestion);
-router.get('/questions/stage/:stage', gameController.getStageQuestions);
-router.get('/questions/stats', gameController.getQuestionStats);
+// POST /api/game/submit-answer (遊戲主程式用)
+router.post('/submit-answer', gameController.submitAnswer);
 
-// --- 列表查詢 & 新增 (比 /:id 更具体) ---
-router.get('/questions', gameController.getQuestions);
-router.post('/questions', gameController.addQuestion);
 
-// --- 互動 (子資源，比 /:id 更具体) ---
-router.get('/questions/:id/hint', gameController.getQuestionHint);
-router.post('/questions/:id/validate', gameController.validateAnswer);
+// --- 地圖/世界相關 ---
+// GET /api/game/map (遊戲主程式用)
+router.get('/map', gameController.getMap);
 
-// --- 針對單一 ID 的操作 (最通用，所以放後面) ---
-router.get('/questions/:id', gameController.getQuestionById);
-router.put('/questions/:id', gameController.updateQuestion);
-router.delete('/questions/:id', gameController.deleteQuestion);
+// POST /api/game/place-building (遊戲主程式用)
+router.post('/place-building', gameController.placeBuilding);
 
-// --- 獨立功能 ---
-router.post('/score/calculate', gameController.calculateScore);
+// POST /api/game/unlock-tile (遊戲主程式用)
+router.post('/unlock-tile', gameController.unlockTile);
+router.post('/clear-building', gameController.clearBuilding);
 
-// --- (危險) 管理員功能 ---
-router.delete('/questions', gameController.clearAllQuestions);
 
-// --- 新增：答題紀錄路由 ---
+// --- 管理/紀錄相關 ---
+// GET /api/game/history (答題紀錄面板用)
 router.get('/history', gameController.getHistory);
-router.post('/history', gameController.addHistory);
+
+// GET /api/game/questions (後台 upload.html 工具用)
+router.get('/questions', gameController.getQuestions);
+
+router.delete('/questions', gameController.clearAllQuestions);
+// ✅ 新增這條路由給 upload.html 的「單獨刪除」按鈕使用
+router.delete('/questions/:id', gameController.deleteQuestion);
+router.post('/questions', gameController.addQuestion);
+router.put('/questions/:id', gameController.updateQuestion);
+// 將設定好的路由匯出
 module.exports = router;
+

@@ -15,8 +15,18 @@
         class="history-item"
         :class="{ correct: entry.isCorrect, incorrect: !entry.isCorrect }"
       >
-        <p class="question">{{ entry.questionText }}</p>
-        <p class="answer">你的答案: {{ entry.userAnswer }}</p>
+        <!-- 顯示題目 -->
+        <p class="question">題目：{{ entry.questionTitle }}</p>
+
+        <!-- 顯示玩家答案 - 修正欄位名稱 -->
+        <p class="answer">你的答案: {{ entry.yourAnswer || entry.userAnswer || '未知' }}</p>
+
+        <!-- 錯誤才顯示正確答案 -->
+        <p v-if="!entry.isCorrect" class="correct-answer">
+          正確答案: {{ entry.correctAnswer }}
+        </p>
+
+        
       </div>
     </div>
   </div>
@@ -50,7 +60,7 @@ onMounted(() => {
   padding-right: 10px;
 }
 .history-item {
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(47, 15, 25, 0.116);
   border-left: 5px solid;
   border-radius: 8px;
   padding: 10px 15px;
@@ -69,6 +79,9 @@ onMounted(() => {
 }
 .answer {
   margin: 0;
+  color: #34495e;
+}
+.correct-answer {
   color: #34495e;
 }
 .loading, .error, .empty {

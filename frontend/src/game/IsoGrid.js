@@ -4,9 +4,9 @@ import { useBuildingStore } from '@/stores/buildings'
 import castleImg from '@/assets/can1.png'
 
 const CASTLE_TILES = new Set([
-  '1,1','1,2','1,3',
-  '2,1','2,2','2,3',
-  '3,1','3,2','3,3',
+  '0,0','0,1','0,2',
+  '1,0','1,1','1,2',
+  '2,0','2,1','2,2',
 ])
 function isCastleTile(row, col) {
   return CASTLE_TILES.has(`${row},${col}`)
@@ -50,6 +50,8 @@ export class IsoGrid {
     this.objectContainer.sortableChildren = true
     this.groundContainer.zIndex = 0
     this.objectContainer.zIndex = 1
+    // 物件層不攔截滑鼠事件，確保可點擊到地面格
+    this.objectContainer.eventMode = 'none'
     
     // 確保容器可以接收交互事件
     this.gridContainer.interactive = true
@@ -184,21 +186,17 @@ export class IsoGrid {
     return map
   }
 
+  // --- drawGrid 和其他方法維持不變 ---
+
+
   updateMapData(newMapData) {
-    console.log('更新地圖數據:', newMapData)
-    this.mapData = newMapData
-    this.drawGrid()
-  }
-
-  setSelectedTile(x, y) {
-    this.selectedTile = { x, y };
+    if (!newMapData || Object.keys(newMapData).length === 0) return;
+    this.mapData = newMapData;
     this.drawGrid();
   }
 
-  clearSelectedTile() {
-    this.selectedTile = null;
-    this.drawGrid();
-  }
+  setSelectedTile(x, y) { this.selectedTile = { x, y }; this.drawGrid(); }
+  clearSelectedTile() { this.selectedTile = null; this.drawGrid(); }
 
   revealTile(row, col) {
     if (this.mapData[row] && this.mapData[row][col]) {
@@ -207,6 +205,7 @@ export class IsoGrid {
     }
   }
   
+  // 在 drawGrid 方法中修正點擊區域問題
   drawGrid() {
     // 清除現有網格
     this.groundContainer.removeChildren()
@@ -228,7 +227,7 @@ export class IsoGrid {
         groundTileContainer.y = y
         groundTileContainer.zIndex = row + col
 
-        const cell = this.mapData[row][col]
+        const cell = this.mapData[row]?.[col] || { status: 'locked' }
         
         // 檢查是否為選中的瓦片
         const isSelected = this.selectedTile && this.selectedTile.x === col && this.selectedTile.y === row;
@@ -254,45 +253,52 @@ export class IsoGrid {
           
           groundTileContainer.addChild(mask);
           groundTileContainer.addChild(grass);
+
+          // 狀態覆層：locked 顯示半透明遮罩，developed 無遮罩，placed 交由建築層處理
+          if (cell.status === 'locked') {
+            const overlay = new PIXI.Graphics();
+            overlay
+              .moveTo(0, -halfH)
+              .lineTo(halfW, 0)
+              .lineTo(0, halfH)
+              .lineTo(-halfW, 0)
+              .closePath()
+              .fill({ color: 0x000000, alpha: 0.35 });
+            overlay.zIndex = 3;
+            groundTileContainer.addChild(overlay);
+          }
         }
 
-        // 如果不是城堡格，添加菱形邊框
+        // 只為非城堡格子創建可互動區域
         if (cell.type !== 'castle') {
-          const tile = new PIXI.Graphics()
-
-          // 繪製菱形瓦片
+          const tile = new PIXI.Graphics();
           tile
-            .moveTo(0, -halfH)   // 上
-            .lineTo(halfW, 0)    // 右
-            .lineTo(0, halfH)    // 下
-            .lineTo(-halfW, 0)   // 左
+            .moveTo(0, -halfH)
+            .lineTo(halfW, 0)
+            .lineTo(0, halfH)
+            .lineTo(-halfW, 0)
             .closePath()
-          .stroke({ width: 1, color: 0xcccccc, alpha: 0.3})
-          .fill({ color: 0xffffff, alpha: 0 });
-
+            .stroke({ width: 1, color: 0xcccccc, alpha: 0.3})
+            .fill({ color: 0xffffff, alpha: 0 });
           tile.zIndex = 2;
           groundTileContainer.addChild(tile);
 
-          // 添加交互
-          groundTileContainer.hitArea = new PIXI.Rectangle(-halfW, -halfH, this.tileSize, this.tileSize)
-          groundTileContainer.eventMode = 'static'
-          groundTileContainer.interactive = true
-          groundTileContainer.cursor = 'pointer'
+          // 設置點擊區域和事件
+          groundTileContainer.hitArea = new PIXI.Rectangle(-halfW, -halfH, this.tileSize, this.tileSize);
+          groundTileContainer.eventMode = 'static';
+          groundTileContainer.interactive = true;
+          groundTileContainer.cursor = 'pointer';
 
+          // 綁定點擊事件
           groundTileContainer.on('pointertap', () => {
-            if (!cell.explored) {
-              if (this.onTileClick) {
-                this.onTileClick(row, col, false)
-              }
-            } else {
-              if (this.onTileClick) {
-                this.onTileClick(row, col, true)
-              }
+            if (this.onTileClick) {
+              this.onTileClick(row, col);
             }
-          })
+          });
 
-          groundTileContainer.on('pointerover', () => { tile.tint = 0xdddddd })
-          groundTileContainer.on('pointerout', () => { tile.tint = 0xffffff })
+          // hover 效果
+          groundTileContainer.on('pointerover', () => { tile.tint = 0xdddddd; });
+          groundTileContainer.on('pointerout', () => { tile.tint = 0xffffff; });
         }
 
         // 如果是選中的瓦片，添加邊框
@@ -314,47 +320,43 @@ export class IsoGrid {
       }
     }
 
-    // 第二階段：繪製城堡（只在 CASTLE_TILES 的中心格繪製一次）
+    // 第二階段：繪製城堡（城堡圖片的 zIndex 要低於點擊區域）
     const castleCenterRow = CASTLE_BOUNDS.centerRow
     const castleCenterCol = CASTLE_BOUNDS.centerCol
     
     if (this.castleTexture) {
       const castleContainer = new PIXI.Container()
       castleContainer.sortableChildren = true
+      // 確保城堡不攔截點擊事件
+      castleContainer.eventMode = 'none'
       
-      // 城堡位置：放在九格中心格的世界坐標
       const castleX = (castleCenterCol - castleCenterRow) * halfW
       const castleY = (castleCenterCol + castleCenterRow) * halfH
       
       castleContainer.x = castleX
       castleContainer.y = castleY
       
-      // 往左移一點（數值可調）
       const offsetX = this.tileSize * 0.1
       castleContainer.x -= offsetX
 
       const castle = new PIXI.Sprite(this.castleTexture)
+      castle.eventMode = 'none'
       castle.anchor.set(0.5, 0.55)
-      // 讓城堡覆蓋 3x3 等角區域
       const castleScale = 2.5
       castle.width = this.tileSize * 3 * castleScale
       castle.height = this.tileSize * 2 * castleScale
-      castle.zIndex = 5
+      castle.zIndex = 5 // 城堡在建築層
       
       castleContainer.addChild(castle)
       this.objectContainer.addChild(castleContainer)
-      
-      console.log('城堡已繪製在位置:', { x: castleX, y: castleY, row: castleCenterRow, col: castleCenterCol })
-    } else {
-      console.warn('城堡紋理尚未載入')
     }
 
-    // 第三階段：繪製其他建築
+    // 第三階段：繪製其他建築（保持不變）
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
         const cell = this.mapData[row][col]
         
-        if (cell.type === 'building') {
+        if (cell.type === 'building' || (cell.status === 'placed' && cell.item)) {
           const x = (col - row) * halfW
           const y = (col + row) * halfH
 
@@ -362,9 +364,9 @@ export class IsoGrid {
           buildingContainer.sortableChildren = true
           buildingContainer.x = x
           buildingContainer.y = y
-          buildingContainer.zIndex = row + col + 50 // 確保建築在草地之上
+          buildingContainer.zIndex = row + col + 50
 
-          const buildingId = cell.buildingId || 1
+          const buildingId = cell.buildingId || cell.item || 1
           const buildingTexture = this.buildingTextures[buildingId]
           
           if (buildingTexture) {

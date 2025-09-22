@@ -26,33 +26,43 @@ let map = Array.from({ length: 20 }, () =>
   };
   */  
 
-const buildingService = require('../services/buildingService');
-const asyncHandler = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+const gameService = require('../services/gameService');
+
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
 
 class BuildingController {
+  constructor() {
+    this.getUserId = (req) => req.query.userId || 'test-user';
+  }
+
+  // 地圖
   getMap = asyncHandler(async (req, res) => {
-    const mapData = await buildingService.getMapState();
-    res.status(200).json({ success: true, map: mapData });
-  });
-  
-  placeBuilding = asyncHandler(async (req, res) => {
-    const { buildingId, position } = req.body;
-    try {
-      const updatedMap = await buildingService.placeBuilding(buildingId, position);
-      res.status(200).json({ success: true, map: updatedMap });
-    } catch (error) {
-      res.status(400).json({ success: false, message: error.message });
-    }
+    const data = await gameService.getMapState(this.getUserId(req));
+    res.status(200).json({ success: true, data });
   });
 
-  clearAllBuildings = asyncHandler(async (req, res) => {
-    try {
-      const clearedMap = await buildingService.clearAllBuildings();
-      res.status(200).json({ success: true, map: clearedMap });
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
+  // 放置建築
+  placeBuilding = asyncHandler(async (req, res) => {
+    const { buildingId, position } = req.body;
+    const data = await gameService.placeBuilding(this.getUserId(req), buildingId, position);
+    res.status(200).json({ success: true, data });
+  });
+
+  // 解鎖土地
+  unlockTile = asyncHandler(async (req, res) => {
+    const { position } = req.body;
+    const data = await gameService.unlockTile(this.getUserId(req), position);
+    res.status(200).json({ success: true, data });
+  });
+
+  // 清除建築（恢復 developed）
+  clearBuilding = asyncHandler(async (req, res) => {
+    const { position } = req.body;
+    const data = await gameService.clearBuilding(this.getUserId(req), position);
+    res.status(200).json({ success: true, data });
   });
 }
 
-module.exports = BuildingController;
+module.exports = new BuildingController();

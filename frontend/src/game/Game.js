@@ -1,115 +1,250 @@
 import * as PIXI from 'pixi.js';
 import { Player } from './Player.js';
 import { IsoGrid } from './IsoGrid';
+import { watch } from 'vue';
+import { usePlayerStore } from '../stores/player';
+import { useGameStore } from '../stores/game';
+import { useBuildingStore } from '../stores/buildings';
 
+/**
+ * 遊戲主引擎類別
+ * 職責：管理所有 PixiJS 世界的邏輯，包括場景、遊戲循環、玩家互動等。
+ */
 export class Game {
-  constructor(containerElement, playerStore, uiStore, gameStore) {
+  constructor(containerElement) {
     this.container = containerElement;
-    this.playerStore = playerStore;
-    this.uiStore = uiStore;
-    this.gameStore = gameStore;
+    // 在 constructor 中直接獲取所有需要的 Pinia stores
+    this.playerStore = usePlayerStore();
+    this.gameStore = useGameStore();
+    // ✅ 修正點：使用正確的複數名稱
+    this.buildingStore = useBuildingStore();
+ 
+    // 初始化所有遊戲相關的屬性
     this.app = null;
-    this.world = null;
+    this.world = null; // 遊戲世界的主容器，用於攝影機移動
     this.player = null;
     this.grid = null;
-    this.keys = {};
+    this.keys = {}; // 用於追蹤鍵盤按鍵狀態
     this.isDragging = false;
     this.dragStart = { x: 0, y: 0 };
     this.TILE_SIZE = 150;
   }
 
-  async init() {
-    this.app = new PIXI.Application();
-    await this.app.init({
-      width: this.container.clientWidth,
-      height: this.container.clientHeight,
-      backgroundColor: 0x1a252f,
-      antialias: true,
-      resizeTo: this.container,
-    });
-    this.container.appendChild(this.app.canvas); 
-    this.world = new PIXI.Container();
-    // 依 zIndex 排序，確保玩家/建築在地圖之上
-    this.world.sortableChildren = true;
-    this.app.stage.addChild(this.world);
+  /**
+   * 初始化遊戲世界
+   */
+  async init() {
+    this.app = new PIXI.Application();
+    await this.app.init({
+      width: this.container.clientWidth,
+      height: this.container.clientHeight,
+      backgroundColor: 0x1a252f, // 深色背景
+      antialias: true,
+      resizeTo: this.container,
+    });
+    this.container.appendChild(this.app.canvas); 
+    this.world = new PIXI.Container();
+    this.world.sortableChildren = true; // 啟用 Z-Index 排序
+    this.app.stage.addChild(this.world);
 
-    this._createMap();
-    await this._createPlayer();
-    this._setupControls();
-    
-    this.app.ticker.add((ticker) => this._gameLoop(ticker.deltaTime));
-  }
+    // 關鍵步驟：在建立地圖前，先從後端載入玩家的最新地圖資料
+    await this.buildingStore.loadMap();
 
-  // 將網格索引轉為世界座標（像素）
-  _gridToWorld(gx, gy) {
-    const halfW = this.TILE_SIZE / 2;
-    const halfH = this.TILE_SIZE / 4;
-    const isoX = (gx - gy) * halfW + (this.grid ? this.grid.gridContainer.x : 0);
-    const isoY = (gx + gy) * halfH + (this.grid ? this.grid.gridContainer.y : 0);
-    return { x: isoX, y: isoY };
-  }
+    this._createMap();
+    this._createPlayer();
+    this._setupControls();
+    this._setupWatchers(); // 啟用響應式監聽
+    
+    this.app.ticker.add((ticker) => this._gameLoop(ticker.deltaTime));
+  }
 
+  /**
+   * 銷毀遊戲，釋放所有資源
+   */
   destroy() {
     window.removeEventListener('keydown', this._handleKeydown);
     window.removeEventListener('keyup', this._handleKeyup);
-    if (this.app && this.app.stage) {
-      this.app.stage.off('pointerdown', this._onDragStart);
-      this.app.stage.off('pointerup', this._onDragEnd);
-      this.app.stage.off('pointerupoutside', this._onDragEnd);
-      this.app.stage.off('pointermove', this._onDragMove);
-    }
     if (this.app) {
-      this.app.destroy(true, { children: true, texture: true, baseTexture: true });
+      if (this.app.stage) {
+        this.app.stage.off('pointerdown', this._onDragStart);
+        this.app.stage.off('pointerup', this._onDragEnd);
+        this.app.stage.off('pointerupoutside', this._onDragEnd);
+        this.app.stage.off('pointermove', this._onDragMove);
+      }
+        this.app.destroy(true, { children: true, texture: true, baseTexture: true });
     }
   }
 
-  _gameLoop(delta) { 
-    const speed = 5 * delta;
-    let { x, y } = this.playerStore.position;
-    let hasMoved = false;
+  /**
+   * 遊戲主循環，每一幀都會執行
+   */
+  _gameLoop(delta) { 
+    const speed = 5 * delta;
+    let { x, y } = this.playerStore.position;
+    let hasMoved = false;
 
-    if (this.keys['ArrowUp'] || this.keys['KeyW']) { y -= speed; hasMoved = true; }
-    if (this.keys['ArrowDown'] || this.keys['KeyS']) { y += speed; hasMoved = true; }
-    if (this.keys['ArrowLeft'] || this.keys['KeyA']) { x -= speed; hasMoved = true; }
-    if (this.keys['ArrowRight'] || this.keys['KeyD']) { x += speed; hasMoved = true; }
-    
-    if (hasMoved) {
-      // 暫時關閉邊界限制，允許自由移動
-      this.playerStore.updatePosition({ x, y });
-      // 原本的邊界檢查：
-      // const { gx, gy } = this._worldToGrid(x, y);
-      // if (this._isInsideGrid(gx, gy)) {
-      //   this.playerStore.updatePosition({ x, y });
-      // }
+    if (this.keys['ArrowUp'] || this.keys['KeyW']) { y -= speed; hasMoved = true; }
+    if (this.keys['ArrowDown'] || this.keys['KeyS']) { y += speed; hasMoved = true; }
+    if (this.keys['ArrowLeft'] || this.keys['KeyA']) { x -= speed; hasMoved = true; }
+    if (this.keys['ArrowRight'] || this.keys['KeyD']) { x += speed; hasMoved = true; }
+    
+    if (hasMoved) {
+      this.playerStore.updatePosition({ x, y });
+    }
+    
+    if (this.player) this.player.update();
+    this._updateCamera();
+  }
+
+  /**
+   * 更新攝影機位置以跟隨玩家
+   */
+  _updateCamera() {
+    if (this.isDragging) return; // 拖曳時鏡頭不跟隨
+    if (!this.player || !this.player.sprite) return;
+    const centerX = this.app.screen.width / 2;
+    const centerY = this.app.screen.height / 2;
+    const targetX = centerX - this.player.sprite.x;
+    const targetY = centerY - this.player.sprite.y;
+    this.world.x += (targetX - this.world.x) * 0.1; // 緩動效果
+    this.world.y += (targetY - this.world.y) * 0.1;
+  }
+
+  /**
+   * 設定所有控制項 (鍵盤、滑鼠)
+   */
+  _setupControls() {
+    this._handleKeydown = (e) => { this.keys[e.code] = true; };
+    this._handleKeyup = (e) => { 
+        this.keys[e.code] = false;
+        if (e.code === 'Enter') {
+            this._inspectCurrentTile();
+        }
+    };
+    window.addEventListener('keydown', this._handleKeydown);
+    window.addEventListener('keyup', this._handleKeyup);
+
+    this.app.stage.eventMode = 'static';
+    this.app.stage.hitArea = this.app.screen;
+
+    this._onDragStart = (e) => {
+        this.isDragging = true;
+        this.dragStart.x = e.global.x - this.world.x;
+        this.dragStart.y = e.global.y - this.world.y;
+    };
+    this._onDragEnd = () => { this.isDragging = false; };
+    this._onDragMove = (e) => {
+        if (this.isDragging) {
+             const newX = e.global.x - this.dragStart.x;
+             const newY = e.global.y - this.dragStart.y;
+             this.world.position.set(newX, newY);
+        }
+    };
+    this.app.stage.on('pointerdown', this._onDragStart);
+    this.app.stage.on('pointerup', this._onDragEnd);
+    this.app.stage.on('pointerupoutside', this._onDragEnd);
+    this.app.stage.on('pointermove', this._onDragMove);
+  }
+
+  /**
+   * 建立地圖
+   */
+  _createMap() {
+    this.grid = new IsoGrid(
+      this.app, 20, 20, this.TILE_SIZE,
+      this._handleTileClick.bind(this),
+      this.buildingStore.map
+    );
+    this.grid.gridContainer.zIndex = 0;
+    this.world.addChild(this.grid.gridContainer);
+  }
+
+  /**
+   * 建立玩家
+   */
+  _createPlayer() {
+    this.player = new Player(this.playerStore);
+    this.player.create(this.world);
+    if (this.player.sprite) {
+        this.player.sprite.zIndex = 2; // 確保玩家在網格之上
     }
-    // 切換玩家動畫狀態
-    if (this.player && typeof this.player.setMoving === 'function') {
-      this.player.setMoving(hasMoved);
-    }
+  }
 
-    this.player.update();
-    this._updateCamera();
-  }
-
-  _updateCamera() {
+  /*處理地圖格子的點擊事件 (智慧點擊)*/
+  _handleTileClick(row, col) {
     if (this.isDragging) return;
-    if (!this.player || !this.player.sprite) return;
-    const centerX = this.app.screen.width / 2;
-    const centerY = this.app.screen.height / 2;
-    const targetX = centerX - this.player.sprite.x;
-    const targetY = centerY - this.player.sprite.y;
-    this.world.x += (targetX - this.world.x) * 0.1;
-    this.world.y += (targetY - this.world.y) * 0.1;
+    
+    const cell = this.buildingStore.map?.[row]?.[col];
+    if (!cell) return;
+    
+    // 城堡區域不能互動
+    if (cell.type === 'castle') {
+      return;
+    }
+
+    // 放置建築模式：只允許在 developed 的土地上
+    if (this.buildingStore.isPlacing) {
+      if (cell.status === 'developed') {
+        this.buildingStore.selectTile({ x: col, y: row });
+      } else {
+        alert('只能在已開發的綠色土地上選取位置！');
+        this.buildingStore.selectTile(null);
+      }
+      return;
+    }
+
+    // 一般模式：依狀態執行對應行為
+    switch (cell.status) {
+      case 'locked':
+        this.gameStore.startUnlockProcess({ x: col, y: row });
+        break;
+      case 'developed':
+        alert('這塊地已經開發了，可以從商店購買建築來蓋！');
+        break;
+      case 'placed':
+        if (confirm(`這裡已經蓋了建築物 (ID: ${cell.item})\n要清除這個建築嗎？`)) {
+          this.buildingStore.clearBuildingAt(col, row);
+        }
+        break;
+      default:
+        break;
+    }
   }
 
+  /**
+   * 設定監聽器，讓 PixiJS 世界能響應 Pinia store 的變化
+   */
+  _setupWatchers() {
+    // 監聽地圖資料變化，自動更新畫面
+    watch(() => this.buildingStore.map, (newMap) => {
+      if (this.grid) {
+        this.grid.updateMapData(newMap);
+      }
+    }, { deep: true });
+
+    // 監聽選中瓦片的變化，自動更新高亮
+    watch(() => this.buildingStore.selectedTile, (tile) => {
+      if (!this.grid) return;
+      if (tile) {
+        this.grid.setSelectedTile(tile.x, tile.y);
+      } else {
+        this.grid.clearSelectedTile();
+      }
+    });
+  }
+
+  /**
+   * 修改控制設定
+   */
   _setupControls() {
     this._handleKeydown = (e) => { this.keys[e.code] = true; };
     this._handleKeyup = (e) => { 
-        this.keys[e.code] = false;
-        if (e.code === 'Enter') {
-            this._inspectCurrentTile();
-        }
+      this.keys[e.code] = false;
+      if (e.code === 'Enter') {
+        this._inspectCurrentTile();
+      }
     };
+    
     window.addEventListener('keydown', this._handleKeydown);
     window.addEventListener('keyup', this._handleKeyup);
 
@@ -117,132 +252,63 @@ export class Game {
     this.app.stage.hitArea = this.app.screen;
 
     this._onDragStart = (e) => {
-        this.isDragging = true;
-        this.dragStart.x = e.global.x - this.world.x;
-        this.dragStart.y = e.global.y - this.world.y;
+      this.isDragging = true;
+      this.dragStart.x = e.global.x - this.world.x;
+      this.dragStart.y = e.global.y - this.world.y;
     };
-    this._onDragEnd = () => {
-        this.isDragging = false;
+    this._onDragEnd = () => { this.isDragging = false; };
+    this._onDragMove = (e) => {
+      if (this.isDragging) {
+        const newX = e.global.x - this.dragStart.x;
+        const newY = e.global.y - this.dragStart.y;
+        this.world.position.set(newX, newY);
+      }
     };
-         this._onDragMove = (e) => {
-         if (this.isDragging) {
-             let newX = e.global.x - this.dragStart.x;
-             let newY = e.global.y - this.dragStart.y;
-             
-             this.world.x = newX;
-             this.world.y = newY;
-         }
-     };
+    
     this.app.stage.on('pointerdown', this._onDragStart);
     this.app.stage.on('pointerup', this._onDragEnd);
     this.app.stage.on('pointerupoutside', this._onDragEnd);
     this.app.stage.on('pointermove', this._onDragMove);
   }
-  
 
-
-  _createMap() {
-    // 使用 IsoGrid 創建地圖
-    this.grid = new IsoGrid(
-      this.app, 
-      20, // rows
-      20, // cols
-      150, // tileSize
-      this._handleTileClick.bind(this), // onTileClick callback
-      null // mapData (使用預設)
-    );
-    
-    // 將網格容器添加到世界容器中
-    this.world.addChild(this.grid.gridContainer);
-    
-    // 設定網格的 zIndex（地圖在底層）
-    this.grid.gridContainer.zIndex = 0;
-    
-    // 將網格置中於畫布
-    const halfW = this.TILE_SIZE / 2;
-    const halfH = this.TILE_SIZE / 4;
-    const gridWidth = (this.grid.cols - 1) * halfW;
-    const gridHeight = (this.grid.rows + this.grid.cols - 1) * halfH;
-    
-    this.grid.gridContainer.x = -gridWidth / 2;
-    this.grid.gridContainer.y = -gridHeight / 2;
-    
-    console.log('✅ 網格創建完成，已置中於畫布');
-    console.log('✅ 網格尺寸:', gridWidth, 'x', gridHeight);
-    console.log('✅ 網格位置:', this.grid.gridContainer.x, this.grid.gridContainer.y);
-  }
-
-  async _createPlayer() {
-    this.player = new Player(this.playerStore);
-    await this.player.create(this.world);
-    
-    // 設定玩家的 zIndex（玩家在地圖之上）
-    this.player.sprite.zIndex = 5;
-    
-    // 將玩家放到地圖中心附近（有效格）
-    const startGrid = { gx: Math.floor(this.grid.cols / 2), gy: Math.floor(this.grid.rows / 2) };
-    const startWorld = this._gridToWorld(startGrid.gx, startGrid.gy);
-    this.playerStore.updatePosition({ x: startWorld.x, y: startWorld.y });
-  }
-
-  _handleTileClick(row, col) {
-    if (this.isDragging) return;
-    // 僅在合法格內處理互動
-    if (!this._isInsideGrid(col, row)) {
-      console.log('超出網格，忽略互動');
-      return;
-    }
-    console.log(`觸發網格互動: (${row}, ${col})`);
-    
-    const mapCenter = 10;
-    const distanceFromCenter = Math.max(
-      Math.abs(row - mapCenter), 
-      Math.abs(col - mapCenter)
-    );
-    
-    if (distanceFromCenter > 6) {
-      this.gameStore.fetchRandomQuestion(1);
-    } else {
-      alert(`你點擊了受保護的區域`);
-    }
-  }
-
+  /**
+ * 偵測玩家目前所在的網格座標 (按下 Enter 觸發)
+ */
   _inspectCurrentTile() {
     const playerPos = this.playerStore.position;
     const isoX = playerPos.x;
     const isoY = playerPos.y;
-    const { gx, gy } = this._worldToGrid(isoX, isoY);
-    const finalGridX = gx;
-    const finalGridY = gy;
-    console.log(`按下 Enter，檢視座標 (${finalGridX}, ${finalGridY})`);
-    
-    if (!this._isInsideGrid(finalGridX, finalGridY)) {
-      console.log('不在網格範圍內，無法互動/答題');
-      return;
-    }
-    this._handleTileClick(finalGridX, finalGridY);
-  }
-
-  // 將世界座標轉為網格索引（整數）
-  _worldToGrid(worldX, worldY) {
-    if (!this.grid) return { gx: -1, gy: -1 };
     const halfW = this.TILE_SIZE / 2;
     const halfH = this.TILE_SIZE / 4;
-    // 轉成網格容器的本地座標
-    const localX = worldX - this.grid.gridContainer.x;
-    const localY = worldY - this.grid.gridContainer.y;
-    // 反變換：由等角像素座標 -> 網格索引（浮點）
-    const gridYf = (localY / halfH + localX / halfW) / 2;
-    const gridXf = gridYf + (localX / halfW);
-    // 四捨五入到最近的格
-    const gx = Math.round(gridXf);
-    const gy = Math.round(gridYf);
-    return { gx, gy };
-  }
-
-  // 是否在網格有效範圍
-  _isInsideGrid(gx, gy) {
-    if (!this.grid) return false;
-    return gx >= 0 && gx < this.grid.cols && gy >= 0 && gy < this.grid.rows;
+    
+    // 將等角座標轉換為網格座標
+    const cartX = (isoX / halfW + isoY / halfH) / 2;
+    const cartY = (isoY / halfH - isoX / halfW) / 2;
+    
+    // 四捨五入取得整數網格座標
+    const col = Math.round(cartX);
+    const row = Math.round(cartY);
+    
+    // 檢查座標是否在有效範圍內
+    if (row >= 0 && row < this.grid.rows && col >= 0 && col < this.grid.cols) {
+      const cell = this.buildingStore.map?.[row]?.[col];
+      if (cell) {
+        // 城堡區域不能答題
+        if (cell.type === 'castle') {
+          alert('城堡區域無法互動！');
+          return;
+        }
+        
+        // 顯示題目或格子資訊
+        const cellInfo = `格子位置: (${row}, ${col})\n狀態: ${cell.status}`;
+        alert(`當前格子資訊:\n${cellInfo}`);
+        
+        // 觸發格子點擊事件
+        this._handleTileClick(row, col);
+      }
+    } else {
+      alert('玩家不在有效的遊戲區域內');
+    }
   }
 }
+

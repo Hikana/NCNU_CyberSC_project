@@ -1,18 +1,14 @@
 const admin = require('firebase-admin');
-
-// 載入服務帳戶金鑰
+// 確保金鑰檔案路徑正確
 const serviceAccount = require('../firebase/firebase-adminsdk.json');
 
-// 檢查是否已經初始化過 Firebase
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
-  });
-  console.log('🔥 Firebase Admin SDK initialized successfully from config.');
-}
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
-// 導出 Firestore 資料庫實例
 const db = admin.firestore();
+const FieldValue = admin.firestore.FieldValue;
 
-module.exports = { db, admin };
+console.log('🔥 Firebase Admin SDK initialized successfully.');
+
+module.exports = { db, FieldValue };

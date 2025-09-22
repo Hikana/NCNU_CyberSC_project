@@ -1,15 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const BuildingController = require('../controllers/buildingController');
-const buildingController = new BuildingController();
+const buildingController = require('../controllers/buildingController');
 
-// 獲取地圖數據
+// 地圖/建築相關（委派給 gameService 實作）
 router.get('/map', buildingController.getMap);
-
-// 放置建築
-router.post('/', buildingController.placeBuilding);
-
-// 清除所有建築
-router.delete('/clear', buildingController.clearAllBuildings);
+router.post('/place-building', buildingController.placeBuilding);
+router.post('/unlock-tile', buildingController.unlockTile);
+router.post('/clear-building', buildingController.clearBuilding);
 
 module.exports = router;
