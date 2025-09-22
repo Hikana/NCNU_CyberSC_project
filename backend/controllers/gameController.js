@@ -1,112 +1,138 @@
-// backend/controllers/gameController.js
-const questionService = require('../services/questionService');
+const gameService = require('../services/gameService');
+const { db } = require('../routes/firebase'); 
 
-// 使用一個高階函式來簡化 try/catch，讓 controller 更乾淨
-const asyncHandler = (fn) => (req, res, next) =>
+// 這是一個小幫手函式，用來自動捕捉非同步函式中的錯誤，讓我們的程式碼更乾淨
+const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
+};
 
 class GameController {
-  // --- 查詢 ---
-  getQuestionById = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const data = await questionService.fetchQuestionById(id);
+  constructor() {
+    // 為了方便，我們先預設一個測試用玩家 ID
+    this.getUserId = (req) => req.query.userId || 'test-user';
+  }
+
+  /**
+   * 處理「獲取隨機題目」的請求
+   */
+  getRandomQuestion = asyncHandler(async (req, res) => {
+    const data = await gameService.getRandomQuestion(this.getUserId(req));
+    res.status(200).json({ success: true, data });
+  });
+
+  
+  /**
+ * 處理「提交答案」的請求
+ */
+/**
+ * 處理「提交答案」的請求
+ */
+/**
+ * 處理「提交答案」的請求
+ */
+/**
+ * 處理「提交答案」的請求 - 只使用 GameService 記錄
+ */
+submitAnswer = asyncHandler(async (req, res) => {
+  console.log("收到的 req.body:", req.body);
+  
+  const { questionId, answer } = req.body;
+  const userId = req.body.userId || this.getUserId(req);
+
+  try {
+    // 直接呼叫 gameService，讓它處理所有邏輯和記錄
+    const result = await gameService.validateAnswer(userId, questionId, answer);
+    
+    console.log("✅ gameService.validateAnswer 執行成功，結果:", result);
+
+    // 回傳 GameService 的完整結果給前端
+    res.status(200).json({
+      success: true,
+      isCorrect: result.isCorrect,
+      correctAnswer: result.correctAnswer,
+      question: result.question,        // 👈 加這行
+      userAnswer: result.userAnswer,  
+      yourAnswer: result.yourAnswer,    // 👈 加這行  
+        // 👈 加這行（容錯）
+      newHistory: result.newHistory,    // 原有的
+      gameData: result                  // 原有的
+    });
+
+  } catch (error) {
+    console.error("❌ gameService 執行失敗:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: '提交答案失敗',
+      details: error.message 
+    });
+  }
+});
+
+
+  /**
+   * 處理「獲取地圖」的請求
+   */
+  getMap = asyncHandler(async (req, res) => {
+    const data = await gameService.getMapState(this.getUserId(req));
+    res.status(200).json({ success: true, data });
+  });
+
+  /**
+   * 處理「放置建築」的請求
+   */
+  placeBuilding = asyncHandler(async (req, res) => {
+    const { buildingId, position } = req.body;
+    const data = await gameService.placeBuilding(this.getUserId(req), buildingId, position);
+    res.status(200).json({ success: true, data });
+  });
+
+  /**
+   * 處理「解鎖土地」的請求
+   */
+  unlockTile = asyncHandler(async (req, res) => {
+    const { position } = req.body;
+    const data = await gameService.unlockTile(this.getUserId(req), position);
+    res.status(200).json({ success: true, data });
+  });
+
+  /**
+   * 處理「獲取答題紀錄」的請求
+   */
+  getHistory = asyncHandler(async (req, res) => {
+    const data = await gameService.getHistory();
     res.status(200).json({ success: true, data });
   });
   getQuestions = asyncHandler(async (req, res) => {
-    const { level, category } = req.query; // 從 query string 取得過濾條件
-    const data = await questionService.fetchQuestions({ level, category });
-    res.status(200).json({ success: true, count: data.length, data });
-  });
-
-  getRandomQuestion = asyncHandler(async (req, res) => {
-    const { level } = req.query;
-    const userId = 'test-user'; 
-    
-    // --- 間諜日誌 1 ---
-    console.log(`[Controller] 收到請求: level=${level}, userId=${userId}`);
-
-    const data = await questionService.getRandomQuestion(parseInt(level || 1), userId);
-    res.status(200).json({ success: true, data });
-  });
-
-  getStageQuestions = asyncHandler(async (req, res) => {
-    const { stage } = req.params;
-    const data = await questionService.getGameStageQuestions(parseInt(stage || 1));
-    res.status(200).json({ success: true, data, count: data.length });
-  });
-
-  // --- 互動 ---
-  validateAnswer = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { answer } = req.body;
-    if (!answer) {
-      return res.status(400).json({ success: false, message: '請提供答案' });
-    }
-    const data = await questionService.validateAnswer(id, answer);
-    res.status(200).json({ success: true, data });
-  });
-  
-  getQuestionHint = asyncHandler(async (req, res) => {
-      const { id } = req.params;
-      const data = await questionService.getQuestionHint(id);
+      const data = await gameService.fetchAllQuestions();
       res.status(200).json({ success: true, data });
   });
-  getQuestionStats = asyncHandler(async (req, res) => {
-    const data = await questionService.getQuestionStatistics();
-    res.status(200).json({ success: true, data });
-  }); 
-  calculateScore = asyncHandler(async (req, res) => {
-      const { correctAnswers, totalQuestions, timeSpent, hintsUsed } = req.body;
-      const score = questionService.calculateScore(correctAnswers, totalQuestions, timeSpent, hintsUsed);
-      res.status(200).json({ success: true, data: { score } });
+  deleteQuestion = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    await gameService.deleteQuestion(id);
+    res.status(200).json({ success: true, message: '題目刪除成功' });
   });
-
-  // --- 管理 ---
+  
+  clearAllQuestions = asyncHandler(async (req, res) => {
+      await gameService.clearAllQuestions();
+      res.status(200).json({ success: true, message: '所有題目已清空' });
+  });
   addQuestion = asyncHandler(async (req, res) => {
     const questionData = req.body;
-    // 基礎驗證
-    if (!questionData.question || !questionData.correctAnswer || !questionData.level) {
-      return res.status(400).json({ success: false, message: '缺少必要欄位' });
+    if (!questionData.question  || questionData.answer === undefined|| !questionData.correctanswer || !questionData.level) {
+       return res.status(400).json({ success: false, message: '缺少必要欄位' });
     }
-    const data = await questionService.createQuestion(questionData);
+    const data = await gameService.createQuestion(questionData);
     res.status(201).json({ success: true, message: '題目新增成功', data });
   });
 
   updateQuestion = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const questionData = req.body;
-    await questionService.updateQuestion(id, questionData);
+    await gameService.updateQuestion(id, questionData);
     res.status(200).json({ success: true, message: '題目更新成功' });
   });
-
-  deleteQuestion = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    await questionService.deleteQuestion(id);
-    res.status(200).json({ success: true, message: '題目刪除成功' });
-  });
-  
-  clearAllQuestions = asyncHandler(async (req, res) => {
-      await questionService.clearAllQuestions();
-      res.status(200).json({ success: true, message: '所有題目已清空' });
-  });
-  // --- 新增：答題紀錄 API ---
-  addHistory = asyncHandler(async (req, res) => {
-        const { questionId, questionText, userAnswer, isCorrect } = req.body;
-        // 基礎驗證
-        if (!questionId || !userAnswer) {
-            return res.status(400).json({ success: false, message: '缺少必要欄位' });
-        }
-        const entryData = { questionId, questionText, userAnswer, isCorrect };
-        const data = await questionService.createHistoryEntry(entryData);
-        res.status(201).json({ success: true, data });
-    });
-
-    getHistory = asyncHandler(async (req, res) => {
-        const data = await questionService.fetchHistory();
-        res.status(200).json({ success: true, data });
-    });  
-
-
 }
 
+// 匯出一個 GameController 的實例，讓 routes 可以直接使用
 module.exports = new GameController();
+

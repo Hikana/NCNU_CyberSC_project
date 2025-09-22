@@ -11,10 +11,10 @@
         
         <div class="options-container" v-if="questionHasOptions">
           <button 
-            v-for="option in gameStore.currentQuestion.options" 
-            :key="option"
+            v-for="(option,index) in gameStore.currentQuestion.options" 
+            :key="index"
             class="option-btn"
-            @click="submit(option)"
+            @click="submit(index)"
           >
             {{ option }}
           </button>
@@ -47,13 +47,13 @@ const questionHasOptions = computed(() => {
   return gameStore.currentQuestion?.options && gameStore.currentQuestion.options.length > 0;
 });
 
-function submit(answer) {
-  if (!answer || !answer.trim()) {
-    alert('請選擇一個選項或輸入答案！');
-    return;
-  }
-  gameStore.submitAnswer(answer);
-  userAnswer.value = ''; // 清空輸入框
+function submit(answerIndex) {
+  if (answerIndex === undefined || (typeof answerIndex === 'string' && !answerIndex.trim())) {
+    alert('請選擇一個選項或輸入答案！');
+    return;
+  }
+  gameStore.submitAnswer(answerIndex);
+  userAnswer.value = ''; // 清空輸入框
 }
 </script>
 
