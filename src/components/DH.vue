@@ -88,7 +88,7 @@
 
     <!-- 共享金鑰 -->
     <div v-if="sharedSecretAlice && sharedSecretBob" class="mt-6">
-      <label class="block font-semibold mb-2">共享金鑰 (Alice & Bob)(AES key)</label>
+      <label class="block font-semibold mb-2">共享金鑰 (Alice & Bob)</label>
       <div
         class="p-3 rounded bg-black/60 text-pink-300 font-mono break-all"
       >
