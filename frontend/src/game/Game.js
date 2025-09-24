@@ -162,13 +162,13 @@ export class Game {
   /**
    * 建立玩家
    */
-  _createPlayer() {
-    this.player = new Player(this.playerStore);
-    this.player.create(this.world);
+  _createPlayer() {
+    this.player = new Player(this.playerStore);
+    this.player.create(this.world);
     if (this.player.sprite) {
-        this.player.sprite.zIndex = 2; // 確保玩家在網格之上
-    }
-  }
+        this.player.sprite.zIndex = 5; // 確保玩家在網格之上
+  }
+}
 
   /*處理地圖格子的點擊事件 (智慧點擊)*/
   _handleTileClick(row, col) {
@@ -187,7 +187,7 @@ export class Game {
       if (cell.status === 'developed') {
         this.buildingStore.selectTile({ x: col, y: row });
       } else {
-        alert('只能在已開發的綠色土地上選取位置！');
+        this.buildingStore.showPlacementMessage('只能選擇已開發的土地！');
         this.buildingStore.selectTile(null);
       }
       return;
@@ -202,9 +202,8 @@ export class Game {
         alert('這塊地已經開發了，可以從商店購買建築來蓋！');
         break;
       case 'placed':
-        if (confirm(`這裡已經蓋了建築物 (ID: ${cell.item})\n要清除這個建築嗎？`)) {
-          this.buildingStore.clearBuildingAt(col, row);
-        }
+        // 觸發 UI 提示，不用瀏覽器 confirm
+        this.buildingStore.promptDelete({ x: col, y: row, item: cell.item });
         break;
       default:
         break;

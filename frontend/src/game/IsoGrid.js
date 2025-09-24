@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js'
 import grassImg from '@/assets/grass.png'
+import landImg from '@/assets/land.png'
 import { useBuildingStore } from '@/stores/buildings'
 import castleImg from '@/assets/can1.png'
 
@@ -61,9 +62,9 @@ export class IsoGrid {
     this.gridContainer.addChild(this.groundContainer)
     this.gridContainer.addChild(this.objectContainer)
     
-    // 預載入建築、草地與城堡圖片
     this.loadBuildingTextures()
-    this.loadGrassTextures() // 內部載入完成後會自動觸發重繪
+    this.loadGrassTextures() 
+    this.loadLandTexture()
     this.loadCastleTexture()
   }
   
@@ -100,16 +101,6 @@ export class IsoGrid {
           const texture = PIXI.Texture.from(img)
           this.buildingTextures[id] = texture
         }
-        
-        img.onerror = () => {
-          console.warn(`⚠️ 建築圖片 ${id} 載入失敗:`, imageUrl)
-          // 如果載入失敗，創建一個彩色矩形作為替代
-          const graphics = new PIXI.Graphics()
-          graphics.rect(0, 0, this.tileSize, this.tileSize)
-            .fill({ color: 0x00ff00 + (id * 0x111111) })
-          this.buildingTextures[id] = this.createTextureFromGraphics(graphics)
-        }
-        
         img.src = imageUrl
         
       } catch (error) {
@@ -131,7 +122,7 @@ export class IsoGrid {
     })
   }
 
-  // 預載入草地圖片（放入 Assets 快取，避免警告）
+  // 預載入草地圖片
   async loadGrassTextures() {
     this.grassTextures = {}
     try {
@@ -151,7 +142,21 @@ export class IsoGrid {
     }
   }
 
-  // 預載入城堡圖片（放入 Assets 快取）
+  async loadLandTexture() {
+    this.landTexture = null
+    try {
+      this.landTexture = await PIXI.Assets.load(landImg)
+    } catch (e) {
+      console.warn('⚠️ 地圖圖片載入失敗，使用後備方案:', e)
+      this.landTexture = PIXI.Texture.from(landImg)
+    }
+    // 載入完成後重繪
+    if (this.mapData) {
+      this.drawGrid()
+    }
+  }
+  
+  // 預載入城堡圖片
   async loadCastleTexture() {
     this.castleTexture = null
     try {
@@ -186,10 +191,9 @@ export class IsoGrid {
     return map
   }
 
-  // --- drawGrid 和其他方法維持不變 ---
 
 
-  updateMapData(newMapData) {
+  updateMapData(newMapData) { 
     if (!newMapData || Object.keys(newMapData).length === 0) return;
     this.mapData = newMapData;
     this.drawGrid();
@@ -198,7 +202,7 @@ export class IsoGrid {
   setSelectedTile(x, y) { this.selectedTile = { x, y }; this.drawGrid(); }
   clearSelectedTile() { this.selectedTile = null; this.drawGrid(); }
 
-  revealTile(row, col) {
+  revealTile(row, col) { 
     if (this.mapData[row] && this.mapData[row][col]) {
       this.mapData[row][col].explored = true
       this.drawGrid()
@@ -248,24 +252,32 @@ export class IsoGrid {
           const coverageScale = 2.0;
           grass.width = this.tileSize * coverageScale;
           grass.height = this.tileSize * coverageScale;
-          grass.mask = mask;
+          grass.mask = mask; 
           grass.zIndex = 1;
           
           groundTileContainer.addChild(mask);
           groundTileContainer.addChild(grass);
 
-          // 狀態覆層：locked 顯示半透明遮罩，developed 無遮罩，placed 交由建築層處理
-          if (cell.status === 'locked') {
-            const overlay = new PIXI.Graphics();
-            overlay
+          if (cell.status === 'locked' && this.landTexture) {
+            const mask2 = new PIXI.Graphics();
+            mask2
               .moveTo(0, -halfH)
               .lineTo(halfW, 0)
               .lineTo(0, halfH)
               .lineTo(-halfW, 0)
               .closePath()
-              .fill({ color: 0x000000, alpha: 0.35 });
-            overlay.zIndex = 3;
-            groundTileContainer.addChild(overlay);
+              .fill(0xffffff);
+
+            const landCover = new PIXI.Sprite(this.landTexture);
+            landCover.anchor.set(0.51, 0.36);
+            const coverageScale2 = 2.5;
+            landCover.width = this.tileSize * coverageScale2;
+            landCover.height = this.tileSize * coverageScale2;
+            landCover.mask = mask2; 
+            landCover.zIndex = 2;  
+
+            groundTileContainer.addChild(mask2);
+            groundTileContainer.addChild(landCover);
           }
         }
 
@@ -356,7 +368,7 @@ export class IsoGrid {
       for (let col = 0; col < this.cols; col++) {
         const cell = this.mapData[row][col]
         
-        if (cell.type === 'building' || (cell.status === 'placed' && cell.item)) {
+        if (cell.status === 'placed' && cell.item) {
           const x = (col - row) * halfW
           const y = (col + row) * halfH
 
@@ -366,7 +378,7 @@ export class IsoGrid {
           buildingContainer.y = y
           buildingContainer.zIndex = row + col + 50
 
-          const buildingId = cell.buildingId || cell.item || 1
+          const buildingId = cell.item
           const buildingTexture = this.buildingTextures[buildingId]
           
           if (buildingTexture) {
@@ -379,7 +391,7 @@ export class IsoGrid {
             
             buildingSprite.width = originalWidth * scale
             buildingSprite.height = originalHeight * scale
-            buildingSprite.anchor.set(0.5, 0.75)
+            buildingSprite.anchor.set(0.5, 0.8)
             buildingSprite.y = halfH * 0.1
             
             buildingContainer.addChild(buildingSprite)

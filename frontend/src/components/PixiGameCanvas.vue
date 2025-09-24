@@ -3,9 +3,9 @@
   
   <div v-if="buildingStore.isPlacing" class="placement-ui">
     <div class="placement-info">
-      <p>選擇位置放置建築 (建築ID: {{ buildingStore.selectedBuildingId }})</p>
+      <p>選擇位置放置建築</p>
       <p v-if="buildingStore.selectedTile">
-        已選取: ({{ buildingStore.selectedTile.x }}, {{ buildingStore.selectedTile.y }})
+        選擇位置: ({{ buildingStore.selectedTile.x }}, {{ buildingStore.selectedTile.y }})
       </p>
       <p style="color: orange;">請點擊地圖上的可建造土地</p>
     </div>
@@ -21,6 +21,23 @@
         取消
       </button>
     </div>
+  </div>
+
+  <!-- 刪除建築 UI -->
+  <div v-if="buildingStore.deleteTarget" class="delete-ui">
+    <div class="delete-panel">
+      <div class="title">刪除建築</div>
+      <div class="desc">位置 ({{ buildingStore.deleteTarget.x }}, {{ buildingStore.deleteTarget.y }})</div>
+      <div class="actions">
+        <button class="danger" @click="confirmDelete">刪除</button>
+        <button class="ghost" @click="cancelDelete">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 放置限制訊息（取代 alert） -->
+  <div v-if="buildingStore.placementMessage" class="toast">
+    {{ buildingStore.placementMessage }}
   </div>
 </template>
 
@@ -56,6 +73,16 @@ function confirmPlacement() {
 function cancelPlacement() {
   buildingStore.setPlacementMode(false);
 }
+
+function confirmDelete() {
+  const tgt = buildingStore.deleteTarget;
+  if (!tgt) return;
+  buildingStore.clearBuildingAt(tgt.x, tgt.y);
+}
+
+function cancelDelete() {
+  buildingStore.cancelDeletePrompt();
+}
 </script>
 
 
@@ -75,6 +102,65 @@ function cancelPlacement() {
   display: block;
   width: 100% !important;
   height: 100% !important;
+}
+
+.delete-ui {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 200;
+}
+
+.delete-panel {
+  background: #a9b39ef3;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  min-width: 300px;
+}
+.delete-panel .title {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.delete-panel .desc {
+  color: #4b5563;
+  margin-bottom: 12px;
+}
+.delete-panel .actions { display: flex; gap: 10px; }
+.delete-panel .danger {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.delete-panel .danger:hover { background: #b91c1c; }
+.delete-panel .ghost {
+  background: #d3f1d7;
+  color: #111827;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.delete-panel .ghost:hover { background: #e5e7eb; }
+
+.toast {
+  position: absolute;
+  top: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111827;
+  color: #fff;
+  padding: 16px 22px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  z-index: 300;
+  max-width: 560px;
+  font-size: 18px;
+  line-height: 1.4; 
 }
 
 .placement-ui {

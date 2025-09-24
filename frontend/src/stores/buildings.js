@@ -27,6 +27,8 @@ export const useBuildingStore = defineStore('buildings', {
     selectedTile: null,
     selectedBuildingId: null,
     isPlacing: false,
+    deleteTarget: null,
+    placementMessage: null,
     
     // 商店建築列表的 id 改為字串，以匹配 IsoGrid.js
     shopBuildings: [
@@ -93,6 +95,23 @@ export const useBuildingStore = defineStore('buildings', {
     clearSelectedTile() {
       this.selectedTile = null;
     },
+
+    // 刪除建築 UI 狀態
+    promptDelete(target) {
+      this.deleteTarget = target; // { x, y, item }
+    },
+    cancelDeletePrompt() {
+      this.deleteTarget = null;
+    },
+
+    // 放置限制訊息（UI 取代 alert）
+    showPlacementMessage(message) {
+      this.placementMessage = message;
+      setTimeout(() => {
+        if (this.placementMessage === message) this.placementMessage = null;
+      }, 2500);
+    },
+    clearPlacementMessage() { this.placementMessage = null; },
     
     // 修改 confirmPlacement，使用 apiService
     async confirmPlacement() {
@@ -175,33 +194,35 @@ export const useBuildingStore = defineStore('buildings', {
       return true
     },
 
-    // 清除地圖上的所有建築（重置為空狀態）
+    // 清除地圖上的所有建築（逐格呼叫現有後端 API）
     async clearAllBuildings() {
       try {
-        // 先清除後端數據
-        const res = await axios.delete('http://localhost:3000/api/buildings/clear')
-        
-        if (res.data.success) {
-          // 後端清除成功，更新本地狀態
-          this.map = res.data.map
-          this.isPlacing = false
-          this.selectedTile = null
-          this.selectedBuildingId = null
-          console.log('已清除地圖上的所有建築（後端同步）')
-          return true
-        } else {
-          throw new Error('後端清除失敗')
+        const tasks = []
+        const size = Array.isArray(this.map) ? this.map.length : 0
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < this.map[y].length; x++) {
+            const cell = this.map[y][x]
+            if (cell && cell.status === 'placed') {
+              // 依序執行，避免同時過多請求
+              // 也可改為批次 Promise.all 分批執行
+              // 這裡先推入任務，後面逐一 await
+              tasks.push(() => apiService.clearBuilding({ x, y }))
+            }
+          }
         }
-      } catch (error) {
-        console.error('清除建築失敗:', error)
-        // 如果後端失敗，至少清除本地狀態
-        this.map = Array.from({ length: 20 }, () =>
-          Array.from({ length: 20 }, () => ({ type: 'empty' }))
-        )
+
+        for (const run of tasks) {
+          await run()
+        }
+
+        await this.loadMap()
         this.isPlacing = false
         this.selectedTile = null
         this.selectedBuildingId = null
-        console.log('已清除地圖上的所有建築（僅本地）')
+        console.log('已清除地圖上的所有建築（逐格調用後端）')
+        return true
+      } catch (error) {
+        console.error('清除建築失敗:', error)
         return false
       }
     },
@@ -222,6 +243,7 @@ export const useBuildingStore = defineStore('buildings', {
             );
           }
           console.log(`已清除位置 (${x}, ${y}) 的建築（後端同步）`)
+          this.deleteTarget = null;
         }
       } catch (e) {
         console.error('清除建築失敗:', e);

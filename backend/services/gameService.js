@@ -2,6 +2,14 @@ const gameData = require('../models/gameData');
 const playerData = require('../models/playerData');
 const { FieldValue } = require('../config/firebase');
 
+// 與前端 IsoGrid 對齊的城堡座標（以 row,col = y,x）
+const CASTLE_TILES = new Set([
+  '0,0','0,1','0,2',
+  '1,0','1,1','1,2',
+  '2,0','2,1','2,2',
+]);
+const isCastleTile = (row, col) => CASTLE_TILES.has(`${row},${col}`);
+
 /**
  * GameService 類別
  * 職責：處理所有遊戲的核心商業邏輯。
@@ -85,15 +93,18 @@ class GameService {
   // 填充玩家資料
   Object.keys(landData).forEach(key => {
     const [x, y] = key.split('_').map(Number);
-    mapArray[y][x] = landData[key];
+    const cell = landData[key];
+    mapArray[y][x] = isCastleTile(y, x) ? { ...cell, type: 'castle' } : cell;
   });
 
-  // 如果玩家地圖還是空的，初始化中間城堡區域
+  // 如果玩家地圖還是空的，初始化預設：依 IsoGrid 的 CASTLE_TILES 畫城堡
   if (Object.keys(landData).length === 0) {
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
-        const isCenterZone = Math.abs(x - 9.5) < 3 && Math.abs(y - 9.5) < 3;
-        mapArray[y][x] = { status: isCenterZone ? 'developed' : 'locked' };
+        mapArray[y][x] = { status: 'locked' };
+        if (isCastleTile(y, x)) {
+          mapArray[y][x] = { status: 'developed', type: 'castle' };
+        }
       }
     }
   }
@@ -103,6 +114,12 @@ class GameService {
 
 
   async placeBuilding(playerId, buildingId, position) {
+    // 後端禁止在城堡座標放置
+    if (isCastleTile(position.y, position.x)) {
+      const err = new Error('城堡區域禁止放置建築');
+      err.status = 400;
+      throw err;
+    }
     await playerData.updateTile(playerId, position.x, position.y, {
       status: 'placed',
       item: buildingId,
