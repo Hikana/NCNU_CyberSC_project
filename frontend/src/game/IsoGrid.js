@@ -59,11 +59,6 @@ export class IsoGrid {
            // 圖片載入完成後創建 PIXI 紋理
            const texture = PIXI.Texture.from(img)
            this.buildingTextures[id] = texture
-           console.log(`✅ 建築圖片 ${id} 載入成功:`, {
-             url: imageUrl,
-             size: `${img.naturalWidth}x${img.naturalHeight}`,
-             texture: texture ? `${texture.width}x${texture.height}` : 'unknown'
-           })
          }
         
         img.onerror = () => {

@@ -1,4 +1,5 @@
 const API_BASE_URL = 'http://localhost:3000/api/game';
+const PLAYER_BASE_URL = 'http://localhost:3000/api/players';
 
 /**
  * 統一處理 fetch 請求的函式
@@ -11,6 +12,7 @@ async function request(endpoint, options = {}) {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
     const result = await response.json();
 
+   
     if (!response.ok || !result.success) {
       throw new Error(result.message || 'API 請求失敗');
     }
@@ -61,6 +63,26 @@ export const apiService = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(entryData),
+    });
+  },
+  // --- 新增：玩家背包 API ---
+  getInventory: (userId) => {
+    return fetch(`${PLAYER_BASE_URL}/${encodeURIComponent(userId)}/inventory`)
+      .then(async (res) => {
+        const json = await res.json();
+        if (!res.ok || !json.success) throw new Error(json.message || '取得背包失敗');
+        return json.data;
+      });
+  },
+  setInventory: (userId, items) => {
+    return fetch(`${PLAYER_BASE_URL}/${encodeURIComponent(userId)}/inventory`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    }).then(async (res) => {
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message || '更新背包失敗');
+      return json.data;
     });
   },
 };

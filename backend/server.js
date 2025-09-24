@@ -3,6 +3,9 @@ const cors = require('cors');
 // 引入所有路由
 const gameRoutes = require('./routes/gameRoutes');
 const buildingRoutes = require('./routes/buildingRoutes');
+const playerRoutes = require('./routes/playerRoutes');
+const inventoryRoutes = require('./routes/inventory');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,6 +20,10 @@ app.use(express.static('public'));
 app.use('/api/game', gameRoutes);
 // 所有建築、地圖相關的 API 都會是 /api/buildings/...
 app.use('/api/buildings', buildingRoutes);
+// 玩家與背包
+app.use('/api/players', playerRoutes);
+//工具
+app.use('/api/inventory', inventoryRoutes);
 
 
 // 伺服器健康檢查

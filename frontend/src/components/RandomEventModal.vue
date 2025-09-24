@@ -1,33 +1,33 @@
 <!-- src/components/RandomEventModal.vue -->
 <template>
-  <div v-if="store.isModalOpen" class="re-modal" role="dialog" aria-modal="true">
+  <div v-if="eventStore.isModalOpen" class="re-modal" role="dialog" aria-modal="true">
     <div class="re-backdrop"></div>
     <div class="re-dialog" role="document">
       <div class="flip-container">
-        <div class="card" :class="{ flipped: store.flipped }">
+        <div class="card" :class="{ flipped: eventStore.flipped }">
           <!-- Front: 事件內容 + 倒數 + 防禦選項 -->
-          <section class="card-face front" v-if="store.currentEvent">
+          <section class="card-face front" v-if="eventStore.currentEvent">
             <header class="title">
-              <h2>{{ store.currentEvent.name }}</h2>
-              <small class="learn">學習：{{ store.currentEvent.shortExplain }}</small>
+              <h2>{{ eventStore.currentEvent.name }}</h2>
+              <small class="learn">學習：{{ eventStore.currentEvent.shortExplain }}</small>
             </header>
 
             <div class="timer">
-              <div class="time" :aria-label="'剩餘秒數 ' + store.timeLeft">{{ store.timeLeft }} 秒</div>
+              <div class="time" :aria-label="'剩餘秒數 ' + eventStore.timeLeft">{{ eventStore.timeLeft }} 秒</div>
               <div class="bar" aria-hidden="true">
                 <div class="bar-inner" :style="{ width: percent + '%' }"></div>
               </div>
             </div>
 
-            <p class="desc">{{ store.currentEvent.gameDescription }}</p>
+            <p class="desc">{{ eventStore.currentEvent.gameDescription }}</p>
 
             <div class="options">
               <button
-                v-for="opt in store.availableDefenses"
+                v-for="opt in eventStore.availableDefenses"
                 :key="opt.key"
                 class="opt-btn"
                 :class="{ locked: !opt.owned }"
-                :disabled="!opt.owned || store.status !== 'pending'"
+                :disabled="!opt.owned || eventStore.status !== 'pending'"
                 @click="onDefenseClick(opt.key, opt.owned)"
               >
                 <span class="opt-name">{{ opt.name }}</span>
@@ -38,35 +38,35 @@
             </div>
 
             <footer class="actions">
-              <button class="ghost" :disabled="store.status !== 'pending'" @click="store.chooseDefense('skip')">
+              <button class="ghost" :disabled="eventStore.status !== 'pending'" @click="eventStore.chooseDefense('skip')">
                 不採取動作
               </button>
             </footer>
           </section>
 
           <!-- Back: 結果 + 失敗後果 + 現實案例 -->
-          <section class="card-face back" v-if="store.currentEvent">
+          <section class="card-face back" v-if="eventStore.currentEvent">
             <header class="title">
               <h2>
-                <span v-if="store.status === 'success'">✅ 防禦成功</span>
+                <span v-if="eventStore.status === 'success'">✅ 防禦成功</span>
                 <span v-else>❌ 防禦失敗</span>
               </h2>
-              <small v-if="store.resultMessage" class="result-msg">{{ store.resultMessage }}</small>
+              <small v-if="eventStore.resultMessage" class="result-msg">{{ eventStore.resultMessage }}</small>
             </header>
 
-            <div v-if="store.status === 'fail'" class="penalty">
+            <div v-if="eventStore.status === 'fail'" class="penalty">
               <h3>失敗後果（遊戲效果）</h3>
-              <p>{{ store.currentEvent.failureConsequence }}</p>
+              <p>{{ eventStore.currentEvent.failureConsequence }}</p>
             </div>
 
             <div class="realcase">
               <h3>現實世界案例</h3>
-              <p class="rc-title"><strong>{{ store.currentEvent.realCase.title }}</strong></p>
-              <p class="rc-body">{{ store.currentEvent.realCase.body }}</p>
+              <p class="rc-title"><strong>{{ eventStore.currentEvent.realCase.title }}</strong></p>
+              <p class="rc-body">{{ eventStore.currentEvent.realCase.body }}</p>
             </div>
 
             <footer class="actions">
-              <button class="primary" @click="store.closeModal()">關閉</button>
+              <button class="primary" @click="eventStore.closeModal()">關閉</button>
             </footer>
           </section>
         </div>
@@ -76,23 +76,36 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useEventStore } from '../stores/eventStore';
+import { computed } from 'vue'
+import { useEventStore } from '@/stores/eventStore'
+import { useInventoryStore } from '@/stores/inventory'
 
-const store = useEventStore();
+// 狀態管理
+const eventStore = useEventStore()
+const inventoryStore = useInventoryStore()
 
+// 計算事件剩餘時間百分比
 const percent = computed(() => {
-  const ev = store.currentEvent;
-  if (!ev) return 0;
-  const p = Math.round((store.timeLeft / ev.timerSeconds) * 100);
-  return Math.max(0, Math.min(100, p));
-});
+  const ev = eventStore.currentEvent
+  if (!ev) return 0
+  const p = Math.round((eventStore.timeLeft / ev.timerSeconds) * 100)
+  return Math.max(0, Math.min(100, p))
+})
 
-function onDefenseClick(key, owned) {
-  if (!owned) return; // 未取得時不動作（僅顯示標籤提示）
-  store.chooseDefense(key);
+// 點擊防禦建材
+function onDefenseClick(key) {
+  // 檢查背包裡有沒有這個道具
+  const owned = inventoryStore.items.find(item => item.id === key)
+  if (!owned) return // 沒有就不能用
+
+  // 使用背包道具（可能要扣掉數量）
+  inventoryStore.useItem(key)
+
+  // 同時告訴事件系統「我選了這個防禦」
+  eventStore.chooseDefense(key)
 }
 </script>
+
 
 <style scoped>
 /* —— 版面 —— */

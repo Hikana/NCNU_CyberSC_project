@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, reactive } from 'vue';
+import { auth } from '@/firebase/firebase';
 
 export const usePlayerStore = defineStore('player', () => {
   // --- State (狀態) ---
@@ -9,6 +10,11 @@ export const usePlayerStore = defineStore('player', () => {
    */
   const x = ref(18);
   const y = ref(5);
+  
+  /**
+   * Firebase 使用者 ID，用於 Firestore 對應玩家文件
+   */
+  const playerId = ref(null);
   
   /**
    * 玩家擁有的科技點
@@ -74,6 +80,22 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   /**
+   * 設定玩家 ID（登入後呼叫）
+   */
+  function setPlayerId(id) {
+    playerId.value = id || null;
+  }
+
+  /**
+   * 從 Firebase Auth 初始化玩家 ID（若已登入）
+   */
+  function initFromAuth() {
+    const uid = auth.currentUser?.uid || null;
+    if (uid) playerId.value = uid;
+    return playerId.value;
+  }
+
+  /**
    * 更新玩家在地圖上的座標
    * @param {{ x: number, y: number }} newPosition - 包含新 x 和 y 座標的物件
    */
@@ -125,9 +147,12 @@ export const usePlayerStore = defineStore('player', () => {
   return {
     x,
     y,
+    playerId,
     techPoints,
     position,
     correctlyAnsweredCount,
+    setPlayerId,
+    initFromAuth,
     moveUp,
     moveDown,
     moveLeft,

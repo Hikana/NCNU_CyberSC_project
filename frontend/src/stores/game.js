@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { apiService } from '@/services/apiService'; 
 import { useHistoryStore } from './historyStore';
 import { usePlayerStore } from './player'; // 確保 playerStore 也被引入
+import { useInventoryStore } from './inventory'; // 引入背包 store
 
 export const useGameStore = defineStore('game', {
   state: () => ({
@@ -64,6 +65,9 @@ export const useGameStore = defineStore('game', {
         // 如果答對了，就呼叫 playerStore 的 action 來增加計數
         if (result.isCorrect) {
           playerStore.incrementCorrectlyAnsweredCount();
+          
+          // 添加物品獎勵到背包
+          await this.giveRewardItems(playerStore.correctlyAnsweredCount);
         }
 
         // 將作答結果記錄到 history
@@ -83,6 +87,58 @@ export const useGameStore = defineStore('game', {
     closeQuestion() {
         this.isAnswering = false;
         this.currentQuestion = null;
+    },
+
+    /**
+     * 根據答對題數給予物品獎勵
+     */
+    async giveRewardItems(correctCount) {
+      const inventoryStore = useInventoryStore();
+      
+      // 確保背包已初始化
+      if (!inventoryStore.userId) {
+        await inventoryStore.init();
+      }
+
+      // 定義獎勵物品
+      const rewardItems = [
+        { id: 'waf', key: 'waf', name: 'WAF 應用程式防火牆', desc: '防禦 SQL 注入和 XSS 攻擊', qty: 1 },
+        { id: 'cdn', key: 'cdn', name: 'CDN + 流量清洗', desc: '分散式防禦 DDoS 攻擊', qty: 1 },
+        { id: 'rate_limit', key: 'rate_limit', name: '速率限制', desc: '限制請求頻率防止濫用', qty: 1 },
+        { id: 'backup', key: 'backup', name: '備份系統', desc: '異地備援確保資料安全', qty: 1 },
+        { id: 'twofa', key: 'twofa', name: '2FA 多重驗證', desc: '雙重驗證提升帳號安全', qty: 1 }
+      ];
+
+      // 根據答對題數給予不同獎勵
+      let rewards = [];
+      if (correctCount === 1) {
+        rewards = [rewardItems[0]]; // WAF
+      } else if (correctCount === 3) {
+        rewards = [rewardItems[1]]; // CDN
+      } else if (correctCount === 5) {
+        rewards = [rewardItems[2]]; // Rate Limit
+      } else if (correctCount === 10) {
+        rewards = [rewardItems[3]]; // Backup
+      } else if (correctCount === 15) {
+        rewards = [rewardItems[4]]; // 2FA
+      } else if (correctCount % 5 === 0 && correctCount > 15) {
+        // 每5題隨機給一個物品
+        const randomIndex = Math.floor(Math.random() * rewardItems.length);
+        rewards = [rewardItems[randomIndex]];
+      }
+
+      // 添加獎勵物品到背包
+      for (const item of rewards) {
+        await inventoryStore.addItem(item);
+        console.log(`獲得獎勵物品: ${item.name}`);
+      }
+
+      if (rewards.length > 0) {
+        alert(`恭喜！你獲得了 ${rewards.map(r => r.name).join('、')}！`);
+      }
+
+
+      
     }
   },
 });

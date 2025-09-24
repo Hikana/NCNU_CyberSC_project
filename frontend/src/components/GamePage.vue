@@ -4,7 +4,7 @@
     
     <div class="ui-layer">
       <StatusBar />
-      <img :src="npcImage" alt="NPC" class="npc" @click="uiStore.toggleNpcMenu()" />
+      <img :src="npcImage" alt="NPC" class="npc" @click="onNpcClick" />
       <ControlsHint /> 
       <NpcMenu @close="uiStore.closeAllMenus()" />
       <!-- <WallMenu /> -->
@@ -27,6 +27,7 @@ import ControlsHint from '@/components/ControlsHint.vue';
 
 import { usePlayerStore } from '@/stores/player';
 import { useUiStore } from '@/stores/ui';
+import { useInventoryStore } from '@/stores/inventory'; // 引入背包 store
 import RandomEventModal from './RandomEventModal.vue'
 /* ✅ [新增] 引入 QuizPanel */
 import QuizPanel from './QuizPanel.vue' 
@@ -34,6 +35,7 @@ import npcImage from '@/assets/NPC.gif';
 
 const playerStore = usePlayerStore();
 const uiStore = useUiStore();
+const inventoryStore = useInventoryStore(); // 背包 store 實例
 
 /* ✅ [新增] 建立 ref，控制 QuizPanel */
 const quizPanelRef = ref(null)             
@@ -41,6 +43,14 @@ const quizPanelRef = ref(null)
 /* ✅ [新增] 啟動答題方法 */
 function openQuiz() {
   quizPanelRef.value.startQuiz("html")   // Firestore 的 category
+}
+
+// NPC 點擊事件：直接打開選單（背包資料從 Firebase 讀取）
+function onNpcClick() {
+  console.log('🎯 NPC 被點擊，打開選單')
+  
+  // 直接打開 NPC 選單，背包資料會從 Firebase 即時同步
+  uiStore.toggleNpcMenu()
 }
 
 </script>
