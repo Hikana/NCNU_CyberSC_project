@@ -12,12 +12,14 @@
             padding: 20px;
             background-color: #f5f5f5;
         }
+
         .container {
             background: white;
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
+
         .form-group { margin-bottom: 20px; }
         label {
             display: block;
@@ -25,18 +27,18 @@
             font-weight: bold;
             color: #333;
         }
+
         input, textarea, select {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 16px;
-            box-sizing: border-box; /* 確保 padding 不會影響寬度 */
+            box-sizing: border-box;
         }
-        textarea {
-            height: 100px;
-            resize: vertical;
-        }
+
+        textarea { height: 100px; resize: vertical; }
+
         button {
             color: white;
             padding: 12px 24px;
@@ -48,6 +50,7 @@
             margin-right: 10px;
             transition: background-color 0.2s ease, transform 0.1s ease;
         }
+
         button:hover { transform: translateY(-1px); }
         .primary { background-color: #4CAF50; }
         .primary:hover { background-color: #45a049; }
@@ -57,6 +60,7 @@
         .danger:hover { background-color: #da190b; }
         .info { background-color: #007bff; }
         .info:hover { background-color: #0056b3; }
+
         .status {
             padding: 12px;
             border-radius: 6px;
@@ -68,6 +72,7 @@
         .status.show { opacity: 1; visibility: visible; }
         .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
         .question-list {
             max-height: 400px;
             overflow-y: auto;
@@ -77,6 +82,7 @@
             background-color: #fff;
             border-radius: 6px;
         }
+
         .question-item {
             padding: 15px;
             border-bottom: 1px solid #eee;
@@ -86,6 +92,7 @@
             flex-wrap: wrap;
         }
         .question-item:last-child { border-bottom: none; }
+
         .question-content { flex-grow: 1; word-break: break-word; }
         .question-content strong { font-size: 1.1em; }
         .question-content small {
@@ -94,9 +101,16 @@
             margin-top: 8px;
             line-height: 1.5;
         }
+
         .action-buttons { flex-shrink: 0; margin-left: 15px; }
         .action-buttons button { padding: 6px 12px; font-size: 14px; margin-left: 5px; }
-        .options-container { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
         .option-input { display: flex; align-items: center; gap: 10px; }
         .option-input input[type="text"] { flex: 1; }
     </style>
@@ -106,24 +120,31 @@
         <h1>🎮 遊戲題目上傳工具</h1>
         
         <div id="status" class="status"></div>
-        
+
         <form id="questionForm">
             <div class="form-group">
                 <label for="questionText">題目內容 *</label>
                 <textarea id="questionText" placeholder="請輸入題目..." required></textarea>
             </div>
-            
+
             <div class="form-group">
-                <label for="correctAnswer">正確答案 *</label>
-                <input type="text" id="correctAnswer" placeholder="請輸入正確答案..." required>
+                <label for="correctAnswer">正確答案索引 *</label>
+                <input type="number" id="correctAnswer" min="0" step="1" 
+                    placeholder="輸入正確答案的索引 (0 = 選項1, 1 = 選項2...)" required>
             </div>
-            
+
             <div class="form-group">
-                <label>選項 (可選，選擇題模式使用)</label>
+                <label for="correctAnswerText">正確答案文字 *</label>
+                <input type="text" id="correctAnswerText" placeholder="請輸入正確答案的中文，例如：選項2 = '跨站腳本攻擊'" required>
+            </div>
+
+
+            <div class="form-group">
+                <label>選項 *</label>
                 <div class="options-container" id="optionsContainer"></div>
                 <button type="button" id="addOptionBtn" class="info">新增選項</button>
             </div>
-            
+
             <div class="form-group">
                 <label for="level">等級 *</label>
                 <select id="level" required>
@@ -132,30 +153,30 @@
                     <option value="3">等級 3 (困難)</option>
                 </select>
             </div>
-            
+
             <div class="form-group">
                 <label for="category">分類</label>
                 <input type="text" id="category" placeholder="例如: javascript, html, css...">
             </div>
-            
+
             <div class="form-group">
                 <label for="points">分數</label>
                 <input type="number" id="points" value="10" min="1" max="100">
             </div>
-            
+
             <button type="submit" class="primary">新增/更新題目</button>
             <button type="button" id="clearFormBtn" class="secondary">清空表單</button>
             <button type="button" id="clearAllBtn" class="danger">清空所有題目</button>
         </form>
-        
+
         <h2>📋 已上傳的題目</h2>
         <div id="questionsList" class="question-list">載入中...</div>
     </div>
 
     <script>
         const API_BASE = 'http://localhost:3000/api/game';
-        
-        // DOM 元素
+
+        // DOM
         const questionForm = document.getElementById('questionForm');
         const optionsContainer = document.getElementById('optionsContainer');
         const addOptionBtn = document.getElementById('addOptionBtn');
@@ -164,47 +185,37 @@
         const questionsListDiv = document.getElementById('questionsList');
         const statusDiv = document.getElementById('status');
 
-        // --- UI 操作函式 ---
+        // --- UI 功能 ---
         const addOption = () => {
             const optionCount = optionsContainer.children.length + 1;
             const optionDiv = document.createElement('div');
             optionDiv.className = 'option-input';
             optionDiv.innerHTML = `
                 <input type="text" placeholder="選項 ${optionCount}" class="option-input-field">
-                <button type="button" class="danger">移除</button>
-            `;
-            // 為新產生的移除按鈕加上事件監聽
+                <button type="button" class="danger">移除</button>`;
             optionDiv.querySelector('button').addEventListener('click', (e) => removeOption(e.target));
             optionsContainer.appendChild(optionDiv);
         };
-
-        const removeOption = (button) => {
-            button.parentElement.remove();
-        };
-
+        const removeOption = (button) => { button.parentElement.remove(); };
         const showStatus = (message, type = 'success') => {
             statusDiv.className = `status ${type} show`;
             statusDiv.textContent = message;
-            
             clearTimeout(statusDiv.fadeTimeout);
-            statusDiv.fadeTimeout = setTimeout(() => {
-                statusDiv.classList.remove('show');
-            }, 3000);
+            statusDiv.fadeTimeout = setTimeout(() => { statusDiv.classList.remove('show'); }, 3000);
         };
-
         const clearForm = () => {
             questionForm.reset();
             optionsContainer.innerHTML = '';
             document.getElementById('level').value = "1";
             document.getElementById('points').value = "10";
         };
-        
+
         const renderQuestions = (questions) => {
-             if (questions.length === 0) {
+            if (questions.length === 0) {
                 questionsListDiv.innerHTML = '<p>目前沒有題目。</p>';
                 return;
             }
-            questionsListDiv.innerHTML = ''; // 清空列表
+            questionsListDiv.innerHTML = '';
             questions.forEach(q => {
                 const item = document.createElement('div');
                 item.className = 'question-item';
@@ -212,47 +223,50 @@
                     <div class="question-content">
                         <strong>(${q.q_code || q.id}) ${q.question}</strong>
                         <small>
-                            答案: ${q.correctAnswer} | 等級: ${q.level} | 分類: ${q.category || '無'} | 分數: ${q.points || 10}
+                            答案: ${q.correctanswer} | 索引: ${q.answer} | 等級: ${q.level} | 分類: ${q.category || '無'} | 分數: ${q.points || 10}
                             ${q.options && q.options.length > 0 ? `| 選項: ${q.options.join(', ')}` : ''}
                         </small>
                     </div>
                     <div class="action-buttons">
                         <button type="button" class="danger" data-id="${q.id}">刪除</button>
-                    </div>
-                `;
-                // 為刪除按鈕加上事件監聽
+                    </div>`;
                 item.querySelector('.danger').addEventListener('click', (e) => deleteQuestion(e.target.dataset.id));
                 questionsListDiv.appendChild(item);
             });
         };
 
-        // --- API 呼叫函式 ---
+        // --- API ---
         const loadQuestions = async () => {
             questionsListDiv.innerHTML = '<p>載入中...</p>';
             try {
                 const response = await fetch(`${API_BASE}/questions`);
                 const result = await response.json();
-                if (response.ok && result.success) {
-                    renderQuestions(result.data);
-                } else {
-                    showStatus(`載入題目失敗: ${result.message}`, 'error');
-                }
-            } catch (error) {
-                showStatus(`網路錯誤: ${error.message}`, 'error');
-            }
+                if (response.ok && result.success) renderQuestions(result.data);
+                else showStatus(`載入題目失敗: ${result.message}`, 'error');
+            } catch (error) { showStatus(`網路錯誤: ${error.message}`, 'error'); }
         };
-        
+
         const handleFormSubmit = async (e) => {
             e.preventDefault();
+
+            const options = Array.from(document.querySelectorAll('.option-input-field'))
+                .map(input => input.value.trim())
+                .filter(value => value);
+
+            const answerIndex = parseInt(document.getElementById('correctAnswer').value);
+            const correctAnswerText = document.getElementById('correctAnswerText').value.trim();
+
             const questionData = {
                 question: document.getElementById('questionText').value,
-                correctAnswer: document.getElementById('correctAnswer').value,
+                options: options,
+                answer: answerIndex,                 // ✅ 索引
+                correctanswer: correctAnswerText,    // ✅ 中文答案（你輸入的）
                 level: parseInt(document.getElementById('level').value),
-                category: document.getElementById('category').value.trim() || null,
                 points: parseInt(document.getElementById('points').value),
-                options: Array.from(document.querySelectorAll('.option-input-field'))
-                              .map(input => input.value.trim())
-                              .filter(value => value),
+                category: document.getElementById('category').value.trim() || null,
+                q_code: `${(document.getElementById('category').value || 'MISC').toUpperCase()}-L${document.getElementById('level').value}-${Date.now().toString().slice(-4)}${Math.floor(Math.random()*10)}`,
+                random: Math.random(),
+                uploadedBy: 'manual-input-v2'
             };
 
             try {
@@ -263,9 +277,8 @@
                 });
                 const result = await response.json();
                 if (response.ok && result.success) {
-                    showStatus(`題目新增成功！(ID: ${result.data.id}, Code: ${result.data.q_code})`, 'success');
-                    clearForm();
-                    loadQuestions();
+                    showStatus(`題目新增成功！(Code: ${result.data.q_code})`, 'success');
+                    clearForm(); loadQuestions();
                 } else {
                     showStatus(`錯誤: ${result.message || '新增失敗'}`, 'error');
                 }
@@ -279,41 +292,29 @@
             try {
                 const response = await fetch(`${API_BASE}/questions/${questionId}`, { method: 'DELETE' });
                 const result = await response.json();
-                if (response.ok && result.success) {
-                    showStatus(`題目 ${questionId} 已成功刪除`, 'success');
-                    loadQuestions();
-                } else {
-                    showStatus(`刪除失敗: ${result.message}`, 'error');
-                }
-            } catch (error) {
-                showStatus(`網路錯誤: ${error.message}`, 'error');
-            }
+                if (response.ok && result.success) { showStatus(`題目 ${questionId} 已刪除`, 'success'); loadQuestions(); }
+                else showStatus(`刪除失敗: ${result.message}`, 'error');
+            } catch (error) { showStatus(`網路錯誤: ${error.message}`, 'error'); }
         };
-        
+
         const clearAllQuestions = async () => {
-            if (!confirm('【警告】確定要清空所有題目嗎？此操作無法復原！')) return;
+            if (!confirm('⚠️ 確定要清空所有題目嗎？此操作無法復原！')) return;
             try {
                 const response = await fetch(`${API_BASE}/questions`, { method: 'DELETE' });
                 const result = await response.json();
-                if (response.ok && result.success) {
-                    showStatus('所有題目已成功清空', 'success');
-                    loadQuestions();
-                } else {
-                    showStatus(`清空失敗: ${result.message}`, 'error');
-                }
-            } catch (error) {
-                showStatus(`網路錯誤: ${error.message}`, 'error');
-            }
+                if (response.ok && result.success) { showStatus('所有題目已清空', 'success'); loadQuestions(); }
+                else showStatus(`清空失敗: ${result.message}`, 'error');
+            } catch (error) { showStatus(`網路錯誤: ${error.message}`, 'error'); }
         };
 
-        // --- 初始化 & 事件綁定 ---
+        // 初始化
         document.addEventListener('DOMContentLoaded', () => {
             loadQuestions();
             questionForm.addEventListener('submit', handleFormSubmit);
             addOptionBtn.addEventListener('click', addOption);
             clearFormBtn.addEventListener('click', clearForm);
             clearAllBtn.addEventListener('click', clearAllQuestions);
-            addOption(); // 預設新增一個選項欄位
+            addOption(); // 預設一個選項
         });
     </script>
 </body>

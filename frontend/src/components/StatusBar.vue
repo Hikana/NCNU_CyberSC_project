@@ -2,26 +2,20 @@
   <div class="top-bar status-bar">
 
     <div class="wall-bar"  @click="uiStore.toggleWallMenu()">
-      <div class="arrow-label">城牆防禦</div>
+      <div class="arrow-label">城牆防禦 🛡️</div>
       <div class="wall-info">
-        <span>{{ wallStore.defenseProgressText }}</span>
+        <span :style="{ color: wallStore.totalDefensePoints < 50 ? 'red' : '#ffffff' }">
+          {{ wallStore.defenseProgressText }}
+        </span>
       </div>
     </div>
 
     <div class="tech-bar">
-      <div class="arrow-label">科技點</div>
+      <div class="arrow-label">科技點 💰</div>
       <div class="tech-info">
-        <span>{{ playerStore.techPoints }} 個</span>
+        <span>{{ playerStore.techPoints }} </span>
       </div>
     </div>
-    <!--
-    <div class="clear-bar" @click="clearAllBuildings">
-      <div class="arrow-label">清除建築</div>
-      <div class="clear-info">
-        <span>🗑️</span>
-      </div>
-    </div>
-    -->
   </div>
 </template>
 
@@ -60,11 +54,10 @@ async function clearAllBuildings() {
 }
 
 .wall-bar,
-.tech-bar,
-.clear-bar {
+.tech-bar {
   display: flex;
   align-items: center;
-  background: #3947c2;
+  background: #68bce9;
   border-radius: 4px;
   padding: 0 10px;
   height: 60px;
@@ -72,16 +65,8 @@ async function clearAllBuildings() {
   cursor: pointer;
 }
 
-.clear-bar {
-  background: #c23939; /* 紅色背景表示危險操作 */
-}
-
-.clear-bar:hover {
-  background: #a02d2d; /* 懸停時更深的紅色 */
-}
-
 .arrow-label {
-  background: #68bce9;
+  background: #3947c2;
   color: #ffffff;
   padding: 8px 12px 8px 10px;
   clip-path: polygon(0 0, 100% 0, 85% 100%, 0% 100%);
@@ -93,11 +78,10 @@ async function clearAllBuildings() {
 }
 
 .tech-info span,
-.wall-info span,
-.clear-info span {
-  color: #ffffff;
+.wall-info span {
+  color: #000000;
   margin: 0 4px;
   font-size: 16px;
-  font-weight: bold;
+  font-weight: bolder; 
 }
 </style>

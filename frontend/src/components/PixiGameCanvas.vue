@@ -1,16 +1,14 @@
 <template>
   <div ref="pixiContainer" class="pixi-canvas"></div>
   
-  <!-- 建築放置提示 -->
   <div v-if="buildingStore.isPlacing" class="placement-ui">
     <div class="placement-info">
-      <p>選擇位置放置建築 (建築ID: {{ buildingStore.selectedBuildingId }})</p>
+      <p>選擇位置放置建築</p>
       <p v-if="buildingStore.selectedTile">
-        已選中: ({{ buildingStore.selectedTile.x }}, {{ buildingStore.selectedTile.y }})
+        選擇位置: ({{ buildingStore.selectedTile.x }}, {{ buildingStore.selectedTile.y }})
       </p>
-      <p style="color: orange;">點選地圖選擇位置</p>
+      <p style="color: orange;">請點擊地圖上的可建造土地</p>
     </div>
-    
     <div class="placement-controls">
       <button 
         v-if="buildingStore.selectedTile" 
@@ -24,55 +22,40 @@
       </button>
     </div>
   </div>
+
+  <!-- 刪除建築 UI -->
+  <div v-if="buildingStore.deleteTarget" class="delete-ui">
+    <div class="delete-panel">
+      <div class="title">刪除建築</div>
+      <div class="desc">位置 ({{ buildingStore.deleteTarget.x }}, {{ buildingStore.deleteTarget.y }})</div>
+      <div class="actions">
+        <button class="danger" @click="confirmDelete">刪除</button>
+        <button class="ghost" @click="cancelDelete">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 放置限制訊息（取代 alert） -->
+  <div v-if="buildingStore.placementMessage" class="toast">
+    {{ buildingStore.placementMessage }}
+  </div>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, nextTick, watch } from 'vue'
-import { usePlayerStore } from '@/stores/player'
-import { useBuildingStore } from '@/stores/buildings'
-import { useUiStore } from '@/stores/ui'
-import { useGameStore } from '@/stores/game'
-import { Game } from '@/game/Game.js'
+import { onMounted, onUnmounted, ref } from 'vue';
+import { useBuildingStore } from '@/stores/buildings';
+import { Game } from '@/game/Game.js';
 
-const pixiContainer = ref(null)
-const playerStore = usePlayerStore()
-const buildingStore = useBuildingStore()
-const uiStore = useUiStore()
-const gameStore = useGameStore()
-let gameInstance = null
-
-const emit = defineEmits(['closeNpcMenu'])
-
-// 監聽地圖變化，更新 IsoGrid
-watch(() => buildingStore.map, (newMap) => {
-  if (gameInstance && gameInstance.grid) {
-    gameInstance.grid.updateMapData(newMap);
-  }
-}, { deep: true });
+const pixiContainer = ref(null);
+const buildingStore = useBuildingStore();
+let gameInstance = null;
 
 onMounted(async () => {
   if (pixiContainer.value) {
-    // 建立遊戲實例，並將所有需要的 stores 傳入
-    gameInstance = new Game(pixiContainer.value, playerStore, uiStore, gameStore);
-    
-    // 在初始化完成後，設置建築放置的點擊處理
+    // 建立遊戲實例，它會自己處理所有事
+    gameInstance = new Game(pixiContainer.value);
     await gameInstance.init();
-    
-    // 設置建築放置的點擊處理
-    if (gameInstance.grid) {
-      gameInstance.grid.onTileClick = (row, col) => {
-        if (buildingStore.isPlacing) {
-          console.log('✅ 在放置模式下，處理瓦片選擇');
-          buildingStore.selectTile({ x: col, y: row });
-          gameInstance.grid.setSelectedTile(col, row);
-        } else {
-          console.log('❌ 不在放置模式，忽略點擊');
-        }
-      };
-      
-      // 重新繪製網格以啟用點擊事件
-      gameInstance.grid.drawGrid();
-    }
+    console.log('✅ PixiGameCanvas.vue: Game 引擎已啟動，並由 Game.js 自主管理');
   }
 });
 
@@ -82,31 +65,26 @@ onUnmounted(() => {
   }
 });
 
+// 這兩個方法只呼叫 store，非常乾淨
 function confirmPlacement() {
-  buildingStore.confirmPlacement().then(() => {
-    if (gameInstance && gameInstance.grid) {
-      // 清除選中狀態
-      gameInstance.grid.clearSelectedTile();
-      
-      // 更新地圖數據到 IsoGrid
-      gameInstance.grid.updateMapData(buildingStore.map);
-      
-      console.log('✅ 建築放置完成，地圖已更新');
-    }
-    emit('closeNpcMenu');
-  }).catch((error) => {
-    console.error('建築放置失敗:', error);
-  });
+  buildingStore.confirmPlacement();
 }
 
 function cancelPlacement() {
   buildingStore.setPlacementMode(false);
-  if (gameInstance && gameInstance.grid) {
-    gameInstance.grid.clearSelectedTile();
-  }
-  emit('closeNpcMenu');
+}
+
+function confirmDelete() {
+  const tgt = buildingStore.deleteTarget;
+  if (!tgt) return;
+  buildingStore.clearBuildingAt(tgt.x, tgt.y);
+}
+
+function cancelDelete() {
+  buildingStore.cancelDeletePrompt();
 }
 </script>
+
 
 <style scoped>
 .pixi-canvas {
@@ -124,6 +102,65 @@ function cancelPlacement() {
   display: block;
   width: 100% !important;
   height: 100% !important;
+}
+
+.delete-ui {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 200;
+}
+
+.delete-panel {
+  background: #a9b39ef3;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  min-width: 300px;
+}
+.delete-panel .title {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.delete-panel .desc {
+  color: #4b5563;
+  margin-bottom: 12px;
+}
+.delete-panel .actions { display: flex; gap: 10px; }
+.delete-panel .danger {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.delete-panel .danger:hover { background: #b91c1c; }
+.delete-panel .ghost {
+  background: #d3f1d7;
+  color: #111827;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.delete-panel .ghost:hover { background: #e5e7eb; }
+
+.toast {
+  position: absolute;
+  top: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111827;
+  color: #fff;
+  padding: 16px 22px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  z-index: 300;
+  max-width: 560px;
+  font-size: 18px;
+  line-height: 1.4; 
 }
 
 .placement-ui {

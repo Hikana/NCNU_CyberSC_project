@@ -1,5 +1,34 @@
 import * as PIXI from 'pixi.js'
 import grassImg from '@/assets/grass.png'
+import landImg from '@/assets/land.png'
+import { useBuildingStore } from '@/stores/buildings'
+import castleImg from '@/assets/can1.png'
+
+const CASTLE_TILES = new Set([
+  '0,0','0,1','0,2',
+  '1,0','1,1','1,2',
+  '2,0','2,1','2,2',
+])
+function isCastleTile(row, col) {
+  return CASTLE_TILES.has(`${row},${col}`)
+}
+
+// 計算城堡區域邊界與中心（供 3x3 單張圖定位）
+const CASTLE_BOUNDS = (() => {
+  const rows = []
+  const cols = []
+  CASTLE_TILES.forEach(key => {
+    const [r, c] = key.split(',').map(Number)
+    rows.push(r); cols.push(c)
+  })
+  const minRow = Math.min(...rows), maxRow = Math.max(...rows)
+  const minCol = Math.min(...cols), maxCol = Math.max(...cols)
+  return {
+    minRow, maxRow, minCol, maxCol,
+    centerRow: Math.round((minRow + maxRow) / 2),
+    centerCol: Math.round((minCol + maxCol) / 2)
+  }
+})()
 
 export class IsoGrid {
   constructor(app, rows, cols, tileSize = 150, onTileClick, mapData = null) {
@@ -15,16 +44,28 @@ export class IsoGrid {
     this.gridContainer = new PIXI.Container()
     // 允許依據 zIndex 排序，確保地圖元素可正確分層
     this.gridContainer.sortableChildren = true
+    // 分層：地面(草地) 與 物件(建築/互動)
+    this.groundContainer = new PIXI.Container()
+    this.objectContainer = new PIXI.Container()
+    this.groundContainer.sortableChildren = true
+    this.objectContainer.sortableChildren = true
+    this.groundContainer.zIndex = 0
+    this.objectContainer.zIndex = 1
+    // 物件層不攔截滑鼠事件，確保可點擊到地面格
+    this.objectContainer.eventMode = 'none'
     
     // 確保容器可以接收交互事件
     this.gridContainer.interactive = true
     this.gridContainer.eventMode = 'static'
     
     this.app.stage.addChild(this.gridContainer)
+    this.gridContainer.addChild(this.groundContainer)
+    this.gridContainer.addChild(this.objectContainer)
     
-    // 預載入建築與草地圖片
     this.loadBuildingTextures()
-    this.loadGrassTextures() // 內部載入完成後會自動觸發重繪
+    this.loadGrassTextures() 
+    this.loadLandTexture()
+    this.loadCastleTexture()
   }
   
   // 從 Graphics 對象創建紋理 (PixiJS v8 兼容)
@@ -55,21 +96,11 @@ export class IsoGrid {
         const img = new Image()
         img.crossOrigin = 'anonymous'
         
-                 img.onload = () => {
-           // 圖片載入完成後創建 PIXI 紋理
-           const texture = PIXI.Texture.from(img)
-           this.buildingTextures[id] = texture
-         }
-        
-        img.onerror = () => {
-          console.warn(`⚠️ 建築圖片 ${id} 載入失敗:`, imageUrl)
-          // 如果載入失敗，創建一個彩色矩形作為替代
-          const graphics = new PIXI.Graphics()
-          graphics.rect(0, 0, this.tileSize, this.tileSize)
-            .fill({ color: 0x00ff00 + (id * 0x111111) })
-          this.buildingTextures[id] = this.createTextureFromGraphics(graphics)
+        img.onload = () => {
+          // 圖片載入完成後創建 PIXI 紋理
+          const texture = PIXI.Texture.from(img)
+          this.buildingTextures[id] = texture
         }
-        
         img.src = imageUrl
         
       } catch (error) {
@@ -82,13 +113,16 @@ export class IsoGrid {
       }
     }
     
-    // 並行載入所有建築圖片
-    for (let i = 1; i <= 9; i++) {
-      importBuildingImage(i)
-    }
+    // 動態載入建築圖片，根據商店中定義的建築 ID
+    const buildingStore = useBuildingStore()
+    const buildingIds = buildingStore.shopBuildings.map(building => building.id)
+    
+    buildingIds.forEach(id => {
+      importBuildingImage(id)
+    })
   }
 
-  // 預載入草地圖片（放入 Assets 快取，避免警告）
+  // 預載入草地圖片
   async loadGrassTextures() {
     this.grassTextures = {}
     try {
@@ -99,11 +133,41 @@ export class IsoGrid {
         this.drawGrid()
       }
     } catch (e) {
+      console.warn('⚠️ 草地圖片載入失敗，使用後備方案:', e)
       // 後備：若載入失敗，仍以 Texture.from 建立
       this.grassTextures.grass = PIXI.Texture.from(grassImg)
       if (this.mapData) {
         this.drawGrid()
       }
+    }
+  }
+
+  async loadLandTexture() {
+    this.landTexture = null
+    try {
+      this.landTexture = await PIXI.Assets.load(landImg)
+    } catch (e) {
+      console.warn('⚠️ 地圖圖片載入失敗，使用後備方案:', e)
+      this.landTexture = PIXI.Texture.from(landImg)
+    }
+    // 載入完成後重繪
+    if (this.mapData) {
+      this.drawGrid()
+    }
+  }
+  
+  // 預載入城堡圖片
+  async loadCastleTexture() {
+    this.castleTexture = null
+    try {
+      this.castleTexture = await PIXI.Assets.load(castleImg)
+    } catch (e) {
+      console.warn('⚠️ 城堡圖片載入失敗，使用後備方案:', e)
+      this.castleTexture = PIXI.Texture.from(castleImg)
+    }
+    // 載入完成後重繪
+    if (this.mapData) {
+      this.drawGrid()
     }
   }
 
@@ -117,17 +181,10 @@ export class IsoGrid {
       for (let col = 0; col < this.cols; col++) {
         const distanceFromCenter = Math.max(Math.abs(row - center), Math.abs(col - center))
 
-        // 預設為空地
-        let tileType = 'empty'
-        
-        // 在特定位置放置草地
-        if ((row === 1 && col === 1) || (row === 1 && col === 2) || (row === 1 && col === 3) || (row === 2 && col === 1) || (row === 2 && col === 2) || (row === 2 && col === 3) || (row === 3 && col === 1) || (row === 3 && col === 2) || (row === 3 && col === 3)) {
-          tileType = 'grass'
-        }
-
-        map[row][col] = { 
-          type: tileType,
-          explored: distanceFromCenter <= 6  // 內圈預設可開發，外圈未知
+        // 初始化：依 CASTLE_TILES 清單標記城堡，其餘鋪草地
+        map[row][col] = {
+          type: isCastleTile(row, col) ? 'castle' : 'grass',
+          explored: distanceFromCenter <= 6
         }
       }
     }
@@ -135,76 +192,54 @@ export class IsoGrid {
   }
 
 
-  updateMapData(newMapData) {
-    console.log('更新地圖數據:', newMapData)
-    this.mapData = newMapData
-    this.drawGrid()
-  }
 
-
-  setSelectedTile(x, y) {
-    this.selectedTile = { x, y };
+  updateMapData(newMapData) { 
+    if (!newMapData || Object.keys(newMapData).length === 0) return;
+    this.mapData = newMapData;
     this.drawGrid();
   }
 
-  clearSelectedTile() {
-    this.selectedTile = null;
-    this.drawGrid();
-  }
+  setSelectedTile(x, y) { this.selectedTile = { x, y }; this.drawGrid(); }
+  clearSelectedTile() { this.selectedTile = null; this.drawGrid(); }
 
-
-  revealTile(row, col) {
+  revealTile(row, col) { 
     if (this.mapData[row] && this.mapData[row][col]) {
       this.mapData[row][col].explored = true
       this.drawGrid()
     }
   }
   
+  // 在 drawGrid 方法中修正點擊區域問題
   drawGrid() {
-    
     // 清除現有網格
-    this.gridContainer.removeChildren()
+    this.groundContainer.removeChildren()
+    this.objectContainer.removeChildren()
 
     const halfW = this.tileSize / 2
     const halfH = this.tileSize / 4
 
+    // 第一階段：繪製所有草地
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
-        // 將格子繪製在世界座標系原點，交給 worldContainer 做置中/鏡頭移動
         const x = (col - row) * halfW
         const y = (col + row) * halfH
 
-        // 創建瓦片容器
-        const tileContainer = new PIXI.Container()
-        tileContainer.x = x
-        tileContainer.y = y
-        // 等角深度：row+col 越大越靠下；讓子元素可排序
-        tileContainer.zIndex = row + col
-        tileContainer.sortableChildren = true
+        // 創建地面瓦片容器
+        const groundTileContainer = new PIXI.Container()
+        groundTileContainer.sortableChildren = true
+        groundTileContainer.x = x
+        groundTileContainer.y = y
+        groundTileContainer.zIndex = row + col
 
-        const tile = new PIXI.Graphics()
-        const cell = this.mapData[row][col]
-
-        let color = 0xffffff
-        let alpha = 0.3
-        
+        const cell = this.mapData[row]?.[col] || { status: 'locked' }
         
         // 檢查是否為選中的瓦片
         const isSelected = this.selectedTile && this.selectedTile.x === col && this.selectedTile.y === row;
-        
-        // 檢查是否為草地瓦片
-        if (cell.type === 'grass') {
-          const tex = this.grassTextures && this.grassTextures.grass;
-          if (!tex) { this.gridContainer.addChild(tileContainer); continue; }
-        
-         const grass1 = new PIXI.Sprite(tex);
-          grass1.anchor.set(0.5, 0.5);
-          const coverageScale = 2.0; // 確保完全覆蓋
-          grass1.width = this.tileSize * coverageScale;
-          grass1.height = this.tileSize * coverageScale;
 
-          const mask1 = new PIXI.Graphics();
-          mask1
+        // 先鋪草地作為地面（每格都鋪，包括城堡格）
+        if (this.grassTextures && this.grassTextures.grass) {
+          const mask = new PIXI.Graphics();
+          mask
             .moveTo(0, -halfH)
             .lineTo(halfW, 0)
             .lineTo(0, halfH)
@@ -212,119 +247,158 @@ export class IsoGrid {
             .closePath()
             .fill(0xffffff);
 
-          tileContainer.addChild(grass1);
-          tileContainer.addChild(mask1);
-          grass1.mask = mask1;
-        
-          this.gridContainer.addChild(tileContainer);
-          continue;
+          const grass = new PIXI.Sprite(this.grassTextures.grass);
+          grass.anchor.set(0.5, 0.5);
+          const coverageScale = 2.0;
+          grass.width = this.tileSize * coverageScale;
+          grass.height = this.tileSize * coverageScale;
+          grass.mask = mask; 
+          grass.zIndex = 1;
+          
+          groundTileContainer.addChild(mask);
+          groundTileContainer.addChild(grass);
+
+          if (cell.status === 'locked' && this.landTexture) {
+            const mask2 = new PIXI.Graphics();
+            mask2
+              .moveTo(0, -halfH)
+              .lineTo(halfW, 0)
+              .lineTo(0, halfH)
+              .lineTo(-halfW, 0)
+              .closePath()
+              .fill(0xffffff);
+
+            const landCover = new PIXI.Sprite(this.landTexture);
+            landCover.anchor.set(0.51, 0.36);
+            const coverageScale2 = 2.5;
+            landCover.width = this.tileSize * coverageScale2;
+            landCover.height = this.tileSize * coverageScale2;
+            landCover.mask = mask2; 
+            landCover.zIndex = 2;  
+
+            groundTileContainer.addChild(mask2);
+            groundTileContainer.addChild(landCover);
+          }
         }
+
+        // 只為非城堡格子創建可互動區域
+        if (cell.type !== 'castle') {
+          const tile = new PIXI.Graphics();
+          tile
+            .moveTo(0, -halfH)
+            .lineTo(halfW, 0)
+            .lineTo(0, halfH)
+            .lineTo(-halfW, 0)
+            .closePath()
+            .stroke({ width: 1, color: 0xcccccc, alpha: 0.3})
+            .fill({ color: 0xffffff, alpha: 0 });
+          tile.zIndex = 2;
+          groundTileContainer.addChild(tile);
+
+          // 設置點擊區域和事件
+          groundTileContainer.hitArea = new PIXI.Rectangle(-halfW, -halfH, this.tileSize, this.tileSize);
+          groundTileContainer.eventMode = 'static';
+          groundTileContainer.interactive = true;
+          groundTileContainer.cursor = 'pointer';
+
+          // 綁定點擊事件
+          groundTileContainer.on('pointertap', () => {
+            if (this.onTileClick) {
+              this.onTileClick(row, col);
+            }
+          });
+
+          // hover 效果
+          groundTileContainer.on('pointerover', () => { tile.tint = 0xdddddd; });
+          groundTileContainer.on('pointerout', () => { tile.tint = 0xffffff; });
+        }
+
+        // 如果是選中的瓦片，添加邊框
+        if (isSelected) {
+          const highlight = new PIXI.Graphics();
+          highlight
+            .moveTo(0, -halfH)
+            .lineTo(halfW, 0)
+            .lineTo(0, halfH)
+            .lineTo(-halfW, 0)
+            .closePath()
+            .stroke({ width: 3, color: 0x00ff00, alpha: 1 });
+          
+          highlight.zIndex = 10;
+          groundTileContainer.addChild(highlight);
+        }
+
+        this.groundContainer.addChild(groundTileContainer);
+      }
+    }
+
+    // 第二階段：繪製城堡（城堡圖片的 zIndex 要低於點擊區域）
+    const castleCenterRow = CASTLE_BOUNDS.centerRow
+    const castleCenterCol = CASTLE_BOUNDS.centerCol
+    
+    if (this.castleTexture) {
+      const castleContainer = new PIXI.Container()
+      castleContainer.sortableChildren = true
+      // 確保城堡不攔截點擊事件
+      castleContainer.eventMode = 'none'
+      
+      const castleX = (castleCenterCol - castleCenterRow) * halfW
+      const castleY = (castleCenterCol + castleCenterRow) * halfH
+      
+      castleContainer.x = castleX
+      castleContainer.y = castleY
+      
+      const offsetX = this.tileSize * 0.1
+      castleContainer.x -= offsetX
+
+      const castle = new PIXI.Sprite(this.castleTexture)
+      castle.eventMode = 'none'
+      castle.anchor.set(0.5, 0.55)
+      const castleScale = 2.5
+      castle.width = this.tileSize * 3 * castleScale
+      castle.height = this.tileSize * 2 * castleScale
+      castle.zIndex = 5 // 城堡在建築層
+      
+      castleContainer.addChild(castle)
+      this.objectContainer.addChild(castleContainer)
+    }
+
+    // 第三階段：繪製其他建築（保持不變）
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.cols; col++) {
+        const cell = this.mapData[row][col]
         
-        // 檢查是否為建築瓦片
-        if (cell.type === 'building') {
-          // 建築瓦片：顯示建築圖片
-          const buildingId = cell.buildingId || 1 // 默認使用建築1
+        if (cell.status === 'placed' && cell.item) {
+          const x = (col - row) * halfW
+          const y = (col + row) * halfH
+
+          const buildingContainer = new PIXI.Container()
+          buildingContainer.sortableChildren = true
+          buildingContainer.x = x
+          buildingContainer.y = y
+          buildingContainer.zIndex = row + col + 50
+
+          const buildingId = cell.item
           const buildingTexture = this.buildingTextures[buildingId]
           
           if (buildingTexture) {
             const buildingSprite = new PIXI.Sprite(buildingTexture)
             buildingSprite.zIndex = 5
             
-            // 計算合適的尺寸，保持比例
             const originalWidth = buildingTexture.width
             const originalHeight = buildingTexture.height
             const scale = Math.min(this.tileSize / originalWidth, this.tileSize / originalHeight)
             
             buildingSprite.width = originalWidth * scale
             buildingSprite.height = originalHeight * scale
-            buildingSprite.anchor.set(0.5, 0.5) // 設置錨點為中心
+            buildingSprite.anchor.set(0.5, 0.8)
+            buildingSprite.y = halfH * 0.1
             
-            
-            // 將建築精靈添加到容器
-            tileContainer.addChild(buildingSprite)
-            
-            // 將建築瓦片容器添加到網格容器
-            this.gridContainer.addChild(tileContainer)
-            
-            // 建築瓦片不需要基礎菱形，直接跳過
-            continue
-          } else {
-            // 如果圖片還沒載入完成，顯示彩色矩形作為佔位符
-            const placeholder = new PIXI.Graphics()
-            placeholder.rect(-halfW, -halfH, this.tileSize, this.tileSize)
-              .fill({ color: 0x00ff00 + (buildingId * 0x111111) })
-            tileContainer.addChild(placeholder)
-            continue
+            buildingContainer.addChild(buildingSprite)
+            this.objectContainer.addChild(buildingContainer)
           }
         }
-        
-        // 非建築瓦片：繪製菱形
-        if (isSelected) {
-          color = 0x00ff00  // 選中的瓦片使用綠色
-          alpha = 0.7
-        }
-
-        // 繪製菱形瓦片
-        tile
-          .moveTo(0, -halfH)   // 上
-          .lineTo(halfW, 0)    // 右
-          .lineTo(0, halfH)    // 下
-          .lineTo(-halfW, 0)   // 左
-          .closePath()
-          .stroke({ width: 1, color: 0xcccccc, alpha: 0.6 })
-          .fill({ color: color, alpha: alpha });
-
-          tileContainer.hitArea = new PIXI.Rectangle(-halfW, -halfH, this.tileSize, this.tileSize)
-          tileContainer.eventMode = 'static'
-          tileContainer.interactive = true
-          tileContainer.cursor = 'pointer'
-        
-
-        // 如果是選中的瓦片，添加邊框
-        if (isSelected) {
-          const border = new PIXI.Graphics();
-          border
-            .moveTo(0, -halfH)
-            .lineTo(halfW, 0)
-            .lineTo(0, halfH)
-            .lineTo(-halfW, 0)
-            .closePath()
-            .stroke({ width: 3, color: 0x00ff00, alpha: 1 }); 
-          tileContainer.addChild(border);
-        }
-
-        tileContainer.addChild(tile);
-
-        // 滑鼠事件：僅在允許滑鼠時綁定
-        
-          tileContainer.on('pointertap', () => {
-            if (!cell.explored) {
-              tileContainer.on('pointerover', () => { tile.tint = 0xdddddd })
-              tileContainer.on('pointerout', () => { tile.tint = 0xffffff })
-              if (this.onTileClick) {
-                this.onTileClick(row, col, false)
-              }
-            } else {
-              if (this.onTileClick) {
-                this.onTileClick(row, col, true)
-              }
-            }
-          })
-        
-
-
-
-
-        
-          tileContainer.on('pointerover', () => { tile.tint = 0xdddddd })
-          tileContainer.on('pointerout', () => { tile.tint = 0xffffff })
-        
-
-        this.gridContainer.addChild(tileContainer);
       }
     }
   }
-
-  
-
 }

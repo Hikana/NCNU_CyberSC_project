@@ -1,25 +1,33 @@
+// backend/server.js
 const express = require('express');
 const cors = require('cors');
-// 引入所有路由
+
+
+
+
+// 1. 確保 Firebase 在伺服器啟動時就被初始化
+require('./config/firebase');
+
+const app = express();
+const port = 3000;
+
+// 2. 引入遊戲(答題)與建築(地圖)路由
 const gameRoutes = require('./routes/gameRoutes');
-const buildingRoutes = require('./routes/buildingRoutes');
+//const buildingRoutes = require('./routes/buildingRoutes');
 const playerRoutes = require('./routes/playerRoutes');
 const inventoryRoutes = require('./routes/inventory');
 
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
+// 中介軟體 (Middleware)
+app.use(express.json()); // 讓 Express 能解析 JSON 格式的請求內容
+app.use(cors());       // 允許跨來源請求，這樣前端才能呼叫後端
 app.use(express.static('public'));
 
-// 掛載路由
-// 所有遊戲、題目、歷史紀錄相關的 API 都會是 /api/game/...
+// 3. 註冊 API 路由
+// 答題/題庫
 app.use('/api/game', gameRoutes);
-// 所有建築、地圖相關的 API 都會是 /api/buildings/...
-app.use('/api/buildings', buildingRoutes);
+// 地圖/建築（語義清楚）
+//app.use('/api/buildings', buildingRoutes);
 // 玩家與背包
 app.use('/api/players', playerRoutes);
 //工具
@@ -43,7 +51,7 @@ app.use((err, req, res, next) => {
 });
 
 // 啟動伺服器
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-  console.log(`Upload tool: http://localhost:${PORT}/upload.html`);
+app.listen(port, () => {
+  console.log(`🚀 Server is running on port ${port}`);
+  console.log(`Upload tool: http://localhost:${port}/upload.html`);
 });

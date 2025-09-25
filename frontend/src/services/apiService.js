@@ -1,71 +1,74 @@
-const API_BASE_URL = 'http://localhost:3000/api/game';
-const PLAYER_BASE_URL = 'http://localhost:3000/api/players';
+const API_BASE = "http://localhost:3000/api/game";
+const PLAYER_BASE_URL = "http://localhost:3000/api/players";
 
-/**
- * 統一處理 fetch 請求的函式
- * @param {string} endpoint - API 的路徑, 例如 '/questions'
- * @param {object} options - fetch 的設定物件
- * @returns {Promise<any>} - 回傳 API 的 data 部分
- */
-async function request(endpoint, options = {}) {
+async function request(url, options = {}) {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-    const result = await response.json();
+    const response = await fetch(`${API_BASE}${url}`, {
+      method: options.method || "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
 
-   
-    if (!response.ok || !result.success) {
-      throw new Error(result.message || 'API 請求失敗');
+    if (!response.ok) {
+      throw new Error(`API 請求失敗 (狀態碼: ${response.status})`);
     }
-    return result.data;
+
+    return await response.json();
   } catch (error) {
-    console.error(`API 請求錯誤 at ${endpoint}:`, error);
-    throw error; // 將錯誤繼續向上拋出，讓呼叫者可以處理
+    console.error(`API 請求錯誤 at ${url}:`, error);
+    throw error;
   }
 }
 
-// 導出所有前端會用到的 API 函式
 export const apiService = {
-  /**
-   * 取得一筆隨機題目
-   * @param {number} level - 題目的等級
-   */
-  getRandomQuestion: (level = 1) => {
-    return request(`/questions/random?level=${level}`);
-  },
-  
-  /**
-   * 驗證答案
-   * @param {string} questionId - 題目 ID
-   * @param {string} answer - 使用者答案
-   */
-  validateAnswer: (questionId, answer) => {
-    return request(`/questions/${questionId}/validate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answer }),
-    });
-  },
-  // --- 新增：答題紀錄 API ---
-  
-  /**
-   * 獲取所有答題紀錄
-   */
-  getHistory: () => {
-    return request('/history');
-  },
+  // --- 答題相關 ---
+  getRandomQuestion: () => request('/random-question'),
 
-  /**
-   * 新增一筆答題紀錄
-   * @param {object} entryData - 要新增的紀錄物件
-   */
-  addHistoryEntry: (entryData) => {
-    return request('/history', {
+  submitAnswer: (userId, questionId, answer) =>
+    request('/submit-answer', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(entryData),
-    });
-  },
-  // --- 新增：玩家背包 API ---
+      body: { userId, questionId, answer }, // 一定要帶 userId
+    }),
+
+  validateAnswer: (questionId, answer) =>
+    request(`/questions/${questionId}/validate`, {
+      method: 'POST',
+      body: { answer },
+    }),
+
+  // --- 地圖功能 ---
+  getMap: () => request('/map'),
+
+  placeBuilding: (buildingId, position) =>
+    request('/place-building', {
+      method: 'POST',
+      body: { buildingId, position },
+    }),
+
+  unlockTile: (position) =>
+    request('/unlock-tile', {
+      method: 'POST',
+      body: { position },
+    }),
+
+  clearBuilding: (position) =>
+    request('/clear-building', {
+      method: 'POST',
+      body: { position },
+    }),
+
+  // --- 歷史紀錄 ---
+  getHistory: () => request('/history'),
+
+  addHistoryEntry: (entryData) =>
+    request('/history', {
+      method: 'POST',
+      body: entryData,
+    }),
+
+  // --- 玩家背包 API ---
   getInventory: (userId) => {
     return fetch(`${PLAYER_BASE_URL}/${encodeURIComponent(userId)}/inventory`)
       .then(async (res) => {
@@ -74,6 +77,7 @@ export const apiService = {
         return json.data;
       });
   },
+
   setInventory: (userId, items) => {
     return fetch(`${PLAYER_BASE_URL}/${encodeURIComponent(userId)}/inventory`, {
       method: 'POST',

@@ -44,24 +44,29 @@ async function uploadQuestions() {
     const docRef = questionsCollection.doc();
 
     // --- 建立符合新架構的資料物件 ---
-    const q_code = `${q.category || 'MISC'}-L${q.level}-${Date.now().toString().slice(-4)}${Math.floor(Math.random()*10)}`;
+    //const q_code = `${q.category || 'MISC'}-L${q.level}-${Date.now().toString().slice(-4)}${Math.floor(Math.random()*10)}`;
 
     const questionData = {
       question: q.question,
-      correctAnswer: q.correctAnswer, // 欄位名對齊
-      level: parseInt(q.level || 1), // 確保是數字
-      points: parseInt(q.points || 10), // 確保是數字
+
+      // ✅ 存索引（程式判斷正確性用）
+      answer: parseInt(q.answer),
+
+      // ✅ 存中文正解（方便人工檢視用）
+      correctanswer: q.correctanswer,
+
+      level: parseInt(q.level || 1),
+      points: parseInt(q.points || 10),
       category: q.category || null,
-      
-      // 動態處理選項，過濾掉空的儲存格
+
       options: [q.option1, q.option2, q.option3, q.option4].filter(opt => opt != null && opt !== ''),
-      
-      // 新增的重要欄位
-      q_code: q_code,
+
+      q_code: `${q.category || 'MISC'}-L${q.level}-${Date.now().toString().slice(-4)}${Math.floor(Math.random()*10)}`,
       random: Math.random(),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       uploadedBy: 'excel-script-v2'
     };
+
     
     // 將 set 操作加入批次中
     batch.set(docRef, questionData);
