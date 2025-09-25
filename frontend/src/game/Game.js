@@ -51,7 +51,7 @@ export class Game {
     await this.buildingStore.loadMap();
 
     this._createMap();
-    this._createPlayer();
+    await this._createPlayer();
     this._setupControls();
     this._setupWatchers(); // 啟用響應式監聽
     
@@ -79,22 +79,51 @@ export class Game {
    * 遊戲主循環，每一幀都會執行
    */
   _gameLoop(delta) { 
-    const speed = 5 * delta;
-    let { x, y } = this.playerStore.position;
-    let hasMoved = false;
+    // 計算移動速度：5 為基礎速度，delta 為每幀的時間倍率（由 PIXI/Ticker 提供，確保不同 FPS 下移動一致）
+    const speed = 5 * delta;
 
-    if (this.keys['ArrowUp'] || this.keys['KeyW']) { y -= speed; hasMoved = true; }
-    if (this.keys['ArrowDown'] || this.keys['KeyS']) { y += speed; hasMoved = true; }
-    if (this.keys['ArrowLeft'] || this.keys['KeyA']) { x -= speed; hasMoved = true; }
-    if (this.keys['ArrowRight'] || this.keys['KeyD']) { x += speed; hasMoved = true; }
-    
-    if (hasMoved) {
-      this.playerStore.updatePosition({ x, y });
-    }
-    
-    if (this.player) this.player.update();
-    this._updateCamera();
-  }
+    // 從玩家狀態儲存 (playerStore) 取得目前座標
+    let { x, y } = this.playerStore.position;
+
+    // 記錄這一幀玩家是否有移動
+    let hasMoved = false;
+
+    // 依據按鍵狀態判斷方向並更新座標
+    if (this.keys['ArrowUp'] || this.keys['KeyW']) { 
+        y -= speed;      // 上移
+        hasMoved = true; // 標記有移動
+    }
+    if (this.keys['ArrowDown'] || this.keys['KeyS']) { 
+        y += speed;      // 下移
+        hasMoved = true;
+    }
+    if (this.keys['ArrowLeft'] || this.keys['KeyA']) { 
+        x -= speed;      // 左移
+        hasMoved = true;
+    }
+    if (this.keys['ArrowRight'] || this.keys['KeyD']) { 
+        x += speed;      // 右移
+        hasMoved = true;
+    }
+    
+    // 如果有移動，就更新玩家位置到 store（通常會觸發畫面重繪或狀態同步）
+    if (hasMoved) {
+        this.playerStore.updatePosition({ x, y });
+    }
+
+    // 如果玩家角色物件存在，更新角色的動畫/狀態
+    if (this.player) {
+        this.player.setMoving(hasMoved); // 設定角色是否處於移動狀態 (控制走路動畫)
+        this.player.update();            // 執行角色更新邏輯 (例如動畫幀、碰撞檢測)
+    }
+
+    // 更新攝影機位置，讓畫面跟著玩家移動
+    this._updateCamera();
+}
+
+
+
+
 
   /**
    * 更新攝影機位置以跟隨玩家
