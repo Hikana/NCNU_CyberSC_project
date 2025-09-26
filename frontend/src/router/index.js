@@ -4,6 +4,7 @@ import GamePage from '../components/GamePage.vue'
 
 const routes = [
   { path: '/', component: HomePage },
+  { path: '/home', component: HomePage },
   { path: '/game', component: GamePage }
 ]
 
