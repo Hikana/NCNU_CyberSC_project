@@ -138,6 +138,10 @@
                 <input type="text" id="correctAnswerText" placeholder="請輸入正確答案的中文，例如：選項2 = '跨站腳本攻擊'" required>
             </div>
 
+            <div class="form-group">
+                <label for="description">題目解釋 *</label>
+                <textarea id="description" placeholder="請輸入題目的詳細描述或解釋..." required></textarea>
+            </div>
 
             <div class="form-group">
                 <label>選項 *</label>
@@ -146,22 +150,8 @@
             </div>
 
             <div class="form-group">
-                <label for="level">等級 *</label>
-                <select id="level" required>
-                    <option value="1">等級 1 (簡單)</option>
-                    <option value="2">等級 2 (中等)</option>
-                    <option value="3">等級 3 (困難)</option>
-                </select>
-            </div>
-
-            <div class="form-group">
                 <label for="category">分類</label>
                 <input type="text" id="category" placeholder="例如: javascript, html, css...">
-            </div>
-
-            <div class="form-group">
-                <label for="points">分數</label>
-                <input type="number" id="points" value="10" min="1" max="100">
             </div>
 
             <button type="submit" class="primary">新增/更新題目</button>
@@ -206,8 +196,6 @@
         const clearForm = () => {
             questionForm.reset();
             optionsContainer.innerHTML = '';
-            document.getElementById('level').value = "1";
-            document.getElementById('points').value = "10";
         };
 
         const renderQuestions = (questions) => {
@@ -223,7 +211,7 @@
                     <div class="question-content">
                         <strong>(${q.q_code || q.id}) ${q.question}</strong>
                         <small>
-                            答案: ${q.correctanswer} | 索引: ${q.answer} | 等級: ${q.level} | 分類: ${q.category || '無'} | 分數: ${q.points || 10}
+                            答案: ${q.correctanswer} | 索引: ${q.answer} | 分類: ${q.category || '無'} | 解釋: ${q.description || '無'}
                             ${q.options && q.options.length > 0 ? `| 選項: ${q.options.join(', ')}` : ''}
                         </small>
                     </div>
@@ -255,18 +243,18 @@
 
             const answerIndex = parseInt(document.getElementById('correctAnswer').value);
             const correctAnswerText = document.getElementById('correctAnswerText').value.trim();
+            const description = document.getElementById('description').value.trim();
 
             const questionData = {
                 question: document.getElementById('questionText').value,
                 options: options,
                 answer: answerIndex,                 // ✅ 索引
                 correctanswer: correctAnswerText,    // ✅ 中文答案（你輸入的）
-                level: parseInt(document.getElementById('level').value),
-                points: parseInt(document.getElementById('points').value),
+                description: description,            // ✅ 題目描述
                 category: document.getElementById('category').value.trim() || null,
-                q_code: `${(document.getElementById('category').value || 'MISC').toUpperCase()}-L${document.getElementById('level').value}-${Date.now().toString().slice(-4)}${Math.floor(Math.random()*10)}`,
+                q_code: `${(document.getElementById('category').value || 'MISC').toUpperCase()}-${Date.now().toString().slice(-4)}${Math.floor(Math.random()*100)}`,
                 random: Math.random(),
-                uploadedBy: 'manual-input-v2'
+                uploadedBy: 'manual-input-v3'
             };
 
             try {

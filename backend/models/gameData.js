@@ -26,9 +26,9 @@ class GameData {
   async addQuestion(questionData) {
     try {
       const category = questionData.category || 'misc';
-      const level = questionData.level || 0;
-      const timestamp = Date.now().toString().slice(-5);
-      const q_code = `${category.toUpperCase()}-L${level}-${timestamp}`;
+      const timestamp = Date.now().toString().slice(-4);
+      const randomNum = Math.floor(Math.random() * 100);
+      const q_code = `${category.toUpperCase()}-${timestamp}${randomNum}`;
 
       const docRef = await this.questionsCollection.add({
         ...questionData,

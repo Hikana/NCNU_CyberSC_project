@@ -20,7 +20,7 @@
 
         <!-- 顯示玩家答案 - 修正欄位名稱 -->
         <p class="answer">你的答案: {{ entry.yourAnswer || entry.userAnswer || '未知' }}</p>
-
+        <p class="answer">解釋: {{ entry.description}}</p>
         <!-- 錯誤才顯示正確答案 -->
         <p v-if="!entry.isCorrect" class="correct-answer">
           正確答案: {{ entry.correctAnswer }}

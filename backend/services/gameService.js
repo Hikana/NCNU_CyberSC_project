@@ -64,11 +64,13 @@ class GameService {
         answeredCount: FieldValue.increment(1)
       });
     }
+    const description=question.description;
     const correctAnswerText = question.options[question.answer] || '未知';
     // 無論對錯，都建立一筆歷史紀錄
     const newHistory = await gameData.addHistoryEntry({
         userId,
         questionId,
+        description,
         correctAnswer: correctAnswerText,
         questionTitle: question.question,
         userAnswer: question.options[userAnswerIndex] || '無效選擇',
@@ -76,7 +78,7 @@ class GameService {
     });
 
     // 將包含新紀錄的完整結果回傳給前端
-    return { isCorrect, correctAnswer: question.options[question.answer], userAnswer: question.options[userAnswerIndex],newHistory };
+    return { isCorrect, correctAnswer: question.options[question.answer],description, userAnswer: question.options[userAnswerIndex],newHistory };
   }
 
   // --- 世界/地圖相關 ---

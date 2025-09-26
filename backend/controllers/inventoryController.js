@@ -1,4 +1,4 @@
-const { db, admin } = require('../firebase/admin');
+const { db, admin } = require('../firebase/firebase-adminsdk.json');
 
 
 
