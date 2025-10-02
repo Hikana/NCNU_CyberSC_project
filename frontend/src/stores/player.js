@@ -24,10 +24,11 @@ export const usePlayerStore = defineStore('player', () => {
   /**
    * 玩家在遊戲世界中的邏輯座標
    * 由 PixiJS 的遊戲循環 (gameLoop) 負責更新
+   * 初始位置設在網格 (3, 3) 避免在城堡區域內
    */
   const position = reactive({
-    x: 0,
-    y: 0
+    x: 0, // 等角座標 X，將在遊戲初始化時設置
+    y: 0  // 等角座標 Y，將在遊戲初始化時設置
   });
   
   const correctlyAnsweredCount = ref(0); // 記錄答對總題數
