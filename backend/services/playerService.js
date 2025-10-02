@@ -8,6 +8,9 @@ class PlayerService {
   async setInventory(userId, items) {
     return playerData.setInventory(userId, items);
   }
+  async getPlayer(userId){
+    return playerData.getPlayer(userId);
+  }
 }
 
 module.exports = new PlayerService();

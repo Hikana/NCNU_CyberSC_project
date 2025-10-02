@@ -1,5 +1,5 @@
 const gameService = require('../services/gameService');
-const questionService = require('../services/questionService');
+
 
 // 這是一個小幫手函式，用來自動捕捉非同步函式中的錯誤，讓我們的程式碼更乾淨
 const asyncHandler = (fn) => (req, res, next) => {
@@ -7,17 +7,16 @@ const asyncHandler = (fn) => (req, res, next) => {
 };
 
 class GameController {
-  constructor() {
-    // 為了方便，我們先預設一個測試用玩家 ID
-    this.getUserId = (req) => req.query.userId || 'test-user';
-  }
+  
+  
 
   /**
    * 處理「獲取隨機題目」的請求（遊戲用）
    * 使用 GameService 以維持與 submitAnswer 相容的題目格式
    */
   getRandomQuestion = asyncHandler(async (req, res) => {
-    const data = await gameService.getRandomQuestion(this.getUserId(req));
+    const userId = req.user.uid; 
+    const data = await gameService.getRandomQuestion(userId);
     res.status(200).json({ success: true, data });
   });
 
@@ -25,9 +24,10 @@ class GameController {
    * 處理「提交答案」的請求 - 只使用 GameService 記錄
    */
   submitAnswer = asyncHandler(async (req, res) => {
+    const userId = req.user.uid;
     console.log("收到的 req.body:", req.body);
     const { questionId, answer } = req.body;
-    const userId = req.body.userId || this.getUserId(req);
+    
 
     try {
       const result = await gameService.validateAnswer(userId, questionId, answer);
@@ -40,6 +40,7 @@ class GameController {
         question: result.question,
         userAnswer: result.userAnswer,
         yourAnswer: result.yourAnswer,
+        description: result.description,
         newHistory: result.newHistory,
         gameData: result
       });
@@ -57,7 +58,8 @@ class GameController {
    * 處理「獲取地圖」的請求
    */
   getMap = asyncHandler(async (req, res) => {
-    const data = await gameService.getMapState(this.getUserId(req));
+    const userId = req.user.uid;
+    const data = await gameService.getMapState(userId);
     res.status(200).json({ success: true, data });
   });
 
@@ -65,8 +67,9 @@ class GameController {
    * 處理「放置建築」的請求
    */
   placeBuilding = asyncHandler(async (req, res) => {
+    const userId = req.user.uid;
     const { buildingId, position } = req.body;
-    const data = await gameService.placeBuilding(this.getUserId(req), buildingId, position);
+    const data = await gameService.placeBuilding(userId, buildingId, position);
     res.status(200).json({ success: true, data });
   });
 
@@ -74,8 +77,9 @@ class GameController {
    * 處理「解鎖土地」的請求
    */
   unlockTile = asyncHandler(async (req, res) => {
+    const userId = req.user.uid;
     const { position } = req.body;
-    const data = await gameService.unlockTile(this.getUserId(req), position);
+    const data = await gameService.unlockTile(userId, position);
     res.status(200).json({ success: true, data });
   });
 
@@ -83,8 +87,9 @@ class GameController {
    * 清除某格建築：恢復為 developed
    */
   clearBuilding = asyncHandler(async (req, res) => {
+    const userId = req.user.uid;
     const { position } = req.body;
-    const data = await gameService.clearBuilding(this.getUserId(req), position);
+    const data = await gameService.clearBuilding(userId, position);
     res.status(200).json({ success: true, data });
   });
 
@@ -92,24 +97,36 @@ class GameController {
    * 處理「獲取答題紀錄」的請求
    */
   getHistory = asyncHandler(async (req, res) => {
-    const data = await gameService.getHistory();
+    const userId = req.user.uid;
+    // 注意：我們需要稍微升級 getHistory 讓它也能接收 userId
+    const data = await gameService.getHistory(userId); 
     res.status(200).json({ success: true, data });
   });
+  // 新增答題紀錄
+  addHistoryEntry = asyncHandler(async (req, res) => {
+    const userId = req.user.uid; // 從 Firebase Auth 取得使用者 UID
+    const historyData = req.body;
+
+    const newEntry = await gameService.addHistoryEntryToSub(userId, historyData);
+    res.status(200).json({ success: true, data: newEntry });
+  });
+
+  // 查詢個人答題紀錄
+  getMyHistory = asyncHandler(async (req, res) => {
+    const userId = req.user.uid;
+    const history = await gameService.getUserHistoryFromSub(userId);
+    res.status(200).json({ success: true, data: history });
+  });
+
 
   /**
    * 題庫管理/查詢（後台用）
    */
   getQuestions = asyncHandler(async (req, res) => {
-    const { level, category } = req.query;
-    const data = await questionService.fetchQuestions({ level, category });
-    res.status(200).json({ success: true, count: data.length, data });
+      const data = await gameService.fetchAllQuestions();
+      res.status(200).json({ success: true, data });
   });
 
-  getStageQuestions = asyncHandler(async (req, res) => {
-    const { stage } = req.params;
-    const data = await questionService.getGameStageQuestions(parseInt(stage || 1));
-    res.status(200).json({ success: true, data, count: data.length });
-  });
 
   // --- 互動 ---
   validateAnswer = asyncHandler(async (req, res) => {
@@ -118,13 +135,13 @@ class GameController {
     if (!answer) {
       return res.status(400).json({ success: false, message: '請提供答案' });
     }
-    const data = await questionService.validateAnswer(id, answer);
+    const data = await gameService.validateAnswer(id, answer);
     res.status(200).json({ success: true, data });
   });
 
   getQuestionHint = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const data = await questionService.getQuestionHint(id);
+    const data = await gameService.getQuestionHint(id);
     res.status(200).json({ success: true, data });
   });
 
@@ -141,7 +158,7 @@ class GameController {
 
   addQuestion = asyncHandler(async (req, res) => {
     const questionData = req.body;
-    if (!questionData.question  || questionData.answer === undefined || !questionData.correctanswer || !questionData.level) {
+    if (!questionData.question  || questionData.answer === undefined || !questionData.correctanswer || !questionData.description) {
       return res.status(400).json({ success: false, message: '缺少必要欄位' });
     }
     const data = await gameService.createQuestion(questionData);

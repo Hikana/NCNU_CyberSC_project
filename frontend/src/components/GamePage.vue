@@ -3,6 +3,13 @@
     <PixiGameCanvas />
     
     <div class="ui-layer">
+      <div style="position: absolute; top: 20px; left: 20px; z-index: 50; pointer-events: auto;">
+        <router-link to="/home">
+          <button style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            返回主頁
+          </button>
+        </router-link>
+      </div>
       <StatusBar />
       <img :src="npcImage" alt="NPC" class="npc" @click="onNpcClick" />
       <ControlsHint /> 

@@ -1,23 +1,102 @@
-const API_BASE = "http://localhost:3000/api/game";
+// apiService.js
+import { getAuth } from 'firebase/auth';
+
+const API_BASE_URL = "http://localhost:3000/api/game"; // 修復：原本是 API_BASE
 const PLAYER_BASE_URL = "http://localhost:3000/api/players";
 
-async function request(url, options = {}) {
+async function request(endpoint, options = {}) {
   try {
-    const response = await fetch(`${API_BASE}${url}`, {
-      method: options.method || "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
+    const auth = getAuth();
+    const user = auth.currentUser;
 
-    if (!response.ok) {
-      throw new Error(`API 請求失敗 (狀態碼: ${response.status})`);
+    // ✅ 如果使用者已登入，就獲取他的 ID Token
+    const token = user ? await user.getIdToken() : null;
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      // ✅ 在請求的 Header 中附上 Token，格式為 'Bearer <token>'
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
-    return await response.json();
+    const config = { 
+      method: 'GET', 
+      ...options, 
+      headers: {
+        ...headers,
+        ...options.headers // 允許覆蓋預設 headers
+      }
+    };
+    
+    if (config.body) { 
+      config.body = JSON.stringify(config.body); 
+    }
+
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`🔄 API 請求: ${config.method} ${url}`);
+
+    const response = await fetch(url, config);
+    
+    // 檢查 response 是否為 JSON 格式
+    const contentType = response.headers.get('content-type');
+    let result;
+    
+    if (contentType && contentType.includes('application/json')) {
+      result = await response.json();
+    } else {
+      result = await response.text();
+    }
+
+    if (!response.ok) {
+      const errorMessage = result.message || result || `API 請求失敗 (狀態碼: ${response.status})`;
+      throw new Error(errorMessage);
+    }
+
+    console.log(`✅ API 成功: ${config.method} ${url}`);
+    return result;
   } catch (error) {
-    console.error(`API 請求錯誤 at ${url}:`, error);
+    console.error(`❌ API Service Error at ${endpoint}:`, error);
+    throw error;
+  }
+}
+
+// 專門處理背包 API 的函數（使用不同的認證方式）
+async function requestInventory(url, options = {}) {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    const token = user ? await user.getIdToken() : null;
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const config = {
+      method: 'GET',
+      ...options,
+      headers: {
+        ...headers,
+        ...options.headers
+      }
+    };
+
+    if (config.body) {
+      config.body = JSON.stringify(config.body);
+    }
+
+    console.log(`🔄 背包 API 請求: ${config.method} ${url}`);
+    
+    const response = await fetch(url, config);
+    const json = await response.json();
+    
+    if (!response.ok || !json.success) {
+      throw new Error(json.message || '背包 API 請求失敗');
+    }
+
+    console.log(`✅ 背包 API 成功: ${config.method} ${url}`);
+    return json.data;
+  } catch (error) {
+    console.error(`❌ 背包 API 錯誤 at ${url}:`, error);
     throw error;
   }
 }
@@ -68,25 +147,57 @@ export const apiService = {
       body: entryData,
     }),
 
-  // --- 玩家背包 API ---
+// 拿自己的答題紀錄
+  getMyHistory: () => request('/history/me'),
+
+  // --- 玩家背包 API （使用統一的認證方式）---
   getInventory: (userId) => {
-    return fetch(`${PLAYER_BASE_URL}/${encodeURIComponent(userId)}/inventory`)
-      .then(async (res) => {
-        const json = await res.json();
-        if (!res.ok || !json.success) throw new Error(json.message || '取得背包失敗');
-        return json.data;
-      });
+    if (!userId) {
+      return Promise.reject(new Error('userId 是必需的'));
+    }
+    
+    const url = `${PLAYER_BASE_URL}/${encodeURIComponent(userId)}/inventory`;
+    return requestInventory(url);
   },
 
   setInventory: (userId, items) => {
-    return fetch(`${PLAYER_BASE_URL}/${encodeURIComponent(userId)}/inventory`, {
+    if (!userId) {
+      return Promise.reject(new Error('userId 是必需的'));
+    }
+    
+    if (!Array.isArray(items)) {
+      return Promise.reject(new Error('items 必須是陣列'));
+    }
+
+    const url = `${PLAYER_BASE_URL}/${encodeURIComponent(userId)}/inventory`;
+    return requestInventory(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items }),
-    }).then(async (res) => {
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error(json.message || '更新背包失敗');
-      return json.data;
+      body: { items }
     });
   },
+
+  // --- 額外的工具方法 ---
+  // 檢查 API 連接狀態
+  checkConnection: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/health`);
+      return response.ok;
+    } catch (error) {
+      console.error('API 連接檢查失敗:', error);
+      return false;
+    }
+  },
+
+  // 獲取用戶資訊
+  getUserInfo: () => request('/user/info'),
+
+  // 更新用戶資料
+  updateUser: (userData) => request('/user/update', {
+    method: 'PUT',
+    body: userData
+  }),
+  getPlayerState: () => request('/player/me'),
 };
+
+// 默認導出
+export default apiService;

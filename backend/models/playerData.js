@@ -21,24 +21,69 @@ class PlayerData {
 
     if (!doc.exists) {
       const newPlayerData = {
+        // 遊戲資料
         castleLevel: 1,
         defense: 120,
-        techPoints: 250,
+        techPoints: 500,
+        
+        // 座標
+        x: 18,
+        y: 5,
+        position: {
+          x: 0,
+          y: 0
+        },
+        
+        // 進度統計
         answeredCount: 0,
         developedCount: 0,
         itemCount: 0,
+        
+        // 答題記錄（只存這個，count 用這個計算）
         correctlyAnsweredIds: [],
+        
+        // 背包
+        backpack: [],
+        
+        // 事件冷卻
         eventCooldown: {
-          DDoS: 0, SQLInjection: 0, XSS: 0, CSRF: 0, BruteForce: 0,
-          Phishing: 0, MITM: 0, Ransomware: 0, PrivilegeEscalation: 0,
-          SessionHijacking: 0, DNSSpoofing: 0, SupplyChain: 0
-        }
+          DDoS: 0, 
+          SQLInjection: 0, 
+          XSS: 0, 
+          CSRF: 0, 
+          BruteForce: 0,
+          Phishing: 0, 
+          MITM: 0, 
+          Ransomware: 0, 
+          PrivilegeEscalation: 0,
+          SessionHijacking: 0, 
+          DNSSpoofing: 0, 
+          SupplyChain: 0
+        },
+        
+        // 時間戳記
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
       };
+      
       await docRef.set(newPlayerData);
       console.log(`為新玩家 ${playerId} 建立了初始資料。`);
-      return newPlayerData;
+      
+      return {
+        ...newPlayerData,
+        correctlyAnsweredCount: 0, // 計算出來的值
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
     }
-    return doc.data();
+    
+    const data = doc.data();
+    
+    // 動態計算 correctlyAnsweredCount
+    return {
+      ...data,
+      correctlyAnsweredCount: data.correctlyAnsweredIds?.length || 0
+    };
   }
 
   async updatePlayer(playerId, data) {
