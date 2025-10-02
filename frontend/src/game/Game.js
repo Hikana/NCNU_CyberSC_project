@@ -35,13 +35,14 @@ export class Game {
    */
   async init() {
     this.app = new PIXI.Application();
-    await this.app.init({
-      width: this.container.clientWidth,
-      height: this.container.clientHeight,
-      backgroundColor: 0x1a252f, // 深色背景
-      antialias: true,
-      resizeTo: this.container,
-    });
+    await this.app.init({
+      width: this.container.clientWidth,
+      height: this.container.clientHeight,
+      backgroundColor: 0x000000, // 透明背景
+      backgroundAlpha: 0, // 完全透明
+      antialias: true,
+      resizeTo: this.container,
+    });
     this.container.appendChild(this.app.canvas); 
     this.world = new PIXI.Container();
     this.world.sortableChildren = true; // 啟用 Z-Index 排序
