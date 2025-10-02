@@ -1,11 +1,24 @@
 <script setup>
-// 移除直接引入的元件，因為會通過路由顯示
+import { onMounted } from 'vue'
+import { useEventStore } from './stores/eventStore'
+
+
+const eventStore = useEventStore()
+
+
+onMounted(() => {
+  eventStore.scheduleFirstEvent()
+})
 </script>
 
 <template>
-  <router-view />
+  <RouterView />
+  
 </template>
 
-<style scoped>
-/* 可以在這裡加入全域樣式 */
-</style>
+
+
+
+
+
+

@@ -1,32 +1,45 @@
 <template>
-  <div class="top-bar">
+  <div class="top-bar status-bar">
 
-    <div class="wall-bar" @click="toggleWallMenu">
-      <div class="arrow-label">城牆防禦</div>
+    <div class="wall-bar"  @click="uiStore.toggleWallMenu()">
+      <div class="arrow-label">城牆防禦 🛡️</div>
       <div class="wall-info">
-        <span>{{ wallDefense }} 點</span>
+        <span :style="{ color: wallStore.totalDefensePoints < 50 ? 'red' : '#ffffff' }">
+          {{ wallStore.defenseProgressText }}
+        </span>
       </div>
     </div>
 
     <div class="tech-bar">
-      <div class="arrow-label">科技點</div>
+      <div class="arrow-label">科技點 💰</div>
       <div class="tech-info">
-        <span>{{ techPoints }}個</span>
+        <span>{{ playerStore.techPoints }} </span>
       </div>
     </div>
-
-    <WallMenu :visible="showWallMenu" />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import WallMenu from './WallMenu.vue'
-const techPoints = ref(100)
-const wallDefense = ref(75)
-const showWallMenu = ref(false)
-function toggleWallMenu() {
-  showWallMenu.value = !showWallMenu.value
+import { usePlayerStore } from '@/stores/player';
+import { useWallStore } from '@/stores/wall';
+import { useUiStore } from '@/stores/ui';
+import { useBuildingStore } from '@/stores/buildings';
+
+const playerStore = usePlayerStore();
+const wallStore = useWallStore();
+const uiStore = useUiStore();
+const buildingStore = useBuildingStore();
+
+// 清除所有建築
+async function clearAllBuildings() {
+  if (confirm('確定要清除地圖上的所有建築嗎？')) {
+    const success = await buildingStore.clearAllBuildings();
+    if (success) {
+      alert('已清除所有建築！');
+    } else {
+      alert('清除建築時發生錯誤，但本地狀態已清除');
+    }
+  }
 }
 </script>
 
@@ -44,7 +57,7 @@ function toggleWallMenu() {
 .tech-bar {
   display: flex;
   align-items: center;
-  background: #3947c2;
+  background: #68bce9;
   border-radius: 4px;
   padding: 0 10px;
   height: 60px;
@@ -53,7 +66,7 @@ function toggleWallMenu() {
 }
 
 .arrow-label {
-  background: #68bce9;
+  background: #3947c2;
   color: #ffffff;
   padding: 8px 12px 8px 10px;
   clip-path: polygon(0 0, 100% 0, 85% 100%, 0% 100%);
@@ -66,9 +79,9 @@ function toggleWallMenu() {
 
 .tech-info span,
 .wall-info span {
-  color: #ffffff;
+  color: #000000;
   margin: 0 4px;
   font-size: 16px;
-  font-weight: bold;
+  font-weight: bolder; 
 }
-</style> 
+</style>

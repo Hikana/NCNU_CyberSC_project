@@ -11,6 +11,8 @@ const count = ref(0)
 <template>
   <h1>{{ msg }}</h1>
 
+  <h1>HelloWorld</h1>
+
   <div class="card">
     <button type="button" @click="count++">count is {{ count }}</button>
     <p>
@@ -34,6 +36,10 @@ const count = ref(0)
     >.
   </p>
   <p class="read-the-docs">Click on the Vite and Vue logos to learn more</p>
+
+  <router-link to="/game">
+    <button>前往 GamePage</button>
+  </router-link>
 </template>
 
 <style scoped>
