@@ -22,13 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Firebase Admin SDK
-frontend/src/firebase/firebase.js
-backend/firebase/
-firebase-adminsdk.json
-serviceAccountKey.json
-*.json
-config/*.json
-
-
