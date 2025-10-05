@@ -64,11 +64,13 @@ class GameService {
         answeredCount: FieldValue.increment(1)
       });
     }
+    const description=question.description;
     const correctAnswerText = question.options[question.answer] || '未知';
     // 無論對錯，都建立一筆歷史紀錄
     const newHistory = await gameData.addHistoryEntry({
         userId,
         questionId,
+        description,
         correctAnswer: correctAnswerText,
         questionTitle: question.question,
         userAnswer: question.options[userAnswerIndex] || '無效選擇',

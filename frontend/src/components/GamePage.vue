@@ -1,5 +1,5 @@
 <template>
-  <div class="game-wrapper">
+  <div class="game-wrapper" :style="{ backgroundImage: `url(${backgroundImage})` }">
     <PixiGameCanvas />
     
     <div class="ui-layer">
@@ -31,6 +31,7 @@ import { useAchievementStore } from '@/stores/achievement';
 import { useWallStore } from '@/stores/wall'; 
 import RandomEventModal from './RandomEventModal.vue'
 import npcImage from '@/assets/NPC.gif';
+import backgroundImage from '@/assets/background.png';
 
 const playerStore = usePlayerStore();
 const uiStore = useUiStore();
@@ -70,7 +71,9 @@ function onNpcClick() {
   height: 100vh;
   position: relative; /* 成為所有絕對定位子元素的基準 */
   overflow: hidden;
-  background-color: #1a252f; /* 給一個底色，防止閃爍 */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /* UI 圖層本身是透明的，並且會覆蓋整個畫面 */

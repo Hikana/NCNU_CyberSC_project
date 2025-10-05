@@ -1,5 +1,5 @@
 const gameService = require('../services/gameService');
-const questionService = require('../services/questionService');
+
 
 // 這是一個小幫手函式，用來自動捕捉非同步函式中的錯誤，讓我們的程式碼更乾淨
 const asyncHandler = (fn) => (req, res, next) => {
@@ -52,6 +52,7 @@ class GameController {
         question: result.question,
         userAnswer: result.userAnswer,
         yourAnswer: result.yourAnswer,
+        description: result.description,
         newHistory: result.newHistory,
         gameData: result
       });
@@ -90,16 +91,10 @@ class GameController {
    * 題庫管理/查詢（後台用）
    */
   getQuestions = asyncHandler(async (req, res) => {
-    const { level, category } = req.query;
-    const data = await questionService.fetchQuestions({ level, category });
-    res.status(200).json({ success: true, count: data.length, data });
+      const data = await gameService.fetchAllQuestions();
+      res.status(200).json({ success: true, data });
   });
 
-  getStageQuestions = asyncHandler(async (req, res) => {
-    const { stage } = req.params;
-    const data = await questionService.getGameStageQuestions(parseInt(stage || 1));
-    res.status(200).json({ success: true, data, count: data.length });
-  });
 
   // --- 互動 ---
   validateAnswer = asyncHandler(async (req, res) => {
@@ -108,13 +103,13 @@ class GameController {
     if (!answer) {
       return res.status(400).json({ success: false, message: '請提供答案' });
     }
-    const data = await questionService.validateAnswer(id, answer);
+    const data = await gameService.validateAnswer(id, answer);
     res.status(200).json({ success: true, data });
   });
 
   getQuestionHint = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const data = await questionService.getQuestionHint(id);
+    const data = await gameService.getQuestionHint(id);
     res.status(200).json({ success: true, data });
   });
 
@@ -131,7 +126,7 @@ class GameController {
 
   addQuestion = asyncHandler(async (req, res) => {
     const questionData = req.body;
-    if (!questionData.question  || questionData.answer === undefined || !questionData.correctanswer || !questionData.level) {
+    if (!questionData.question  || questionData.answer === undefined || !questionData.correctanswer || !questionData.description) {
       return res.status(400).json({ success: false, message: '缺少必要欄位' });
     }
     const data = await gameService.createQuestion(questionData);

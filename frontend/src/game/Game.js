@@ -35,13 +35,14 @@ export class Game {
    */
   async init() {
     this.app = new PIXI.Application();
-    await this.app.init({
-      width: this.container.clientWidth,
-      height: this.container.clientHeight,
-      backgroundColor: 0x1a252f, // 深色背景
-      antialias: true,
-      resizeTo: this.container,
-    });
+    await this.app.init({
+      width: this.container.clientWidth,
+      height: this.container.clientHeight,
+      backgroundColor: 0x000000, // 透明背景
+      backgroundAlpha: 0, // 完全透明
+      antialias: true,
+      resizeTo: this.container,
+    });
     this.container.appendChild(this.app.canvas); 
     this.world = new PIXI.Container();
     this.world.sortableChildren = true; // 啟用 Z-Index 排序
@@ -78,7 +79,7 @@ export class Game {
   /**
    * 遊戲主循環，每一幀都會執行
    */
-  _gameLoop(delta) { 
+  _gameLoop(delta) { 
     // 計算移動速度：5 為基礎速度，delta 為每幀的時間倍率（由 PIXI/Ticker 提供，確保不同 FPS 下移動一致）
     const speed = 5 * delta;
 
@@ -90,20 +91,32 @@ export class Game {
 
     // 依據按鍵狀態判斷方向並更新座標
     if (this.keys['ArrowUp'] || this.keys['KeyW']) { 
-        y -= speed;      // 上移
-        hasMoved = true; // 標記有移動
+        const newY = y - speed;
+        if (this._canMoveTo(x, newY)) {
+          y = newY;
+          hasMoved = true;
+        }
     }
     if (this.keys['ArrowDown'] || this.keys['KeyS']) { 
-        y += speed;      // 下移
-        hasMoved = true;
+        const newY = y + speed;
+        if (this._canMoveTo(x, newY)) {
+          y = newY;
+          hasMoved = true;
+        }
     }
     if (this.keys['ArrowLeft'] || this.keys['KeyA']) { 
-        x -= speed;      // 左移
-        hasMoved = true;
+        const newX = x - speed;
+        if (this._canMoveTo(newX, y)) {
+          x = newX;
+          hasMoved = true;
+        }
     }
     if (this.keys['ArrowRight'] || this.keys['KeyD']) { 
-        x += speed;      // 右移
-        hasMoved = true;
+        const newX = x + speed;
+        if (this._canMoveTo(newX, y)) {
+          x = newX;
+          hasMoved = true;
+        }
     }
     
     // 如果有移動，就更新玩家位置到 store（通常會觸發畫面重繪或狀態同步）
@@ -119,25 +132,54 @@ export class Game {
 
     // 更新攝影機位置，讓畫面跟著玩家移動
     this._updateCamera();
-}
+  }
 
 
 
 
 
   /**
+   * 檢查玩家是否可以移動到指定位置
+   * @param {number} x - 目標 X 座標
+   * @param {number} y - 目標 Y 座標
+   * @returns {boolean} - 是否可以移動
+   */
+  _canMoveTo(x, y) {
+    if (!this.grid) {
+      return false;
+    }
+    
+    // 將等角座標轉換為網格座標
+    const halfW = this.TILE_SIZE / 2;
+    const halfH = this.TILE_SIZE / 4;
+    const cartX = (x / halfW + y / halfH) / 2;
+    const cartY = (y / halfH - x / halfW) / 2;
+    
+    // 四捨五入取得整數網格座標
+    const col = Math.round(cartX);
+    const row = Math.round(cartY);
+    
+    // 檢查座標是否在有效範圍內
+    if (row < 0 || row >= this.grid.rows || col < 0 || col >= this.grid.cols) {
+      return false;
+    }
+         
+    return true;
+  }
+
+  /**
    * 更新攝影機位置以跟隨玩家
    */
-  _updateCamera() {
-    if (this.isDragging) return; // 拖曳時鏡頭不跟隨
-    if (!this.player || !this.player.sprite) return;
-    const centerX = this.app.screen.width / 2;
-    const centerY = this.app.screen.height / 2;
-    const targetX = centerX - this.player.sprite.x;
-    const targetY = centerY - this.player.sprite.y;
-    this.world.x += (targetX - this.world.x) * 0.1; // 緩動效果
-    this.world.y += (targetY - this.world.y) * 0.1;
-  }
+  _updateCamera() {
+    if (this.isDragging) return; // 拖曳時鏡頭不跟隨
+    if (!this.player || !this.player.sprite) return;
+    const centerX = this.app.screen.width / 2;
+    const centerY = this.app.screen.height / 2;
+    const targetX = centerX - this.player.sprite.x;
+    const targetY = centerY - this.player.sprite.y;
+    this.world.x += (targetX - this.world.x) * 0.1; // 緩動效果
+    this.world.y += (targetY - this.world.y) * 0.1;
+  }
 
   /**
    * 設定所有控制項 (鍵盤、滑鼠)
@@ -194,8 +236,21 @@ export class Game {
     this.player.create(this.world);
     if (this.player.sprite) {
         this.player.sprite.zIndex = 1; // 玩家層級低於建築 
+    }
+    
+    // 設置玩家初始位置在城堡區域（網格座標 1,1）
+    const initialRow = 1;
+    const initialCol = 1;
+    const halfW = this.TILE_SIZE / 2;
+    const halfH = this.TILE_SIZE / 4;
+    
+    // 將網格座標轉換為等角座標
+    const isoX = (initialCol - initialRow) * halfW;
+    const isoY = (initialCol + initialRow) * halfH;
+    
+    this.playerStore.updatePosition({ x: isoX, y: isoY });
+    console.log(`🎮 玩家初始位置設置為網格 (${initialRow}, ${initialCol})，等角座標 (${isoX}, ${isoY})`);
   }
-}
 
   /*處理地圖格子的點擊事件 (智慧點擊)*/
   _handleTileClick(row, col) {
@@ -358,5 +413,6 @@ export class Game {
     // 顯示城堡互動確認面板
     this.buildingStore.showCastleInteraction();
   }
-}
+}  
+
 
