@@ -174,6 +174,32 @@ class BuildingService {
   isCastleTile(row, col) {
     return CASTLE_TILES.has(`${row},${col}`);
   }
+
+  // 依據前端提供的 map 同步到 land/{userId}/tiles
+  async syncMap(userId, mapArray) {
+    // 僅處理二維陣列
+    if (!Array.isArray(mapArray) || !Array.isArray(mapArray[0])) {
+      throw new Error('map 必須為二維陣列');
+    }
+    // 逐格寫入：status !== 'locked' 的寫入 tiles，locked 可選擇清除
+    const writes = [];
+    for (let y = 0; y < mapArray.length; y++) {
+      for (let x = 0; x < mapArray[y].length; x++) {
+        const cell = mapArray[y][x] || {};
+        const tileId = `${x}_${y}`;
+        if (cell.status && cell.status !== 'locked') {
+          const payload = {
+            status: cell.status,
+            buildingId: cell.buildingId || null,
+            syncedAt: Date.now()
+          };
+          writes.push(playerData.updateTile(userId, x, y, payload));
+        }
+      }
+    }
+    await Promise.all(writes);
+    return this.getMapState(userId);
+  }
 }
 
 module.exports = new BuildingService();

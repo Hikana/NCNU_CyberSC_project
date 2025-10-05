@@ -2,8 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const gameRoutes = require('./routes/gameRoutes');
-
-const inventoryRoutes = require('./routes/inventory');
+const buildingRoutes = require('./routes/buildingRoutes');
+const playerRoutes = require('./routes/playerRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
 
 const app = express();
 // 中介軟體
@@ -20,7 +21,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // 提供靜態文件服務
 app.use('/public', express.static(path.join(__dirname, 'public')));
-app.use('/api/inventory', inventoryRoutes);
 
 // 上傳頁面路由
 app.get('/upload', (req, res) => {
@@ -29,6 +29,9 @@ app.get('/upload', (req, res) => {
 
 // API 路由
 app.use('/api/game', gameRoutes);
+app.use('/api/buildings', buildingRoutes);
+app.use('/api/players', playerRoutes);
+app.use('/api/inventory', inventoryRoutes);
 
 // 健康檢查
 app.get('/health', (req, res) => {

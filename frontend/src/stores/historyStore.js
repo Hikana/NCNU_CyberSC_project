@@ -1,6 +1,7 @@
 // frontend/src/stores/historyStore.js
 import { defineStore } from 'pinia';
 import { apiService } from '../services/apiService';
+import { useAuthStore } from './authStore';   
 
 export const useHistoryStore = defineStore('history', {
   state: () => ({
@@ -30,14 +31,22 @@ export const useHistoryStore = defineStore('history', {
      * 從後端獲取所有答題紀錄
      */
     async fetchHistory() {
+      const authStore = useAuthStore();
+      // ✅ 如果玩家沒有登入，就直接停止，不執行任何操作
+      if (!authStore.user) {
+          console.warn('無法獲取歷史紀錄：使用者未登入');
+          this.history = []; // 確保登出後列表會清空
+          return;
+      }
       this.isLoading = true;
       this.error = null;
       
       try {
+        
         const response = await apiService.getHistory();
         if (response.success) {
           this.history = response.data;
-          console.log('✅ 成功獲取答題紀錄:', this.history);
+          console.log(`✅ 成功獲取玩家 ${authStore.user.uid} 的答題紀錄:`, this.history.length, '筆');
         } else {
           throw new Error(response.message || '獲取紀錄失敗');
         }
@@ -50,10 +59,18 @@ export const useHistoryStore = defineStore('history', {
     },
 
     /**
+     * 載入使用者歷史紀錄（供 authStore 呼叫）
+     */
+    async loadUserHistory() {
+      console.log('🔄 載入使用者歷史紀錄...');
+      await this.fetchHistory(); // 直接使用原有的 fetchHistory 方法
+    },
+
+    /**
      * 將新的答題紀錄加到前端列表
      * @param {object} entryData - 答題紀錄物件
      */
-    async addHistoryEntry(entryData) {
+    async addUserHistoryEntry(entryData) {
       if (!entryData) {
         console.log('❌ addHistoryEntry 收到空資料');
         return;
@@ -72,7 +89,7 @@ export const useHistoryStore = defineStore('history', {
     /**
      * 清空所有紀錄
      */
-    clearHistory() {
+    clearOnLogout() {
       this.history = [];
       this.isInitialized = false; // 👈 重置初始化狀態
       console.log('🗑️ 已清空所有答題紀錄');

@@ -116,9 +116,16 @@ class GameService {
   }
   
   // --- 其他 ---
-  
-  async getHistory() {
-      return gameData.getHistory();
+  async addHistoryEntryToSub(userId, historyData) {
+    return await gameData.addHistoryEntryToSub(userId, historyData);
+  }
+
+  async getUserHistoryFromSub(userId) {
+    return await gameData.getUserHistoryFromSub(userId);
+  }
+
+  async getHistory(userId) {
+      return gameData.getHistory(userId);
   }
   async fetchAllQuestions() {
     return gameData.getAllQuestions();

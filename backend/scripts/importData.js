@@ -139,7 +139,7 @@ async function importData() {
   const batch = db.batch(); // 使用批次寫入可以更有效率地處理多筆資料
 
   // 定義目標路徑：/players/test-user/backpack
-  const playerDocRef = db.collection('players').doc('test-user');
+  const playerDocRef = db.collection('players').doc('userId');
   const backpackCollectionRef = playerDocRef.collection('backpack');
 
 

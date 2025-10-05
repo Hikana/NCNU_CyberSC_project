@@ -68,7 +68,7 @@ export const useGameStore = defineStore('game', () => {
       }
 
       if (result.newHistory) {
-          historyStore.addHistoryEntry(result.newHistory);
+          historyStore.addUserHistoryEntry(result.newHistory);
           console.log("✅ 歷史記錄已即時更新:", result.newHistory);
       } else {
           console.warn('後端未回傳 newHistory 物件');

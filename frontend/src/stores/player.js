@@ -107,8 +107,12 @@ export const usePlayerStore = defineStore('player', () => {
    */
   async function loadPlayerData() {
     try {
-      const userId = playerId.value || 'test-user';
-      const playerData = await apiService.getPlayer(userId);
+      const uid = playerId.value || auth.currentUser?.uid || null;
+      if (!uid) {
+        console.warn('⚠️ 無法載入玩家資料：尚未登入（無 uid）');
+        return;
+      }
+      const playerData = await apiService.getPlayer(uid);
       
       // 更新本地狀態
       techPoints.value = playerData.techPoints || 0;
@@ -152,8 +156,9 @@ export const usePlayerStore = defineStore('player', () => {
    */
   async function updateTechPoints(newTechPoints) {
     try {
-      const userId = playerId.value || 'test-user';
-      await apiService.updatePlayerTechPoints(userId, newTechPoints);
+      const uid = playerId.value || auth.currentUser?.uid || null;
+      if (!uid) throw new Error('尚未登入，無法更新科技點');
+      await apiService.updatePlayerTechPoints(uid, newTechPoints);
       techPoints.value = newTechPoints;
       console.log('✅ 科技點已更新到資料庫:', newTechPoints);
     } catch (error) {
@@ -175,8 +180,9 @@ export const usePlayerStore = defineStore('player', () => {
    */
   async function updateDefense(newDefense) {
     try {
-      const userId = playerId.value || 'test-user';
-      await apiService.updatePlayerDefense(userId, newDefense);
+      const uid = playerId.value || auth.currentUser?.uid || null;
+      if (!uid) throw new Error('尚未登入，無法更新防禦值');
+      await apiService.updatePlayerDefense(uid, newDefense);
       defense.value = newDefense;
       console.log('✅ 防禦值已更新到資料庫:', newDefense);
       

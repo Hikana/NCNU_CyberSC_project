@@ -1,4 +1,3 @@
-// backend/middleware/auth.js
 const { admin } = require('../config/firebase');
 
 module.exports = async function (req, res, next) {

@@ -3,14 +3,11 @@ const buildingService = require('../services/buildingService');
 const asyncHandler = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
 class BuildingController {
-  constructor() {
-    // 預設測試用玩家 ID
-    this.getUserId = (req) => req.query.userId || req.body.userId || req.params.userId || 'test-user';
-  }
+  constructor() {}
 
   // 取得地圖狀態
   getMap = asyncHandler(async (req, res) => {
-    const userId = req.query.userId || req.body.userId || req.params.userId || 'test-user';
+    const userId = req.user.uid;
     const mapData = await buildingService.getMapState(userId);
     res.status(200).json({ success: true, data: mapData });
   });
@@ -19,7 +16,7 @@ class BuildingController {
   placeBuilding = asyncHandler(async (req, res) => {
     try {
       const { buildingId, position } = req.body;
-      const userId = req.query.userId || req.body.userId || req.params.userId || 'test-user';
+      const userId = req.user.uid;
       
       if (!buildingId || !position || position.x === undefined || position.y === undefined) {
         return res.status(400).json({ 
@@ -42,7 +39,7 @@ class BuildingController {
   // 移除建築
   removeBuilding = asyncHandler(async (req, res) => {
     const { x, y } = req.params;
-    const userId = req.query.userId || req.body.userId || req.params.userId || 'test-user';
+    const userId = req.user.uid;
     
     const position = { x: parseInt(x), y: parseInt(y) };
     const result = await buildingService.removeBuilding(userId, position);
@@ -68,6 +65,22 @@ class BuildingController {
     }
     
     res.status(200).json({ success: true, data: buildingInfo });
+  });
+
+  // 將前端目前地圖狀態同步到資料庫（只寫入非 locked 與城堡保留規則）
+  syncMap = asyncHandler(async (req, res) => {
+    const userId = req.user.uid;
+    const { map } = req.body; // 二維陣列，每格含 { status, buildingId?, x, y }
+    if (!Array.isArray(map) || !Array.isArray(map[0])) {
+      return res.status(400).json({ success: false, message: '地圖格式錯誤，需為二維陣列' });
+    }
+    try {
+      const updated = await buildingService.syncMap(userId, map);
+      res.status(200).json({ success: true, data: updated });
+    } catch (err) {
+      console.error('syncMap 錯誤:', err);
+      res.status(500).json({ success: false, message: err.message || '同步地圖失敗' });
+    }
   });
 }
 

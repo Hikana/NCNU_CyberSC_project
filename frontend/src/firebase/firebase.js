@@ -1,11 +1,12 @@
-// Import the functions you need from the SDKs you need
+// firebase.js 或 firebase-config.js
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getFirestore } from "firebase/firestore";  // 🔑 Firestore 需要這個
-
+import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
-// Your web app's Firebase configuration
+
+// ⚠️ 安全提醒：在生產環境中，建議將這些配置放到環境變數中
+// 例如：apiKey: import.meta.env.VITE_FIREBASE_API_KEY
 const firebaseConfig = {
   apiKey: "AIzaSyAyOvDG380ac3t-j5AxLj--pzCrllv53cc",
   authDomain: "test-fdd27.firebaseapp.com",
@@ -17,16 +18,36 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+let app;
+let analytics;
+let db;
+let auth;
 
+try {
+  // 初始化 Firebase
+  app = initializeApp(firebaseConfig);
+  console.log("✅ Firebase 應用初始化成功");
 
+  // 初始化 Analytics（僅在瀏覽器環境中）
+  if (typeof window !== 'undefined') {
+    analytics = getAnalytics(app);
+    console.log("✅ Firebase Analytics 初始化成功");
+  }
 
-// Initialize Firestore
-const db = getFirestore(app);
-const auth = getAuth(app);
+  // 初始化 Firestore
+  db = getFirestore(app);
+  console.log("✅ Firestore 初始化成功");
 
-// // 匯出 db
-// export { db };
-// 匯出 db 跟 auth
-export { db, auth };
+  // 初始化 Auth
+  auth = getAuth(app);
+  console.log("✅ Firebase Auth 初始化成功");
+
+} catch (error) {
+  console.error("❌ Firebase 初始化失敗:", error);
+}
+
+// 匯出服務
+export { db, auth, analytics, app };
+
+// 預設匯出 auth（方便在其他地方使用）
+export default auth;

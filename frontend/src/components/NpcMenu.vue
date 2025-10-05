@@ -89,13 +89,14 @@ import AchievementMenu from '@/components/AchievementMenu.vue'
 import HistoryPanel from '@/components/HistoryPanel.vue'
 import { useUiStore } from '@/stores/ui';
 import { useInventoryStore } from '@/stores/inventory.js';
-
+import { useAuthStore } from '@/stores/authStore';
 
 import { usePlayerStore } from '@/stores/player'
 
 
 const player = usePlayerStore()
 const inv = useInventoryStore()
+const authStore = useAuthStore(); 
 
 // 選中的物品
 const selectedItem = ref(null)
@@ -119,7 +120,8 @@ const inventoryStore = useInventoryStore()
 
 onMounted(async () => {
   // 初始化背包，即時監聽 Firestore；沒登入就用 test-user
-  const uid = player.playerId || 'test-user'
+  const uid = authStore.user?.uid;
+
   console.log('🚀 初始化背包，玩家ID:', uid)
   await inventoryStore.init(uid)
   console.log('✅ 背包初始化完成，物品數量:', inventoryStore.items.length)

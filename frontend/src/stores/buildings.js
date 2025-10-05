@@ -55,10 +55,7 @@ export const useBuildingStore = defineStore('buildings', {
     // 新增：從後端載入地圖狀態的 action
     async loadMap() {
       try {
-        const playerStore = usePlayerStore();
-        const userId = playerStore.playerId || playerStore.initFromAuth() || 'test-user';
-        
-        const mapData = await apiService.getMap(userId);
+        const mapData = await apiService.getMap();
         
         // 確保 mapData 是正確的二維陣列格式
         if (Array.isArray(mapData) && Array.isArray(mapData[0])) {
@@ -150,19 +147,16 @@ export const useBuildingStore = defineStore('buildings', {
       }
     
       try {
-        const playerStore = usePlayerStore();
-        const userId = playerStore.playerId || playerStore.initFromAuth() || 'test-user';
-    
         // ✅ 確認前端呼叫方式
         const response = await apiService.placeBuilding(
           this.selectedBuildingId,
-          { x: this.selectedTile.x, y: this.selectedTile.y }, // 確保傳 position 是物件 {x,y}
-          userId // userId 放第三個參數，apiService 內會自動放到 query
+          { x: this.selectedTile.x, y: this.selectedTile.y } // 確保傳 position 是物件 {x,y}
         );
     
-        if (response.success) {
+        if (response) {
+          const playerStore = usePlayerStore();
           await playerStore.refreshPlayerData(); // 更新玩家資料
-          this.map = response.data; // 更新地圖
+          this.map = response; // api 直接回傳 map 二維陣列
           this.isPlacing = false;
           this.selectedTile = null;
           this.selectedBuildingId = null;
@@ -188,10 +182,7 @@ export const useBuildingStore = defineStore('buildings', {
     // 清除特定位置的建築
     async clearBuildingAt(x, y) {
       try {
-        const playerStore = usePlayerStore();
-        const userId = playerStore.playerId || playerStore.initFromAuth() || 'test-user';
-        
-        const newMap = await apiService.clearBuilding({ x, y }, userId);
+        const newMap = await apiService.clearBuilding({ x, y });
         
         // 確保是二維陣列格式
         if (Array.isArray(newMap) && Array.isArray(newMap[0])) {

@@ -7,10 +7,6 @@ const asyncHandler = (fn) => (req, res, next) => {
 };
 
 class GameController {
-  constructor() {
-    // 為了方便，我們先預設一個測試用玩家 ID
-    this.getUserId = (req) => req.query.userId || req.body.userId || 'test-user';
-  }
 
   /**
    * 處理「獲取隨機題目」的請求（遊戲用）
@@ -29,16 +25,22 @@ class GameController {
       console.error('❌ 取得隨機題目失敗:', error);
       res.status(500).json({ success: false, message: error.message });
     }
+    const userId = req.user.uid; 
+    const data = await gameService.getRandomQuestion(userId);
   });
 
   /**
    * 處理「提交答案」的請求 - 只使用 GameService 記錄
    */
   submitAnswer = asyncHandler(async (req, res) => {
+    const userId = req.user.uid;
+    console.log("收到的 req.body:", req.body);
+    const { questionId, answer } = req.body;
+    
+
     try {
       console.log("🎯 收到提交答案請求:", req.body);
       const { questionId, answer } = req.body;
-      const userId = req.body.userId || req.query.userId || 'test-user';
 
       console.log(`📝 處理用戶 ${userId} 的答案: 題目ID=${questionId}, 答案=${answer}`);
 
@@ -72,8 +74,8 @@ class GameController {
    * 處理「解鎖土地」的請求
    */
   unlockTile = asyncHandler(async (req, res) => {
+    const userId = req.user.uid;
     const { position } = req.body;
-    const userId = req.body.userId || req.query.userId || 'test-user';
     const data = await gameService.unlockTile(userId, position);
     res.status(200).json({ success: true, data });
   });
@@ -83,9 +85,27 @@ class GameController {
    * 處理「獲取答題紀錄」的請求
    */
   getHistory = asyncHandler(async (req, res) => {
-    const data = await gameService.getHistory();
+    const userId = req.user.uid;
+    // 注意：我們需要稍微升級 getHistory 讓它也能接收 userId
+    const data = await gameService.getHistory(userId); 
     res.status(200).json({ success: true, data });
   });
+  // 新增答題紀錄
+  addHistoryEntry = asyncHandler(async (req, res) => {
+    const userId = req.user.uid; // 從 Firebase Auth 取得使用者 UID
+    const historyData = req.body;
+
+    const newEntry = await gameService.addHistoryEntryToSub(userId, historyData);
+    res.status(200).json({ success: true, data: newEntry });
+  });
+
+  // 查詢個人答題紀錄
+  getMyHistory = asyncHandler(async (req, res) => {
+    const userId = req.user.uid;
+    const history = await gameService.getUserHistoryFromSub(userId);
+    res.status(200).json({ success: true, data: history });
+  });
+
 
   /**
    * 題庫管理/查詢（後台用）

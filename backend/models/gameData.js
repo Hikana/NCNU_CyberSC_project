@@ -1,10 +1,10 @@
 const { db, FieldValue } = require('../config/firebase');
-const admin = require('firebase-admin');
+
 
 class GameData {
   constructor() {
     this.db = db;
-    this.usersCollection = this.db.collection('users');
+    this.usersCollection = this.db.collection('players');
     this.questionsCollection = this.db.collection('questions');
     this.historyCollection = this.db.collection('history');
   }
@@ -109,12 +109,23 @@ class GameData {
 
   
   // --- 歷史紀錄 (History) 相關 ---
-  async getHistory() {
-    const snapshot = await this.historyCollection.orderBy('timestamp', 'desc').get();
+   async getHistory(userId) {
+    const snapshot = await this.historyCollection
+                            .where("userId", "==", userId) // ✅ 關鍵的過濾條件
+                            .orderBy('timestamp', 'desc')
+                            .get();
     if (snapshot.empty) return [];
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
-  
+  async getUserHistory(userId) {
+    const snapshot = await this.historyCollection
+      .where("userId", "==", userId)
+      .orderBy("timestamp", "desc")
+      .get();
+
+    if (snapshot.empty) return [];
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
   async addHistoryEntry(historyEntry) {
     // --- 監視器 1 ---
     // 檢查這個函式是否有被呼叫，以及它收到了什麼資料
@@ -141,6 +152,39 @@ class GameData {
       throw error; // 將錯誤繼續向上拋出，讓 Service 層知道
     }
   }
+
+  async addHistoryEntryToSub(userId, historyEntry) {
+    try {
+      // ✅ 修正點：直接指向 'players' 集合
+      const playerRef = db.collection('players').doc(userId); 
+      const historyRef = playerRef.collection('history');
+
+      const docRef = await historyRef.add({
+        ...historyEntry,
+        timestamp: FieldValue.serverTimestamp()
+      });
+
+      const newEntry = await docRef.get();
+      return { id: docRef.id, ...newEntry.data() };
+
+    } catch (error) {
+      console.error("❌ 寫入子集合歷史紀錄失敗:", error);
+      throw error;
+    }
+  }
+
+
+  async getUserHistoryFromSub(userId) {
+    const snapshot = await this.usersCollection
+      .doc(userId)
+      .collection("history")
+      .orderBy("timestamp", "desc")
+      .get();
+
+    if (snapshot.empty) return [];
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
   
   async updateQuestion(questionId, questionData) {
     return this.questionsCollection.doc(questionId).update({

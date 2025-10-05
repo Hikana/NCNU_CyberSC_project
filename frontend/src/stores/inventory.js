@@ -3,9 +3,8 @@ import { defineStore } from 'pinia';
 import { db } from '@/firebase/firebase';
 // 從 Firestore 套件引入需要用到的函式
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { useAuthStore } from '@/stores/authStore';
 
-// 測試階段先寫死一個 userId
-const DEFAULT_USER_ID = "test-user";
 
 
 export const useInventoryStore = defineStore('inventory', {
@@ -26,16 +25,17 @@ export const useInventoryStore = defineStore('inventory', {
   },
     actions: {
     async init(userId) {
+      const authStore = useAuthStore(); 
       // 初始化：讀取 players/{userId}/backpack 子集合
-      const finalUserId = userId || DEFAULT_USER_ID;
+      
 
-      if (!finalUserId) {
+      if (!userId) {
         console.warn('init inventory: 缺少 userId');
         return;
       }
       
       this.loading = true;
-      const backpackRef = collection(db, 'players', finalUserId, 'backpack');
+      const backpackRef = collection(db, 'players', userId, 'backpack');
       
       try {
         // 即時監聽子集合變更
