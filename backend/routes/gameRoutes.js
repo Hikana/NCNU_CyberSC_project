@@ -11,16 +11,9 @@ router.get('/random-question', gameController.getRandomQuestion);
 router.post('/submit-answer', gameController.submitAnswer);
 
 
-// --- 地圖/世界相關 ---
-// GET /api/game/map (遊戲主程式用)
-router.get('/map', gameController.getMap);
-
-// POST /api/game/place-building (遊戲主程式用)
-router.post('/place-building', gameController.placeBuilding);
-
+// --- 地圖解鎖相關 ---
 // POST /api/game/unlock-tile (遊戲主程式用)
 router.post('/unlock-tile', gameController.unlockTile);
-router.post('/clear-building', gameController.clearBuilding);
 
 
 // --- 管理/紀錄相關 ---

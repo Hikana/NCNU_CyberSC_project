@@ -2,7 +2,8 @@ import * as PIXI from 'pixi.js'
 import grassImg from '@/assets/grass.png'
 import landImg from '@/assets/land.png'
 import { useBuildingStore } from '@/stores/buildings'
-import castleImg from '@/assets/can1.png'
+import { useWallStore } from '@/stores/wall'
+import castleImg from '@/assets/castle0.png'
 
 const CASTLE_TILES = new Set([
   '0,0','0,1','0,2',
@@ -65,7 +66,7 @@ export class IsoGrid {
     this.loadBuildingTextures()
     this.loadGrassTextures() 
     this.loadLandTexture()
-    this.loadCastleTexture()
+    this.loadCastleTextures()
   }
   
   // 從 Graphics 對象創建紋理 (PixiJS v8 兼容)
@@ -156,15 +157,55 @@ export class IsoGrid {
     }
   }
   
-  // 預載入城堡圖片
-  async loadCastleTexture() {
-    this.castleTexture = null
+  // 預載入城堡圖片（多層級）
+  async loadCastleTextures() {
+    this.castleTextures = {}
+    
+    // 載入城堡基礎圖片（castle0.png）
     try {
-      this.castleTexture = await PIXI.Assets.load(castleImg)
+      this.castleTextures[0] = await PIXI.Assets.load(castleImg)
     } catch (e) {
-      console.warn('⚠️ 城堡圖片載入失敗，使用後備方案:', e)
-      this.castleTexture = PIXI.Texture.from(castleImg)
+      console.warn('⚠️ 城堡基礎圖片載入失敗，使用後備方案:', e)
+      this.castleTextures[0] = PIXI.Texture.from(castleImg)
     }
+    
+    // 動態載入城堡升級層級圖片（castle1.png 到 castle10.png）
+    const loadCastleLevel = async (level) => {
+      try {
+        const module = await import(`../assets/castle${level}.png`)
+        const imageUrl = module.default
+        
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        
+        return new Promise((resolve, reject) => {
+          img.onload = () => {
+            const texture = PIXI.Texture.from(img)
+            this.castleTextures[level] = texture
+            resolve(texture)
+          }
+          img.onerror = reject
+          img.src = imageUrl
+        })
+      } catch (error) {
+        console.warn(`⚠️ 城堡圖片 castle${level}.png 載入失敗:`, error)
+        return null
+      }
+    }
+    
+    // 載入所有城堡等級圖片
+    const loadPromises = []
+    for (let level = 1; level <= 10; level++) {
+      loadPromises.push(loadCastleLevel(level))
+    }
+    
+    try {
+      await Promise.all(loadPromises)
+      console.log('✅ 城堡圖片載入完成')
+    } catch (e) {
+      console.warn('⚠️ 部分城堡圖片載入失敗:', e)
+    }
+    
     // 載入完成後重繪
     if (this.mapData) {
       this.drawGrid()
@@ -332,11 +373,14 @@ export class IsoGrid {
       }
     }
 
-    // 第二階段：繪製城堡（城堡圖片的 zIndex 要低於點擊區域）
+    // 第二階段：繪製城堡（多層級顯示）
     const castleCenterRow = CASTLE_BOUNDS.centerRow
     const castleCenterCol = CASTLE_BOUNDS.centerCol
     
-    if (this.castleTexture) {
+    if (this.castleTextures && this.castleTextures[0]) {
+      const wallStore = useWallStore()
+      const castleLevel = wallStore.castleLevel || 0
+      
       const castleContainer = new PIXI.Container()
       castleContainer.sortableChildren = true
       // 確保城堡不攔截點擊事件
@@ -351,24 +395,34 @@ export class IsoGrid {
       const offsetX = this.tileSize * 0.1
       castleContainer.x -= offsetX
 
-      const castle = new PIXI.Sprite(this.castleTexture)
-      castle.eventMode = 'none'
-      castle.anchor.set(0.5, 0.55)
-      const castleScale = 2.5
-      castle.width = this.tileSize * 3 * castleScale
-      castle.height = this.tileSize * 2 * castleScale
-      castle.zIndex = 5 // 城堡在建築層
-      
-      castleContainer.addChild(castle)
+      // 繪製城堡層級（從基礎層到當前等級）
+      for (let level = 0; level <= castleLevel; level++) {
+        if (this.castleTextures[level]) {
+          const castleLayer = new PIXI.Sprite(this.castleTextures[level])
+          castleLayer.eventMode = 'none'
+          castleLayer.anchor.set(0.5, 0.55)
+          const castleScale = 2.5
+          castleLayer.width = this.tileSize * 3 * castleScale
+          castleLayer.height = this.tileSize * 2 * castleScale
+          castleLayer.zIndex = 5 + level // 每層級增加 zIndex，確保正確疊加
+          
+          // 讓上層稍微偏移，營造疊加效果
+          if (level > 0) {
+            // Y軸稍微向上偏移（讓上層看起來更高）
+            castleLayer.y = -level * 112
+          }
+          castleContainer.addChild(castleLayer)
+        }
+      }
       this.objectContainer.addChild(castleContainer)
     }
 
-    // 第三階段：繪製其他建築（保持不變）
+    // 第三階段：繪製其他建築
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
         const cell = this.mapData[row][col]
         
-        if (cell.status === 'placed' && cell.item) {
+        if (cell.status === 'placed' && cell.buildingId) {
           const x = (col - row) * halfW
           const y = (col + row) * halfH
 
@@ -376,9 +430,9 @@ export class IsoGrid {
           buildingContainer.sortableChildren = true
           buildingContainer.x = x
           buildingContainer.y = y
-          buildingContainer.zIndex = row + col + 50
+          buildingContainer.zIndex = 5 // 建築容器層級高於玩家
 
-          const buildingId = cell.item
+          const buildingId = cell.buildingId
           const buildingTexture = this.buildingTextures[buildingId]
           
           if (buildingTexture) {

@@ -21,17 +21,17 @@
           :key="achievement.id"
           class="achievement-item"
           :class="{ 
-            'unlocked': achievement.unlocked,
-            'locked': !achievement.unlocked
+            'unlocked': achievement.status !== 'locked',
+            'locked': achievement.status === 'locked'
           }"
         >
           <div class="achievement-icon">
-            {{ achievement.unlocked ? '🏆' : '🔒' }}
+            {{ achievement.status === 'locked' ? '🔒' : '🏆' }}
           </div>
           <div class="achievement-info">
             <h3 class="achievement-title">{{ achievement.name }}</h3>
             <p class="achievement-description">{{ achievement.description }}</p>
-            <div class="achievement-progress" v-if="!achievement.unlocked">
+            <div class="achievement-progress" v-if="achievement.status === 'locked'">
               <div class="progress-bar">
                 <div 
                   class="progress-fill" 
@@ -43,11 +43,10 @@
           </div>
           <div class="achievement-actions">
             <div class="achievement-reward">
-              <span class="reward-text">💰 {{ achievement.reward }}</span>
+              <span class="reward-text"> {{ rewardText(achievement) }}</span>
             </div>
-            <div v-if="achievement.unlocked" class="unlocked-text">
-              已解鎖
-            </div>
+            <button v-if="achievement.status === 'unlocked'" class="claim-btn" @click="claimReward(achievement.id)">領取</button>
+            <div v-else-if="achievement.status === 'finish'" class="unlocked-text">已領取</div>
           </div>
         </div>
       </div>
@@ -73,75 +72,62 @@ const emit = defineEmits(['close'])
 // 使用成就 store
 const achievementStore = useAchievementStore()
 
-// 在元件掛載時檢查成就
-onMounted(() => {
-  achievementStore.checkAllAchievements()
+// 檢查成就進度（成就已在 GamePage 初始化時載入）
+onMounted(async () => {
+  // 如果成就已經載入，只檢查是否有新的成就可以解鎖
+  if (achievementStore.achievements.length > 0) {
+    await achievementStore.checkAllAchievements()
+  } else {
+    // 如果成就還沒載入（備用方案），則載入成就
+    await achievementStore.loadAchievements()
+  }
 })
 
-// 計算屬性
-const completedCount = computed(() => {
-  return achievementStore.unlockedAchievements.length
+const completedCount = computed(() => { // 已完成成就數
+  return achievementStore.achievements.filter(a => a.status === 'finish').length
 })
 
-const totalCount = computed(() => {
+const totalCount = computed(() => { // 總成就數
   return achievementStore.achievements.length
 })
 
-const completionRate = computed(() => {
-  return achievementStore.totalProgress
+const completionRate = computed(() => { // 完成率
+  const total = achievementStore.achievements.length || 0
+  if (!total) return 0
+  const finished = achievementStore.achievements.filter(a => a.status === 'finish').length
+  return Math.round((finished / total) * 100)
 })
 
 // 排序後的成就列表
 const sortedAchievements = computed(() => {
+  const rank = { unlocked: 0, locked: 1, finish: 2 }
   return [...achievementStore.achievements].sort((a, b) => {
-    // 第一優先級：已解鎖的排在前面
-    if (!a.unlocked && b.unlocked) return 1
-    if (a.unlocked && !b.unlocked) return -1
-    
-    // 第二優先級：按進度排序
-    const aProgress = a.progress / a.maxProgress
-    const bProgress = b.progress / b.maxProgress
-    return bProgress - aProgress
+    const ra = rank[a.status] ?? 99
+    const rb = rank[b.status] ?? 99
+    if (ra !== rb) return ra - rb
+    // 同一狀態下，先依 maxProgress 由小到大（例如 1 題/第一座/第一個 會排一起）
+    const am = a.maxProgress || (a.condition?.value ?? 1)
+    const bm = b.maxProgress || (b.condition?.value ?? 1)
+    if (am !== bm) return am - bm
+    // 再依名稱穩定排序
+    return String(a.name || a.id).localeCompare(String(b.name || b.id))
   })
 })
 
-// 領取獎勵功能（簡化版，因為 store 中沒有獎勵系統）
+// 領取獎勵：呼叫 store.claim 並顯示提示
 const claimReward = (achievementId) => {
-  // 這裡可以加入獎勵邏輯，比如給玩家科技點
-  console.log(`成就 ${achievementId} 獎勵已領取`);
-};
+  const a = achievementStore.achievements.find(x => x.id === achievementId)
+  if (!a || a.status !== 'unlocked') return
+  achievementStore.claim(achievementId)
+}
 
-
-
-// 顯示獎勵提示
-const showRewardNotification = (reward) => { 
-  // 創建一個臨時的獎勵提示元素
-  const notification = document.createElement('div');
-  notification.className = 'reward-notification';
-  notification.innerHTML = `
-    <div class="reward-notification-content">
-      <span class="reward-icon">🎉</span>
-      <span class="reward-text">獲得獎勵: ${reward}</span>
-    </div>
-  `;
-  
-  document.body.appendChild(notification);
-  
-  // 添加動畫類
-  setTimeout(() => {
-    notification.classList.add('show');
-  }, 100);
-  
-  // 自動移除
-  setTimeout(() => {
-    notification.classList.remove('show');
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 300);
-  }, 3000);
-};
+// 獎勵顯示文字
+const rewardText = (a) => {
+  const tech = a?.reward?.techPoints || 0
+  const wall = a?.reward?.wallDefense || 0
+  if (tech >= 0 && wall >= 0) return `+${tech} 💰、+${wall} 🛡️`
+  return '—'
+}
 </script>
 
 <style scoped>
@@ -311,6 +297,18 @@ const showRewardNotification = (reward) => {
   opacity: 0.8;
 }
 
+.claim-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.claim-btn:hover {
+  background: #218838;
+}
+
 /* 獎勵提示樣式 */
 .reward-notification {
   position: fixed;
@@ -319,68 +317,6 @@ const showRewardNotification = (reward) => {
   z-index: 10000;
   transform: translateX(400px);
   transition: transform 0.3s ease;
-}
-
-.reward-notification.show {
-  transform: translateX(0);
-}
-
-.reward-notification-content {
-  background: linear-gradient(135deg, #28a745, #20c997);
-  color: white;
-  padding: 16px 20px;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(40, 167, 69, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 280px;
-}
-
-.reward-icon {
-  font-size: 24px;
-  animation: bounce 0.6s ease-in-out;
-}
-
-.reward-text {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-@keyframes bounce { 
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-10px);
-  }
-  60% {
-    transform: translateY(-5px);
-  }
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .achievement-content {
-    margin: 20px;
-    max-width: calc(100% - 40px);
-  }
-  
-  .achievement-stats {
-    flex-direction: column;
-    gap: 12px;
-  }
-  
-  .achievement-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-  
-  .achievement-reward {
-    margin-left: 0;
-    align-self: stretch;
-  }
 }
 </style>
 

@@ -21,35 +21,44 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import PixiGameCanvas from '@/components/PixiGameCanvas.vue';
 import StatusBar from '@/components/StatusBar.vue';
 import NpcMenu from '@/components/NpcMenu.vue';
-// import WallMenu from '@/components/WallMenu.vue';
 import QuestionModal from '@/components/QuestionModal.vue';
 import ControlsHint from '@/components/ControlsHint.vue';
 
 import { usePlayerStore } from '@/stores/player';
 import { useUiStore } from '@/stores/ui';
-import { useInventoryStore } from '@/stores/inventory'; // 引入背包 store
+import { useInventoryStore } from '@/stores/inventory'; 
+import { useAchievementStore } from '@/stores/achievement';
+import { useWallStore } from '@/stores/wall'; 
 import RandomEventModal from './RandomEventModal.vue'
-/* ✅ [新增] 引入 QuizPanel */
-import QuizPanel from './QuizPanel.vue' 
 import npcImage from '@/assets/NPC.gif';
 
 const playerStore = usePlayerStore();
 const uiStore = useUiStore();
-const inventoryStore = useInventoryStore(); // 背包 store 實例
+const inventoryStore = useInventoryStore(); 
+const achievementStore = useAchievementStore();
+const wallStore = useWallStore(); 
 
-/* ✅ [新增] 建立 ref，控制 QuizPanel */
+// 初始化玩家資料、成就系統和城堡系統
+onMounted(async () => {
+  // 1. 載入玩家基本資料
+  await playerStore.loadPlayerData();
+  
+  // 2. 載入成就系統
+  await achievementStore.loadAchievements();
+  
+  // 3. 載入城堡系統並同步等級
+  await wallStore.loadCastleLevel();
+  await wallStore.syncCastleLevel();
+});
+
 const quizPanelRef = ref(null)             
 
-/* ✅ [新增] 啟動答題方法 */
 function openQuiz() {
-  quizPanelRef.value.startQuiz("html")   // Firestore 的 category
+  quizPanelRef.value.startQuiz("html")   
 }
 
 // NPC 點擊事件：直接打開選單（背包資料從 Firebase 讀取）
 function onNpcClick() {
-  console.log('🎯 NPC 被點擊，打開選單')
-  
-  // 直接打開 NPC 選單，背包資料會從 Firebase 即時同步
   uiStore.toggleNpcMenu()
 }
 

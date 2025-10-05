@@ -12,7 +12,7 @@ export const useGameStore = defineStore('game', () => {
   const currentQuestion = ref(null);
   const isAnswering = ref(false);
   const tileToUnlock = ref(null); // 要解鎖的地塊座標
-  const userId = ref("demoUser123"); // ⚠️ 這裡可以改成從 Firebase Auth 拿 UID
+  const userId = ref("test-user"); // 使用與其他部分一致的用戶ID
 
   // --- Actions ---
 
@@ -65,7 +65,6 @@ export const useGameStore = defineStore('game', () => {
       // ✅ 檢查必要屬性
       if (result.isCorrect === undefined) {
         throw new Error('後端回應缺少 isCorrect 屬性');
-        
       }
 
       if (result.newHistory) {
@@ -84,7 +83,10 @@ export const useGameStore = defineStore('game', () => {
         alert('答對了！土地已解鎖！');
 
         if (tileToUnlock.value) {
-          const unlockResponse = await apiService.unlockTile(tileToUnlock.value);
+          const playerStore = usePlayerStore();
+          const currentUserId = playerStore.playerId || userId.value || 'test-user';
+          
+          const unlockResponse = await apiService.unlockTile(tileToUnlock.value, currentUserId);
           if (unlockResponse.success) {
             const newMap = unlockResponse.data;
             if (Array.isArray(newMap)) {

@@ -188,14 +188,12 @@ export class Game {
     this.world.addChild(this.grid.gridContainer);
   }
 
-  /**
-   * 建立玩家
-   */
+  /*建立玩家 */
   _createPlayer() {
     this.player = new Player(this.playerStore);
     this.player.create(this.world);
     if (this.player.sprite) {
-        this.player.sprite.zIndex = 5; // 確保玩家在網格之上
+        this.player.sprite.zIndex = 1; // 玩家層級低於建築 
   }
 }
 
@@ -211,7 +209,7 @@ export class Game {
       return;
     }
 
-    // 放置建築模式：只允許在 developed 的土地上
+    // 只有在放置建築模式時才允許滑鼠點擊
     if (this.buildingStore.isPlacing) {
       if (cell.status === 'developed') {
         this.buildingStore.selectTile({ x: col, y: row });
@@ -222,21 +220,8 @@ export class Game {
       return;
     }
 
-    // 一般模式：依狀態執行對應行為
-    switch (cell.status) {
-      case 'locked':
-        this.gameStore.startUnlockProcess({ x: col, y: row });
-        break;
-      case 'developed':
-        alert('這塊地已經開發了，可以從商店購買建築來蓋！');
-        break;
-      case 'placed':
-        // 觸發 UI 提示，不用瀏覽器 confirm
-        this.buildingStore.promptDelete({ x: col, y: row, item: cell.item });
-        break;
-      default:
-        break;
-    }
+    // 非放置模式時，滑鼠點擊無效
+    return;
   }
 
   /**
@@ -299,9 +284,7 @@ export class Game {
     this.app.stage.on('pointermove', this._onDragMove);
   }
 
-  /**
- * 偵測玩家目前所在的網格座標 (按下 Enter 觸發)
- */
+  /*偵測玩家目前所在的網格座標 (按下 Enter 觸發)*/
   _inspectCurrentTile() {
     const playerPos = this.playerStore.position;
     const isoX = playerPos.x;
@@ -321,22 +304,59 @@ export class Game {
     if (row >= 0 && row < this.grid.rows && col >= 0 && col < this.grid.cols) {
       const cell = this.buildingStore.map?.[row]?.[col];
       if (cell) {
-        // 城堡區域不能答題
+        // 城堡區域：顯示進入練功坊確認
         if (cell.type === 'castle') {
-          alert('城堡區域無法互動！');
+          this._showCastleInteraction();
           return;
         }
         
-        // 顯示題目或格子資訊
-        const cellInfo = `格子位置: (${row}, ${col})\n狀態: ${cell.status}`;
-        alert(`當前格子資訊:\n${cellInfo}`);
-        
-        // 觸發格子點擊事件
-        this._handleTileClick(row, col);
+        // 處理格子互動（非放置模式）
+        this._handleTileInteraction(row, col);
       }
     } else {
-      alert('玩家不在有效的遊戲區域內');
+      this.buildingStore.tileDevelopedMessage = '玩家不在有效的遊戲區域內！';
+      setTimeout(() => {
+        this.buildingStore.clearTileMessage();
+      }, 2500);
     }
+  }
+
+  /**
+   * 處理格子互動（鍵盤 Enter 觸發）
+   */
+  _handleTileInteraction(row, col) {
+    const cell = this.buildingStore.map?.[row]?.[col];
+    if (!cell) return;
+    
+    // 城堡區域不能互動
+    if (cell.type === 'castle') {
+      return;
+    }
+
+    // 依狀態執行對應行為
+    switch (cell.status) {
+      case 'locked':
+        this.gameStore.startUnlockProcess({ x: col, y: row });
+        break;
+      case 'developed':
+        this.buildingStore.tileDevelopedMessage = '這塊地已經開發了，可以從商店購買建築來蓋！';
+        setTimeout(() => {
+          this.buildingStore.clearTileMessage();
+        }, 2500);
+        break;
+      case 'placed':
+        // 觸發 UI 提示，不用瀏覽器 confirm
+        this.buildingStore.promptDelete({ x: col, y: row, item: cell.item });
+        break;
+      default:
+        break;
+    }
+  }
+
+  /*顯示城堡互動確認UI*/
+  _showCastleInteraction() {
+    // 顯示城堡互動確認面板
+    this.buildingStore.showCastleInteraction();
   }
 }
 

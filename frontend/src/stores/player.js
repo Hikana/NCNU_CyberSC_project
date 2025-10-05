@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, reactive } from 'vue';
+import { apiService } from '@/services/apiService';
 import { auth } from '@/firebase/firebase';
 
 export const usePlayerStore = defineStore('player', () => {
@@ -17,9 +18,14 @@ export const usePlayerStore = defineStore('player', () => {
   const playerId = ref(null);
   
   /**
-   * 玩家擁有的科技點
+   * 玩家擁有的科技點（從後端同步）
    */
-  const techPoints = ref(500);
+  const techPoints = ref(0);
+
+  /**
+   * 玩家擁有的防禦值（從後端同步）
+   */
+  const defense = ref(120);
 
   /**
    * 玩家在遊戲世界中的邏輯座標
@@ -96,6 +102,32 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   /**
+   * 從後端載入玩家資料
+   */
+  async function loadPlayerData() {
+    try {
+      const userId = playerId.value || 'test-user';
+      const playerData = await apiService.getPlayer(userId);
+      
+      // 更新本地狀態
+      techPoints.value = playerData.techPoints || 0;
+      defense.value = playerData.defense || 120;
+      correctlyAnsweredCount.value = playerData.answeredCount || 0;
+      
+      console.log('✅ 玩家資料已從後端載入:', { techPoints: techPoints.value, defense: defense.value, answeredCount: correctlyAnsweredCount.value });
+    } catch (error) {
+      console.error('載入玩家資料失敗:', error);   
+    }
+  }
+
+  /**
+   * 重新整理玩家資料（用於建築放置後同步科技點）
+   */
+  async function refreshPlayerData() {
+    await loadPlayerData();
+  }
+
+  /**
    * 更新玩家在地圖上的座標
    * @param {{ x: number, y: number }} newPosition - 包含新 x 和 y 座標的物件
    */
@@ -108,24 +140,65 @@ export const usePlayerStore = defineStore('player', () => {
    * 增加科技點
    * @param {number} amount - 要增加的數量
    */
-  function addTechPoints(amount) {
-    techPoints.value += amount;
+  async function addTechPoints(amount) {
+    const newTechPoints = techPoints.value + amount;
+    await updateTechPoints(newTechPoints);
   }
 
   /**
-   * 花費科技點 (一個安全的操作)
-   * @param {number} cost - 要花費的數量
-   * @returns {boolean} - 回傳 true 代表成功，false 代表失敗 (點數不足)
+   * 更新科技點到資料庫
+   * @param {number} newTechPoints - 新的科技點數
    */
-  function spendTechPoints(cost) {
-    if (techPoints.value >= cost) {
-      techPoints.value -= cost;
-      console.log(`花費 ${cost} 科技點，剩餘: ${techPoints.value}`);
-      return true;
-    } else {
-      console.warn(`科技點不足！需要 ${cost}，但只有 ${techPoints.value}`);
-      return false;
+  async function updateTechPoints(newTechPoints) {
+    try {
+      const userId = playerId.value || 'test-user';
+      await apiService.updatePlayerTechPoints(userId, newTechPoints);
+      techPoints.value = newTechPoints;
+      console.log('✅ 科技點已更新到資料庫:', newTechPoints);
+    } catch (error) {
+      console.error('更新科技點失敗:', error);
     }
+  }
+
+  /**
+   * 增加防禦值
+   * @param {number} amount - 要增加的數量
+   */
+  function addDefense(amount) {
+    defense.value += amount;
+  }
+
+  /**
+   * 更新防禦值到資料庫
+   * @param {number} newDefense - 新的防禦值
+   */
+  async function updateDefense(newDefense) {
+    try {
+      const userId = playerId.value || 'test-user';
+      await apiService.updatePlayerDefense(userId, newDefense);
+      defense.value = newDefense;
+      console.log('✅ 防禦值已更新到資料庫:', newDefense);
+      
+      // 同步城堡等級
+      try {
+        const { useWallStore } = await import('./wall');
+        const wallStore = useWallStore();
+        await wallStore.syncCastleLevel();
+      } catch (error) {
+        console.warn('同步城堡等級失敗:', error);
+      }
+    } catch (error) {
+      console.error('更新防禦值失敗:', error);
+    }
+  }
+
+  /**
+   * 檢查是否有足夠的科技點（只檢查，不扣除）
+   * @param {number} cost - 要檢查的數量
+   * @returns {boolean} - 回傳 true 代表足夠，false 代表不足
+   */
+  function hasEnoughTechPoints(cost) {
+    return techPoints.value >= cost;
   }
   
   // --- 新增：更新進度的方法 ---
@@ -149,6 +222,7 @@ export const usePlayerStore = defineStore('player', () => {
     y,
     playerId,
     techPoints,
+    defense,
     position,
     correctlyAnsweredCount,
     setPlayerId,
@@ -160,7 +234,12 @@ export const usePlayerStore = defineStore('player', () => {
     incrementCorrectlyAnsweredCount,
     updatePosition,
     addTechPoints,
-    spendTechPoints,
+    updateTechPoints,
+    addDefense,
+    updateDefense,
+    hasEnoughTechPoints,
+    loadPlayerData,
+    refreshPlayerData,
     startResourceGeneration,
     stopResourceGeneration,
   }

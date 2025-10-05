@@ -58,7 +58,7 @@ class GameService {
     
     if (isCorrect) {
       // 答對了，更新玩家的答題進度
-      await gameData.addCorrectlyAnsweredId(userId, questionId);
+      await playerData.addCorrectlyAnsweredId(userId, questionId);
       // 同時更新玩家的總答對題數
       await playerData.updatePlayer(userId, {
         answeredCount: FieldValue.increment(1)
@@ -76,72 +76,41 @@ class GameService {
     });
 
     // 將包含新紀錄的完整結果回傳給前端
-    return { isCorrect, correctAnswer: question.options[question.answer], userAnswer: question.options[userAnswerIndex],newHistory };
+    return { 
+      isCorrect, 
+      correctAnswer: question.options[question.answer], 
+      userAnswer: question.options[userAnswerIndex],
+      yourAnswer: question.options[userAnswerIndex], // 為了相容性
+      question: question.question,
+      newHistory 
+    };
   }
 
-  // --- 世界/地圖相關 ---
-
-  async getMapState(playerId) {
-  const landData = await playerData.getPlayerLand(playerId);
-  const size = 20;
-
-  // 建立二維陣列
-  const mapArray = Array.from({ length: size }, () =>
-    Array.from({ length: size }, () => ({ status: 'locked' }))
-  );
-
-  // 填充玩家資料
-  Object.keys(landData).forEach(key => {
-    const [x, y] = key.split('_').map(Number);
-    const cell = landData[key];
-    mapArray[y][x] = isCastleTile(y, x) ? { ...cell, type: 'castle' } : cell;
-  });
-
-  // 如果玩家地圖還是空的，初始化預設：依 IsoGrid 的 CASTLE_TILES 畫城堡
-  if (Object.keys(landData).length === 0) {
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        mapArray[y][x] = { status: 'locked' };
-        if (isCastleTile(y, x)) {
-          mapArray[y][x] = { status: 'developed', type: 'castle' };
-        }
-      }
-    }
-  }
-
-  return mapArray;
-}
-
-
-  async placeBuilding(playerId, buildingId, position) {
-    // 後端禁止在城堡座標放置
-    if (isCastleTile(position.y, position.x)) {
-      const err = new Error('城堡區域禁止放置建築');
-      err.status = 400;
-      throw err;
-    }
-    await playerData.updateTile(playerId, position.x, position.y, {
-      status: 'placed',
-      item: buildingId,
-      type: 'building'
-    });
-    return this.getMapState(playerId);
-  }
+  // --- 地圖解鎖相關 ---
 
   async unlockTile(playerId, position) {
-    await playerData.updateTile(playerId, position.x, position.y, { status: 'developed' });
-    await playerData.updatePlayer(playerId, { developedCount: FieldValue.increment(1) });
-    return this.getMapState(playerId);
-  }
-  
-  async clearBuilding(playerId, position) {
-    // 將該格還原為已開發狀態，並移除建築欄位（避免 merge 殘留）
-    await playerData.updateTile(playerId, position.x, position.y, {
-      status: 'developed',
-      item: FieldValue.delete(),
-      type: FieldValue.delete()
-    });
-    return this.getMapState(playerId);
+    try {
+      await playerData.updateTile(playerId, position.x, position.y, { status: 'developed' });
+      await playerData.updatePlayer(playerId, { developedCount: FieldValue.increment(1) });
+      
+      // 返回解鎖後的狀態（簡化版本，不包含建築資訊）
+      const landData = await playerData.getPlayerLand(playerId);
+      const size = 20;
+      const mapArray = Array.from({ length: size }, () =>
+        Array.from({ length: size }, () => ({ status: 'locked' }))
+      );
+
+      Object.keys(landData).forEach(key => {
+        const [x, y] = key.split('_').map(Number);
+        const cell = landData[key];
+        mapArray[y][x] = isCastleTile(y, x) ? { ...cell, type: 'castle' } : cell;
+      });
+
+      return mapArray;
+    } catch (error) {
+      console.error('unlockTile 錯誤:', error);
+      throw error;
+    }
   }
   
   // --- 其他 ---

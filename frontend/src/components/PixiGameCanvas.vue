@@ -23,21 +23,43 @@
     </div>
   </div>
 
-  <!-- 刪除建築 UI -->
+  <!-- 拆除建築 UI -->
   <div v-if="buildingStore.deleteTarget" class="delete-ui">
     <div class="delete-panel">
-      <div class="title">刪除建築</div>
+      <div class="title">拆除建築</div>
       <div class="desc">位置 ({{ buildingStore.deleteTarget.x }}, {{ buildingStore.deleteTarget.y }})</div>
       <div class="actions">
-        <button class="danger" @click="confirmDelete">刪除</button>
+        <button class="danger" @click="confirmDelete">拆除</button>
         <button class="ghost" @click="cancelDelete">取消</button>
       </div>
     </div>
   </div>
 
   <!-- 放置限制訊息（取代 alert） -->
-  <div v-if="buildingStore.placementMessage" class="toast">
-    {{ buildingStore.placementMessage }}
+  <div v-if="buildingStore.placementMessage" class="toast tile-developed">
+    <div class="message-content">
+      <div class="message-icon">🚫</div>
+      <div class="message-text">{{ buildingStore.placementMessage }}</div>
+    </div>
+  </div>
+
+  <!-- 土地已開發提示訊息 -->
+  <div v-if="buildingStore.tileDevelopedMessage" class="toast tile-developed">
+    <div class="message-content">
+      <div class="message-text">{{ buildingStore.tileDevelopedMessage }}</div>
+    </div>
+  </div>
+
+  <!-- 城堡互動確認 -->
+  <div v-if="buildingStore.castleInteraction" class="castle-interaction-ui">
+    <div class="castle-panel">
+      <div class="castle-title">練功坊</div>
+      <div class="castle-desc">確定進入練功坊嗎？</div>
+      <div class="castle-actions">
+        <button class="confirm-btn" @click="enterTrainingRoom">確認</button>
+        <button class="cancel-btn" @click="cancelCastleInteraction">取消</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -82,6 +104,16 @@ function confirmDelete() {
 
 function cancelDelete() {
   buildingStore.cancelDeletePrompt();
+}
+
+function enterTrainingRoom() {
+  // TODO: 實現進入練功坊的邏輯
+  console.log('進入練功坊');
+  buildingStore.hideCastleInteraction();
+}
+
+function cancelCastleInteraction() {
+  buildingStore.hideCastleInteraction();
 }
 </script>
 
@@ -147,22 +179,6 @@ function cancelDelete() {
 }
 .delete-panel .ghost:hover { background: #e5e7eb; }
 
-.toast {
-  position: absolute;
-  top: 32px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #111827;
-  color: #fff;
-  padding: 16px 22px;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-  z-index: 300;
-  max-width: 560px;
-  font-size: 18px;
-  line-height: 1.4; 
-}
-
 .placement-ui {
   position: absolute;
   top: 10px;
@@ -219,5 +235,138 @@ function cancelDelete() {
 
 .cancel-btn:hover {
   background: #da190b;
+}
+
+.toast {
+  position: absolute;
+  top: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  padding: 16px 22px;
+  border-radius: 12px;
+  z-index: 300;
+  max-width: 560px;
+  font-size: 18px;
+  line-height: 1.4; 
+} 
+
+.tile-developed {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  border: 2px solid #16a34a;
+  animation: slideInFromTop 0.3s ease-out;
+}
+
+.tile-developed .message-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tile-developed .message-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.tile-developed .message-text {
+  flex: 1;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.castle-interaction-ui {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 400;
+}
+
+.castle-panel {
+  background:#68bce9;
+  border: 2px solid #0c51a2;
+  border-radius: 16px;
+  padding: 24px;
+  min-width: 320px;
+  text-align: center;
+  animation: castlePanelAppear 0.3s ease-out;
+}
+
+.castle-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: rgb(0, 0, 0);
+  margin-bottom: 12px;
+} 
+
+.castle-desc {
+  font-size: 18px;
+  color: rgb(0, 0, 0);
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+.castle-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.castle-actions .confirm-btn {
+  background: #059669;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.castle-actions .confirm-btn:hover {
+  background: #047857;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+.castle-actions .cancel-btn {
+  background: #f44336;
+  color: rgb(0, 0, 0);
+  border: 2px solid rgba(255,255,255,0.3);
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.castle-actions .cancel-btn:hover {
+  background: #da190b;
+  border-color: rgba(255,255,255,0.5);
+  transform: translateY(-2px);
+}
+
+@keyframes castlePanelAppear {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 </style>

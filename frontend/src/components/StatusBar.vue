@@ -79,7 +79,7 @@ async function clearAllBuildings() {
 
 .tech-info span,
 .wall-info span {
-  color: #000000;
+  color: #ffffff;
   margin: 0 4px;
   font-size: 16px;
   font-weight: bolder; 

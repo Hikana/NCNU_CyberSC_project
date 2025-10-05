@@ -1,6 +1,4 @@
-const { db, admin } = require('../firebase/admin');
-
-
+const { db, admin } = require('../config/firebase');
 
 exports.getInventory = async (req, res) => {
   try {

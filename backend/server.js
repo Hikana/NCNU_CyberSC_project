@@ -2,9 +2,6 @@
 const express = require('express');
 const cors = require('cors');
 
-
-
-
 // 1. 確保 Firebase 在伺服器啟動時就被初始化
 require('./config/firebase');
 
@@ -13,7 +10,7 @@ const port = 3000;
 
 // 2. 引入遊戲(答題)與建築(地圖)路由
 const gameRoutes = require('./routes/gameRoutes');
-//const buildingRoutes = require('./routes/buildingRoutes');
+const buildingRoutes = require('./routes/buildingRoutes'); 
 const playerRoutes = require('./routes/playerRoutes');
 const inventoryRoutes = require('./routes/inventory');
 
@@ -26,8 +23,8 @@ app.use(express.static('public'));
 // 3. 註冊 API 路由
 // 答題/題庫
 app.use('/api/game', gameRoutes);
-// 地圖/建築（語義清楚）
-//app.use('/api/buildings', buildingRoutes);
+// 建築系統（獨立路由）
+app.use('/api/buildings', buildingRoutes);
 // 玩家與背包
 app.use('/api/players', playerRoutes);
 //工具

@@ -1,4 +1,3 @@
-// backend/models/playerData.js
 const { db, FieldValue } = require('../config/firebase');
 
 /**
@@ -42,7 +41,12 @@ class PlayerData {
   }
 
   async updatePlayer(playerId, data) {
-    return this.players.doc(playerId).set(data, { merge: true });
+    try {
+      return await this.players.doc(playerId).update(data);
+    } catch (error) {
+      console.error('updatePlayer 錯誤:', error);
+      throw error;
+    }
   }
 
   async addCorrectlyAnsweredId(userId, questionId) {
@@ -104,6 +108,38 @@ class PlayerData {
     const snapshot = await this.achievements.get();
     if (snapshot.empty) return [];
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  // 取得玩家成就進度
+  async getPlayerAchievements(userId) {
+    const snapshot = await this.players.doc(userId).collection('achievements').get();
+    if (snapshot.empty) return [];
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  // 更新玩家成就狀態
+  async updatePlayerAchievement(userId, achievementId, updateData) {
+    console.log(`📝 準備更新 Firestore: players/${userId}/achievements/${achievementId}`);
+    console.log(`📝 更新資料:`, updateData);
+    
+    const docRef = this.players.doc(userId).collection('achievements').doc(achievementId);
+    const updatePayload = {
+      ...updateData,
+      updatedAt: FieldValue.serverTimestamp()
+    };
+    
+    // 如果是領取獎勵，記錄領取時間
+    if (updateData.status === 'finish') {
+      updatePayload.claimedAt = Date.now();
+      console.log(`🏆 成就已完成，記錄領取時間: ${updatePayload.claimedAt}`);
+    }
+    
+    console.log(`📝 最終更新資料:`, updatePayload);
+    await docRef.set(updatePayload, { merge: true });
+    
+    const result = { id: achievementId, ...updatePayload };
+    console.log(`✅ Firestore 更新完成:`, result);
+    return result;
   }
 }
 

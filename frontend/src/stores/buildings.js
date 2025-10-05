@@ -29,6 +29,8 @@ export const useBuildingStore = defineStore('buildings', {
     isPlacing: false,
     deleteTarget: null,
     placementMessage: null,
+    tileDevelopedMessage: null,
+    castleInteraction: null,
     
     // 商店建築列表的 id 改為字串，以匹配 IsoGrid.js
     shopBuildings: [
@@ -52,27 +54,41 @@ export const useBuildingStore = defineStore('buildings', {
   actions: {
     // 新增：從後端載入地圖狀態的 action
     async loadMap() {
-  try {
-    const response = await apiService.getMap();
-    if (response.success) {
-      const newMap = response.data;
+      try {
+        const playerStore = usePlayerStore();
+        const userId = playerStore.playerId || playerStore.initFromAuth() || 'test-user';
+        
+        const mapData = await apiService.getMap(userId);
+        
+        // 確保 mapData 是正確的二維陣列格式
+        if (Array.isArray(mapData) && Array.isArray(mapData[0])) {
+          this.map = mapData;
+        } else {
+          console.error('地圖資料格式不正確:', mapData);
+          // 建立預設地圖
+          this.map = Array.from({ length: 20 }, (_, y) =>
+            Array.from({ length: 20 }, (_, x) => ({ 
+              status: 'locked', 
+              type: 'empty',
+              x, 
+              y 
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('從後端載入地圖失敗:', error);
+        // 建立預設地圖作為備用
+        this.map = Array.from({ length: 20 }, (_, y) =>
+          Array.from({ length: 20 }, (_, x) => ({ 
+            status: 'locked', 
+            type: 'empty',
+            x, 
+            y 
+          }))
+        );
+      }
+    },
 
-      // 把物件轉成 20x20 陣列
-      const size = 20;
-      this.map = Array.from({ length: size }, (_, y) =>
-        Array.from({ length: size }, (_, x) => newMap[y]?.[x] || { status: 'locked' })
-      );
-
-      console.log('✅ 地圖資料成功從後端載入並轉成陣列');
-    }
-  } catch (error) {
-    console.error('從後端載入地圖失敗:', error);
-  }
-},
-
-
-
-    // (setPlacementMode, startPlacing, selectTile, clearSelectedTile 維持不變)
     setPlacementMode(enabled, buildingId = null) {
       this.isPlacing = enabled;
       this.selectedBuildingId = buildingId;
@@ -112,73 +128,48 @@ export const useBuildingStore = defineStore('buildings', {
       }, 2500);
     },
     clearPlacementMessage() { this.placementMessage = null; },
+    clearTileMessage() { this.tileDevelopedMessage = null; },
+    showCastleInteraction() { this.castleInteraction = true; },
+    hideCastleInteraction() { this.castleInteraction = null; },
     
-    // 修改 confirmPlacement，使用 apiService
+    
     async confirmPlacement() {
       if (!this.selectedTile || !this.selectedBuildingId) {
         console.warn('無法確認放置：未選擇瓦片或建築');
         return;
       }
-
+    
       // 禁止在城堡九格放置
-      const isCastleTile = (row, col) => (
-        (row >= 1 && row <= 3) && (col >= 1 && col <= 3)
-      )
+      const isCastleTile = (row, col) => (row >= 1 && row <= 3) && (col >= 1 && col <= 3);
       if (isCastleTile(this.selectedTile.y, this.selectedTile.x)) {
-        alert('此區域為城堡，無法放置建築')
-        this.isPlacing = false
-        this.selectedTile = null
-        this.selectedBuildingId = null
-        return
+        alert('此區域為城堡，無法放置建築');
+        this.isPlacing = false;
+        this.selectedTile = null;
+        this.selectedBuildingId = null;
+        return;
       }
-
+    
       try {
+        const playerStore = usePlayerStore();
+        const userId = playerStore.playerId || playerStore.initFromAuth() || 'test-user';
+    
+        // ✅ 確認前端呼叫方式
         const response = await apiService.placeBuilding(
           this.selectedBuildingId,
-          this.selectedTile
+          { x: this.selectedTile.x, y: this.selectedTile.y }, // 確保傳 position 是物件 {x,y}
+          userId // userId 放第三個參數，apiService 內會自動放到 query
         );
-        
+    
         if (response.success) {
-          // 後端成功後才扣科技點
-          const playerStore = usePlayerStore()
-          const buildingItem = this.shopBuildings.find(b => b.id === this.selectedBuildingId)
-          if (buildingItem) {
-            playerStore.spendTechPoints(buildingItem.techCost)
-            console.log(`確認建造，扣除 ${buildingItem.techCost} 科技點`)
-          }
-          // 後端回傳最新地圖狀態於 data
-          this.map = response.data
-          this.isPlacing = false
-          this.selectedTile = null
-          this.selectedBuildingId = null
+          await playerStore.refreshPlayerData(); // 更新玩家資料
+          this.map = response.data; // 更新地圖
+          this.isPlacing = false;
+          this.selectedTile = null;
+          this.selectedBuildingId = null;
           console.log('建築放置成功，更新地圖');
         } else {
-          // 如果後端失敗，在本地更新地圖（用於測試）
-          const { x, y } = this.selectedTile
-          // 本地測試時也扣科技點
-          const playerStore = usePlayerStore()
-          const buildingItem = this.shopBuildings.find(b => b.id === this.selectedBuildingId)
-          if (buildingItem) {
-            playerStore.spendTechPoints(buildingItem.techCost)
-            console.log(`確認建造（本地），扣除 ${buildingItem.techCost} 科技點`)
-          }
-          this.map[y][x] = {
-            status: 'placed',
-            item: this.selectedBuildingId
-          }
-          this.isPlacing = false
-          this.selectedTile = null
-          this.selectedBuildingId = null
-          console.log('建築放置成功（本地更新），更新地圖');
-          
-          // 檢查建築相關成就
-          try {
-            const { useAchievementStore } = await import('./achievement')
-            const achievementStore = useAchievementStore()
-            achievementStore.checkBuildingAchievements()
-          } catch (error) {
-            console.log('成就檢查失敗:', error)
-          }
+          console.error('建築放置失敗:', response.message || '未知錯誤');
+          alert('建築放置失敗，請稍後再試');
         }
       } catch (err) {
         console.error('建築放置請求失敗:', err);
@@ -189,62 +180,28 @@ export const useBuildingStore = defineStore('buildings', {
     // 購買建築（不扣科技點，只進入放置模式）
     buyBuilding(buildingItem) {
       console.log(`選擇建築 ${buildingItem.name}！`)
-      // 直接設置放置模式，不扣科技點
       this.setPlacementMode(true, buildingItem.id)
       return true
     },
 
-    // 清除地圖上的所有建築（逐格呼叫現有後端 API）
-    async clearAllBuildings() {
-      try {
-        const tasks = []
-        const size = Array.isArray(this.map) ? this.map.length : 0
-        for (let y = 0; y < size; y++) {
-          for (let x = 0; x < this.map[y].length; x++) {
-            const cell = this.map[y][x]
-            if (cell && cell.status === 'placed') {
-              // 依序執行，避免同時過多請求
-              // 也可改為批次 Promise.all 分批執行
-              // 這裡先推入任務，後面逐一 await
-              tasks.push(() => apiService.clearBuilding({ x, y }))
-            }
-          }
-        }
-
-        for (const run of tasks) {
-          await run()
-        }
-
-        await this.loadMap()
-        this.isPlacing = false
-        this.selectedTile = null
-        this.selectedBuildingId = null
-        console.log('已清除地圖上的所有建築（逐格調用後端）')
-        return true
-      } catch (error) {
-        console.error('清除建築失敗:', error)
-        return false
-      }
-    },
 
     // 清除特定位置的建築
     async clearBuildingAt(x, y) {
       try {
-        const response = await apiService.clearBuilding({ x, y });
-        if (response.success) {
-          // 後端回傳可能是物件或二維陣列，統一轉成 20x20 陣列
-          const newMap = response.data;
-          if (Array.isArray(newMap)) {
-            this.map = newMap;
-          } else {
-            const size = 20;
-            this.map = Array.from({ length: size }, (_, row) =>
-              Array.from({ length: size }, (_, col) => newMap[row]?.[col] || { status: 'locked' })
-            );
-          }
-          console.log(`已清除位置 (${x}, ${y}) 的建築（後端同步）`)
-          this.deleteTarget = null;
+        const playerStore = usePlayerStore();
+        const userId = playerStore.playerId || playerStore.initFromAuth() || 'test-user';
+        
+        const newMap = await apiService.clearBuilding({ x, y }, userId);
+        
+        // 確保是二維陣列格式
+        if (Array.isArray(newMap) && Array.isArray(newMap[0])) {
+          this.map = newMap;
+        } else {
+          console.error('清除建築後的地圖資料格式不正確:', newMap);
         }
+        
+        console.log(`已清除位置 (${x}, ${y}) 的建築（後端同步）`);
+        this.deleteTarget = null;
       } catch (e) {
         console.error('清除建築失敗:', e);
       }
