@@ -127,7 +127,7 @@ function cancelCastleInteraction() {
   left: 0;
   z-index: 0;
   min-width: 100vw;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .pixi-canvas canvas {

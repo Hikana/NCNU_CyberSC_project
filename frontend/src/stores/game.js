@@ -12,7 +12,7 @@ export const useGameStore = defineStore('game', () => {
   const currentQuestion = ref(null);
   const isAnswering = ref(false);
   const tileToUnlock = ref(null); // 要解鎖的地塊座標
-  const userId = ref("test-user"); // 使用與其他部分一致的用戶ID
+  const userId = ref(null); // 將從 playerStore 獲取真實的 userId
 
   // --- Actions ---
 
@@ -84,7 +84,11 @@ export const useGameStore = defineStore('game', () => {
 
         if (tileToUnlock.value) {
           const playerStore = usePlayerStore();
-          const currentUserId = playerStore.playerId || userId.value || 'test-user';
+          if (!playerStore.userId) {
+            console.warn('⚠️ 尚未登入，無法解鎖地塊');
+            return;
+          }
+          const currentUserId = playerStore.userId;
           
           const unlockResponse = await apiService.unlockTile(tileToUnlock.value, currentUserId);
           if (unlockResponse.success) {

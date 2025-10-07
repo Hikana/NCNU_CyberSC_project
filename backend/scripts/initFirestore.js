@@ -26,8 +26,9 @@ async function initFirestore() {
     console.log("🚀 開始初始化 Firestore 資料...");
 
     // 1️⃣ 建立玩家背包
-    const playerId = "test-user"; // 先用你現在的玩家
-    const backpackRef = db.collection("players").doc(playerId).collection("backpack");
+    // 注意：這個腳本僅用於初始化測試資料，實際運行時會根據真實用戶ID創建資料
+    const userId = "test-user"; // 測試用，實際系統會使用真實的 Firebase UID
+    const backpackRef = db.collection("players").doc(userId).collection("backpack");
     await backpackRef.doc("tool01").set({
       name: "輸入驗證工具",
       count: 1,
@@ -46,7 +47,7 @@ async function initFirestore() {
     });
 
     // 3️⃣ 建立事件範例
-    const eventRef = db.collection("events").doc(playerId).collection("list").doc("event01");
+    const eventRef = db.collection("events").doc(userId).collection("list").doc("event01");
     await eventRef.set({
       title: "SQL Injection 攻擊",
       description: "駭客正嘗試對資料庫進行 SQL 注入攻擊！",

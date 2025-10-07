@@ -90,13 +90,13 @@ class GameService {
 
   // --- 地圖解鎖相關 ---
 
-  async unlockTile(playerId, position) {
+  async unlockTile(userId, position) {
     try {
-      await playerData.updateTile(playerId, position.x, position.y, { status: 'developed' });
-      await playerData.updatePlayer(playerId, { developedCount: FieldValue.increment(1) });
+      await playerData.updateTile(userId, position.x, position.y, { status: 'developed' });
+      await playerData.updatePlayer(userId, { developedCount: FieldValue.increment(1) });
       
       // 返回解鎖後的狀態（簡化版本，不包含建築資訊）
-      const landData = await playerData.getPlayerLand(playerId);
+      const landData = await playerData.getPlayerLand(userId);
       const size = 20;
       const mapArray = Array.from({ length: size }, () =>
         Array.from({ length: size }, () => ({ status: 'locked' }))

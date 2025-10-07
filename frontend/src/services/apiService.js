@@ -95,16 +95,12 @@ async function requestInventory(url, options = {}) {
       config.body = JSON.stringify(config.body);
     }
 
-    console.log(`🔄 背包 API 請求: ${config.method} ${url}`);
-    
     const response = await fetch(url, config);
     const json = await response.json();
     
     if (!response.ok || !json.success) {
       throw new Error(json.message || '背包 API 請求失敗');
     }
-
-    console.log(`✅ 背包 API 成功: ${config.method} ${url}`);
     return json.data;
   } catch (error) {
     console.error(`❌ 背包 API 錯誤 at ${url}:`, error);
@@ -163,16 +159,6 @@ export const apiService = {
         return json.data;
       });
   },
-
-  // 同步目前地圖到伺服器（以目前登入者）
-  syncMap: async (map) => {
-    if (!Array.isArray(map) || !Array.isArray(map[0])) {
-      return Promise.reject(new Error('map 必須是二維陣列'));
-    }
-    const url = `${BUILDING_BASE_URL}/map/sync`;
-    return requestInventory(url, { method: 'POST', body: { map } });
-  },
-
 
   // --- 地圖功能（保留在 game API 中） ---
   unlockTile: (position, userId) => {

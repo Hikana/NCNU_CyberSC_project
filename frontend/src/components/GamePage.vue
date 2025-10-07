@@ -74,9 +74,8 @@ function onNpcClick() {
 
 <style scoped>
 .game-wrapper {
-  width: 100vw;
-  height: 100vh;
-  position: relative; /* 成為所有絕對定位子元素的基準 */
+  position: fixed; /* 直接佔滿視窗，避免父層高度鏈問題 */
+  inset: 0;        /* top:0; right:0; bottom:0; left:0; */
   overflow: hidden;
   background-size: cover;
   background-position: center;
@@ -139,12 +138,6 @@ function onNpcClick() {
   pointer-events: auto;
 }
 
-/* 確保 WallMenu 有正確的層級
-:deep(.wall-menu) {
-  z-index: 25;
-  pointer-events: auto;
-  transition: transform 0.2s ease-in-out;
-} */
 .npc:hover {
     transform: scale(1.1);
 }

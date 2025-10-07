@@ -21,7 +21,4 @@ router.get('/shop', buildingController.getBuildingShop);
 // 取得建築資訊
 router.get('/info/:buildingId', buildingController.getBuildingInfo);
 
-// 同步目前使用者的地圖狀態（以前端傳來的 map 為準）
-router.post('/map/sync', auth, buildingController.syncMap);
-
 module.exports = router;

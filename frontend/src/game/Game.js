@@ -308,7 +308,7 @@ export class Game {
     this._handleKeydown = (e) => { this.keys[e.code] = true; };
     this._handleKeyup = (e) => { 
       this.keys[e.code] = false;
-      if (e.code === 'Enter') {
+      if (e.code === 'Enter' || e.code === 'KeyE') {
         this._inspectCurrentTile();
       }
     };
