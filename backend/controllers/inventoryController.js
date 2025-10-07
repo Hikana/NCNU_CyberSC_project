@@ -2,9 +2,9 @@ const { db, admin } = require('../config/firebase');
 
 exports.getInventory = async (req, res) => {
   try {
-    const playerId = req.params.playerId || req.user.uid;
+    const userId = req.params.userId || req.user.uid;
     const invSnap = await db.collection('players')
-                          .doc(playerId)
+                          .doc(userId)
                           .collection('inventory')
                           .get();
     const items = invSnap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -17,11 +17,11 @@ exports.getInventory = async (req, res) => {
 
 exports.addItem = async (req, res) => {
   try {
-    const playerId = req.params.playerId || req.user.uid;
+    const userId = req.params.userId || req.user.uid;
     const { templateId, amount = 1 } = req.body;
     if (!templateId) return res.status(400).json({ error: 'templateId required' });
 
-    const invDocRef = db.collection('players').doc(playerId).collection('inventory').doc(templateId);
+    const invDocRef = db.collection('players').doc(userId).collection('inventory').doc(templateId);
     const templateRef = db.collection('itemTemplates').doc(templateId);
 
     // transaction: 如果已存在就增加 qty，不存在就建立並從模板帶入 name/type/defense
@@ -41,7 +41,7 @@ exports.addItem = async (req, res) => {
         tx.update(invDocRef, { qty: admin.firestore.FieldValue.increment(amount) });
       }
       // optional: push to history
-      const hRef = db.collection('players').doc(playerId).collection('history').doc();
+      const hRef = db.collection('players').doc(userId).collection('history').doc();
       tx.set(hRef, {
         type: 'inventory_add',
         templateId,
@@ -59,11 +59,11 @@ exports.addItem = async (req, res) => {
 
 exports.useItem = async (req, res) => {
   try {
-    const playerId = req.params.playerId || req.user.uid;
+    const userId = req.params.userId || req.user.uid;
     const { templateId, amount = 1 } = req.body;
     if (!templateId) return res.status(400).json({ error: 'templateId required' });
 
-    const invDocRef = db.collection('players').doc(playerId).collection('inventory').doc(templateId);
+    const invDocRef = db.collection('players').doc(userId).collection('inventory').doc(templateId);
 
     const result = await db.runTransaction(async (tx) => {
       const invDoc = await tx.get(invDocRef);
@@ -75,7 +75,7 @@ exports.useItem = async (req, res) => {
       else tx.delete(invDocRef);
 
       // add history
-      const hRef = db.collection('players').doc(playerId).collection('history').doc();
+      const hRef = db.collection('players').doc(userId).collection('history').doc();
       tx.set(hRef, {
         type: 'inventory_use',
         templateId,

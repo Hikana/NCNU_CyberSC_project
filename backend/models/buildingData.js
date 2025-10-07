@@ -12,16 +12,8 @@ class BuildingData {
   async getMap() {
     const doc = await this.mapDocRef.get();
     if (!doc.exists) {
-      const newMap = Array.from({ length: 20 }, (_, y) => 
-        Array.from({ length: 20 }, (_, x) => ({
-          status: 'locked',
-          type: 'empty',
-          x,
-          y
-        }))
-      );
-      await this.mapDocRef.set({ tiles: newMap });
-      return newMap;
+      // 如果不存在，初始化地圖
+      return await this.initializeMap();
     }
     const tiles = doc.data().tiles;
     
@@ -29,10 +21,10 @@ class BuildingData {
     if (!Array.isArray(tiles) && typeof tiles === 'object') {
       const convertedMap = Array.from({ length: 20 }, (_, y) =>
         Array.from({ length: 20 }, (_, x) => {
-          const cell = tiles[y]?.[x] || { type: 'empty' };
+          const cell = tiles[y]?.[x] || { baseType: 'empty' };
           return {
             ...cell,
-            status: cell.status || 'locked',
+            baseType: cell.baseType || cell.type || 'empty', 
             x,
             y
           };
@@ -58,21 +50,19 @@ class BuildingData {
     if (!doc.exists) {
       const newMap = Array.from({ length: 20 }, (_, y) => 
         Array.from({ length: 20 }, (_, x) => ({
-          status: 'locked',
-          type: 'empty',
+          // 全域地圖只存儲靜態資訊，不存儲動態狀態
+          baseType: 'empty',         
           x,
-          y,
-          unlockCost: Math.floor(Math.random() * 100) + 50 // 隨機解鎖成本
+          y
         }))
       );
       
-      // 設置城堡區域為 developed
+      // 設置城堡區域的基礎類型
       for (let y = 0; y <= 2; y++) {
         for (let x = 0; x <= 2; x++) {
           newMap[y][x] = {
             ...newMap[y][x],
-            status: 'developed',
-            type: 'castle'
+            baseType: 'castle',
           };
         }
       }

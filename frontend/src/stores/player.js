@@ -15,7 +15,7 @@ export const usePlayerStore = defineStore('player', () => {
   /**
    * Firebase 使用者 ID，用於 Firestore 對應玩家文件
    */
-  const playerId = ref(null);
+  const userId = ref(null);
   
   /**
    * 玩家擁有的科技點（從後端同步）
@@ -25,7 +25,7 @@ export const usePlayerStore = defineStore('player', () => {
   /**
    * 玩家擁有的防禦值（從後端同步）
    */
-  const defense = ref(120);
+  const defense = ref(0);
 
   /**
    * 玩家在遊戲世界中的邏輯座標
@@ -89,8 +89,8 @@ export const usePlayerStore = defineStore('player', () => {
   /**
    * 設定玩家 ID（登入後呼叫）
    */
-  function setPlayerId(id) {
-    playerId.value = id || null;
+  function setUserId(id) {
+    userId.value = id || null;
   }
 
   /**
@@ -98,8 +98,8 @@ export const usePlayerStore = defineStore('player', () => {
    */
   function initFromAuth() {
     const uid = auth.currentUser?.uid || null;
-    if (uid) playerId.value = uid;
-    return playerId.value;
+    if (uid) userId.value = uid;
+    return userId.value;
   }
 
   /**
@@ -107,7 +107,7 @@ export const usePlayerStore = defineStore('player', () => {
    */
   async function loadPlayerData() {
     try {
-      const uid = playerId.value || auth.currentUser?.uid || null;
+      const uid = userId.value || auth.currentUser?.uid || null;
       if (!uid) {
         console.warn('⚠️ 無法載入玩家資料：尚未登入（無 uid）');
         return;
@@ -156,7 +156,7 @@ export const usePlayerStore = defineStore('player', () => {
    */
   async function updateTechPoints(newTechPoints) {
     try {
-      const uid = playerId.value || auth.currentUser?.uid || null;
+      const uid = userId.value || auth.currentUser?.uid || null;
       if (!uid) throw new Error('尚未登入，無法更新科技點');
       await apiService.updatePlayerTechPoints(uid, newTechPoints);
       techPoints.value = newTechPoints;
@@ -180,7 +180,7 @@ export const usePlayerStore = defineStore('player', () => {
    */
   async function updateDefense(newDefense) {
     try {
-      const uid = playerId.value || auth.currentUser?.uid || null;
+      const uid = userId.value || auth.currentUser?.uid || null;
       if (!uid) throw new Error('尚未登入，無法更新防禦值');
       await apiService.updatePlayerDefense(uid, newDefense);
       defense.value = newDefense;
@@ -227,12 +227,12 @@ export const usePlayerStore = defineStore('player', () => {
   return {
     x,
     y,
-    playerId,
+    userId,
     techPoints,
     defense,
     position,
     correctlyAnsweredCount,
-    setPlayerId,
+    setUserId,
     initFromAuth,
     moveUp,
     moveDown,

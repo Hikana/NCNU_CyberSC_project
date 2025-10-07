@@ -14,8 +14,8 @@ class PlayerData {
   }
 
   // --- 玩家 (Player) 相關 ---
-  async getPlayer(playerId) {
-    const docRef = this.players.doc(playerId);
+  async getPlayer(userId) {
+    const docRef = this.players.doc(userId);
     const doc = await docRef.get();
 
     if (!doc.exists) {
@@ -66,7 +66,10 @@ class PlayerData {
       };
       
       await docRef.set(newPlayerData);
-      console.log(`為新玩家 ${playerId} 建立了初始資料。`);
+      console.log(`為新玩家 ${userId} 建立了初始資料。`);
+      
+      // 初始化新玩家的地圖瓦片資料
+      await this.initializePlayerLand(userId);
       
       return {
         ...newPlayerData,
@@ -85,9 +88,9 @@ class PlayerData {
     };
   }
 
-  async updatePlayer(playerId, data) {
+  async updatePlayer(userId, data) {
     try {
-      return await this.players.doc(playerId).update(data);
+      return await this.players.doc(userId).update(data);
     } catch (error) {
       console.error('updatePlayer 錯誤:', error);
       throw error;
@@ -124,16 +127,57 @@ class PlayerData {
   }
 
   // --- 土地 (Land) 相關 ---
-  async getPlayerLand(playerId) {
-    const snapshot = await this.land.doc(playerId).collection('tiles').get();
+  
+  // 初始化新玩家的地圖瓦片資料
+  async initializePlayerLand(userId) {
+    console.log(`🗺️ 開始為新玩家 ${userId} 初始化地圖瓦片資料...`);
+    
+    const batch = db.batch();
+    const tilesCollection = this.land.doc(userId).collection('tiles');
+    
+    // 創建 20x20 的地圖瓦片
+    for (let y = 0; y < 20; y++) {
+      for (let x = 0; x < 20; x++) {
+        const tileId = `${x}_${y}`;
+        const tileData = {
+          x,
+          y,
+          type: 'empty',
+          status: 'locked',
+          buildingId: null,
+        };
+        
+        // 設置城堡區域 (0,0)-(2,2) 為已開發狀態
+        if (y <= 2 && x <= 2) {
+          tileData.status = 'developed';
+          tileData.type = 'castle';
+          tileData.buildingId = null;
+        }
+        
+        const tileRef = tilesCollection.doc(tileId);
+        batch.set(tileRef, tileData);
+      }
+    }
+    
+    try {
+      await batch.commit();
+      console.log(`✅ 成功為玩家 ${userId} 初始化了 400 個地圖瓦片`);
+    } catch (error) {
+      console.error(`❌ 初始化玩家 ${userId} 地圖瓦片失敗:`, error);
+      throw error;
+    }
+  }
+
+  async getPlayerLand(userId) {
+    const snapshot = await this.land.doc(userId).collection('tiles').get();
     const landData = {};
     snapshot.forEach(doc => { landData[doc.id] = doc.data(); });
     return landData;
   }
 
-  async updateTile(playerId, x, y, data) {
+  async updateTile(userId, x, y, data) {
     const tileId = `${x}_${y}`;
-    return this.land.doc(playerId).collection('tiles').doc(tileId).set(data, { merge: true });
+    return this.land.doc(userId).collection('tiles').doc(tileId).set(data, { merge: true });
   }
 
   // --- 商店 (Shop) ---

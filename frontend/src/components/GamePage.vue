@@ -14,8 +14,7 @@
       <img :src="npcImage" alt="NPC" class="npc" @click="onNpcClick" />
       <ControlsHint /> 
       <NpcMenu @close="uiStore.closeAllMenus()" />
-      <!-- <WallMenu /> -->
-      <QuestionModal />
+      <QuizPanel />
     </div>
 
     <!-- ✅ 新增：隨機事件彈窗 (只在遊戲裡出現) -->
@@ -28,7 +27,7 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import PixiGameCanvas from '@/components/PixiGameCanvas.vue';
 import StatusBar from '@/components/StatusBar.vue';
 import NpcMenu from '@/components/NpcMenu.vue';
-import QuestionModal from '@/components/QuestionModal.vue';
+import QuizPanel from '@/components/QuizPanel.vue';
 import ControlsHint from '@/components/ControlsHint.vue';
 
 import { usePlayerStore } from '@/stores/player';
@@ -59,12 +58,6 @@ onMounted(async () => {
   await wallStore.syncCastleLevel();
 });
 
-const quizPanelRef = ref(null)             
-
-function openQuiz() {
-  quizPanelRef.value.startQuiz("html")   
-}
-
 // NPC 點擊事件：直接打開選單（背包資料從 Firebase 讀取）
 function onNpcClick() {
   uiStore.toggleNpcMenu()
@@ -74,9 +67,8 @@ function onNpcClick() {
 
 <style scoped>
 .game-wrapper {
-  width: 100vw;
-  height: 100vh;
-  position: relative; /* 成為所有絕對定位子元素的基準 */
+  position: fixed; /* 直接佔滿視窗，避免父層高度鏈問題 */
+  inset: 0;        /* top:0; right:0; bottom:0; left:0; */
   overflow: hidden;
   background-size: cover;
   background-position: center;
@@ -139,12 +131,6 @@ function onNpcClick() {
   pointer-events: auto;
 }
 
-/* 確保 WallMenu 有正確的層級
-:deep(.wall-menu) {
-  z-index: 25;
-  pointer-events: auto;
-  transition: transform 0.2s ease-in-out;
-} */
 .npc:hover {
     transform: scale(1.1);
 }

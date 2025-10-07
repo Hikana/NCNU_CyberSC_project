@@ -66,22 +66,7 @@ class BuildingController {
     
     res.status(200).json({ success: true, data: buildingInfo });
   });
-
-  // 將前端目前地圖狀態同步到資料庫（只寫入非 locked 與城堡保留規則）
-  syncMap = asyncHandler(async (req, res) => {
-    const userId = req.user.uid;
-    const { map } = req.body; // 二維陣列，每格含 { status, buildingId?, x, y }
-    if (!Array.isArray(map) || !Array.isArray(map[0])) {
-      return res.status(400).json({ success: false, message: '地圖格式錯誤，需為二維陣列' });
-    }
-    try {
-      const updated = await buildingService.syncMap(userId, map);
-      res.status(200).json({ success: true, data: updated });
-    } catch (err) {
-      console.error('syncMap 錯誤:', err);
-      res.status(500).json({ success: false, message: err.message || '同步地圖失敗' });
-    }
-  });
+  
 }
 
 module.exports = new BuildingController();

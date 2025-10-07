@@ -27,7 +27,11 @@ export const useAchievementStore = defineStore('achievement', {
       this.error = null;
       try {
         const playerStore = usePlayerStore();
-        const uid = playerStore.playerId || playerStore.initFromAuth() || 'test-user';
+        const uid = playerStore.userId || playerStore.initFromAuth();
+        if (!uid) {
+          console.warn('⚠️ 尚未登入，無法載入成就資料');
+          return;
+        }
         
         // 透過 API 取得玩家成就進度（已包含全域成就和玩家進度的合併）
         const achievements = await apiService.getPlayerAchievements(uid);
@@ -64,7 +68,11 @@ export const useAchievementStore = defineStore('achievement', {
       const gameStats = { answeredCount, itemCount, developedCount, eventCount };
       
       try {
-        const uid = playerStore.playerId || playerStore.initFromAuth() || 'test-user';
+        const uid = playerStore.userId || playerStore.initFromAuth();
+        if (!uid) {
+          console.warn('⚠️ 尚未登入，無法載入成就資料');
+          return;
+        }
         // 透過 API 檢查並更新成就進度
         const updatedAchievements = await apiService.checkAchievements(uid, gameStats);
         this.achievements = updatedAchievements.map(a => ({ ...a, _applied: false }));
@@ -96,7 +104,11 @@ export const useAchievementStore = defineStore('achievement', {
       
       // 透過 API 更新玩家成就狀態
       const playerStore = usePlayerStore();
-      const uid = playerStore.playerId || playerStore.initFromAuth() || 'test-user';
+      const uid = playerStore.userId || playerStore.initFromAuth();
+      if (!uid) {
+        console.warn('⚠️ 尚未登入，無法更新成就');
+        return;
+      }
       
       try {
         console.log('🔄 正在更新成就狀態到資料庫:', achievementId, 'status: finish');

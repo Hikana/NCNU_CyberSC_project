@@ -13,7 +13,7 @@ export const useGameStore = defineStore('game', () => {
   const currentQuestion = ref(null);
   const isAnswering = ref(false);
   const tileToUnlock = ref(null); // 要解鎖的地塊座標
-  const userId = ref("test-user"); // 使用與其他部分一致的用戶ID
+  const userId = ref(null); // 將從 playerStore 獲取真實的 userId
 
   // --- Actions ---
 
@@ -92,8 +92,9 @@ export const useGameStore = defineStore('game', () => {
       /*historyStore.addHistoryEntry(newHistoryEntry);
       console.log('✅ 歷史記錄已即時更新:', newHistoryEntry);*/
 
-      // 處理答題結果
+      // 處理答題結果（不使用 alert，改由呼叫端決定顯示方式）
       if (result.isCorrect) {
+
         // 🎁 顯示獎勵信息
         alert('答對了！土地已解鎖！\n🎁 獲得獎勵：\n+50 科技點\n+10 防禦值');
 
@@ -103,7 +104,7 @@ export const useGameStore = defineStore('game', () => {
 
         if (tileToUnlock.value) {
           const currentUserId = playerStore.playerId || userId.value || 'test-user';
-          
+     
           const unlockResponse = await apiService.unlockTile(tileToUnlock.value, currentUserId);
           if (unlockResponse.success) {
             const responseData = unlockResponse.data;
@@ -133,15 +134,12 @@ export const useGameStore = defineStore('game', () => {
             }
           }
         }
-      } else {
-        alert(`答錯了！正確答案是: ${result.correctAnswer || '未知'}`);
       }
-
+      // 將結果回傳給呼叫端（例如 QuizPanel 用於翻面顯示）
+      return result;
     } catch (err) {
       console.error('提交答案失敗:', err);
-      alert('提交答案時發生錯誤，請稍後再試');
-    } finally {
-      closeQuestion();
+      throw err;
     }
   }
 

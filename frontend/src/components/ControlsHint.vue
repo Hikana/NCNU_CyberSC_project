@@ -2,7 +2,7 @@
   <div class="controls-hint">
     <div><strong>控制說明:</strong></div>
     <div>↑↓←→ 移動角色</div>
-    <div>Enter 檢視區域</div>
+    <div>Enter / E 檢視區域</div>
     <div>滑鼠拖動 移動視野</div>
   </div>
 </template>

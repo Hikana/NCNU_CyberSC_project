@@ -75,7 +75,11 @@ export const useWallStore = defineStore('wall', {
     async loadCastleLevel() {
       try {
         const playerStore = usePlayerStore();
-        const playerData = await apiService.getPlayer(playerStore.playerId || 'test-user');
+        if (!playerStore.userId) {
+          console.warn('⚠️ 尚未登入，無法載入城堡等級');
+          return;
+        }
+        const playerData = await apiService.getPlayer(playerStore.userId);
         
         if (playerData.castleLevel !== undefined) {
           this.castleLevel = playerData.castleLevel;
@@ -94,9 +98,13 @@ export const useWallStore = defineStore('wall', {
     async updateCastleLevel(newLevel) {
       try {
         const playerStore = usePlayerStore();
-        const userId = playerStore.playerId || 'test-user';
+        if (!playerStore.userId) {
+          console.warn('⚠️ 尚未登入，無法更新城堡等級');
+          return;
+        }
+        const currentUserId = playerStore.userId;
         
-        await apiService.updatePlayerCastleLevel(userId, newLevel);
+        await apiService.updatePlayerCastleLevel(currentUserId, newLevel);
         this.castleLevel = newLevel;
         
         console.log('✅ 城堡等級已更新到資料庫:', newLevel);

@@ -14,6 +14,7 @@ export class Player {
     this.walkSprite = null; // 移動動畫
     this.isMoving = false;
     this.scale = 0.1; // 視覺大小微調
+    this.isFlipped = false; // 玩家是否面向右（翻轉狀態）
   }
 
   // 將座標轉換變成一個私有方法（保留以後可能用到）
@@ -46,9 +47,7 @@ export class Player {
 
     this.idleSprite.anchor.set(0.5);
     this.walkSprite.anchor.set(0.5); 
-    // 先套用基礎縮放
-    this.idleSprite.scale.set(this.scale*0.5);
-    this.walkSprite.scale.set(this.scale);
+    this._updateSpriteRotation();
 
     // 若為 AnimatedSprite 則設定並播放
     if (this.idleSprite.play) {
@@ -82,6 +81,28 @@ export class Player {
     if (this.idleSprite && this.walkSprite) {
       this.idleSprite.visible = !moving;
       this.walkSprite.visible = moving;
+    }
+  }
+
+  /**
+   * 翻轉玩家方向
+   */
+  flipDirection() {
+    this.isFlipped = !this.isFlipped;
+    this._updateSpriteRotation();
+  }
+
+  /**
+   * 更新精靈的旋轉狀態
+   * @private
+   */
+  _updateSpriteRotation() {
+    if (this.idleSprite && this.walkSprite) {
+      const scaleX = this.isFlipped ? -this.scale * 0.5 : this.scale * 0.5;
+      const walkScaleX = this.isFlipped ? -this.scale : this.scale;
+      
+      this.idleSprite.scale.set(scaleX, this.scale * 0.5);
+      this.walkSprite.scale.set(walkScaleX, this.scale);
     }
   }
 

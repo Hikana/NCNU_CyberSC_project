@@ -15,8 +15,10 @@ class GameController {
   getRandomQuestion = asyncHandler(async (req, res) => {
     try {
       console.log('🎲 收到隨機題目請求');
+
       const userId = req.user.uid; 
       const question = await gameService.getRandomQuestion(userId);
+
       console.log('✅ 取到題目:', question);
       if (!question) {
         throw new Error('沒有題目可用');

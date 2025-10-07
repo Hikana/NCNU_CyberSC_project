@@ -119,7 +119,7 @@ function useItem(item) {
 const inventoryStore = useInventoryStore()
 
 onMounted(async () => {
-  // 初始化背包，即時監聽 Firestore；沒登入就用 test-user
+  // 初始化背包，即時監聽 Firestore
   const uid = authStore.user?.uid;
 
   console.log('🚀 初始化背包，玩家ID:', uid)

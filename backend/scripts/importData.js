@@ -138,7 +138,7 @@ async function importData() {
   console.log('開始匯入資料...');
   const batch = db.batch(); // 使用批次寫入可以更有效率地處理多筆資料
 
-  // 定義目標路徑：/players/test-user/backpack
+  // 定義目標路徑：/players/test-user/backpack (測試用，實際系統會使用真實的 Firebase UID)
   const playerDocRef = db.collection('players').doc('userId');
   const backpackCollectionRef = playerDocRef.collection('backpack');
 

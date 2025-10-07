@@ -127,7 +127,7 @@ export const useAuthStore = defineStore('auth', () => {
     // 確保 playerStore 使用正確的使用者 ID
     if (user.value) {
       console.log('👤 設定玩家 ID:', user.value.uid);
-      playerStore.setPlayerId(user.value.uid);
+      playerStore.setUserId(user.value.uid);
       
       // 依序載入所有資料
       if (playerStore.loadUserData) {
