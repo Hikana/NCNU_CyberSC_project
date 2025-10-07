@@ -58,6 +58,11 @@ async function request(endpoint, options = {}) {
     }
 
     if (!response.ok) {
+      // 處理認證錯誤
+      if (response.status === 401) {
+        const errorMessage = result.error || result.message || '認證失敗，請重新登入';
+        throw new Error(errorMessage);
+      }
       const errorMessage = result.message || result || `API 請求失敗 (狀態碼: ${response.status})`;
       throw new Error(errorMessage);
     }

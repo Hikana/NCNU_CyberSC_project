@@ -6,6 +6,7 @@ import { useBuildingStore } from './buildings';
 import { useHistoryStore } from './historyStore';
 import { usePlayerStore } from './player'; // 確保 playerStore 也被引入
 import { useInventoryStore } from './inventory'; // 引入背包 store
+import { useAuthStore } from './authStore'; // 引入認證 store
 
 export const useGameStore = defineStore('game', () => {
   // --- State ---
@@ -30,6 +31,14 @@ export const useGameStore = defineStore('game', () => {
    */
   async function fetchRandomQuestion() {
     try {
+      // 檢查用戶是否已登入
+      const authStore = useAuthStore();
+      if (!authStore.user) {
+        console.error('用戶未登入，無法獲取題目');
+        alert('請先登入後再進行遊戲');
+        return;
+      }
+
       const response = await apiService.getRandomQuestion();
       if (response.success) {
         currentQuestion.value = response.data;
@@ -37,6 +46,11 @@ export const useGameStore = defineStore('game', () => {
       }
     } catch (err) {
       console.error('獲取題目失敗:', err);
+      if (err.message.includes('認證失敗') || err.message.includes('No token')) {
+        alert('認證失敗，請重新登入');
+      } else {
+        alert('獲取題目時發生錯誤，請稍後再試');
+      }
     }
   }
 
@@ -80,24 +94,42 @@ export const useGameStore = defineStore('game', () => {
 
       // 處理答題結果
       if (result.isCorrect) {
-        alert('答對了！土地已解鎖！');
+        // 🎁 顯示獎勵信息
+        alert('答對了！土地已解鎖！\n🎁 獲得獎勵：\n+50 科技點\n+10 防禦值');
+
+        // 更新玩家數值（後端已經自動發放獎勵，這裡只需要重新載入資料）
+        const playerStore = usePlayerStore();
+        await playerStore.refreshPlayerData();
 
         if (tileToUnlock.value) {
-          const playerStore = usePlayerStore();
           const currentUserId = playerStore.playerId || userId.value || 'test-user';
           
           const unlockResponse = await apiService.unlockTile(tileToUnlock.value, currentUserId);
           if (unlockResponse.success) {
-            const newMap = unlockResponse.data;
-            if (Array.isArray(newMap)) {
+            const responseData = unlockResponse.data;
+            
+            // 處理地圖更新
+            if (responseData.map && Array.isArray(responseData.map)) {
               // 後端已回傳 2D 陣列，直接套用
-              buildingStore.map = newMap;
-            } else if (newMap && typeof newMap === 'object') {
+              buildingStore.map = responseData.map;
+            } else if (responseData.map && typeof responseData.map === 'object') {
               // 保險：若回傳為物件(以 y_x 為鍵)，轉成 20x20 陣列
               const size = 20;
               buildingStore.map = Array.from({ length: size }, (_, y) =>
-                Array.from({ length: size }, (_, x) => newMap[y]?.[x] || { status: 'locked' })
+                Array.from({ length: size }, (_, x) => responseData.map[y]?.[x] || { status: 'locked' })
               );
+            }
+            
+            // 🎲 處理觸發的事件
+            if (responseData.triggeredEvent) {
+              console.log('🎲 觸發隨機事件:', responseData.triggeredEvent);
+              
+              // 導入事件store並觸發事件
+              const { useEventStore } = await import('./eventStore');
+              const eventStore = useEventStore();
+              
+              // 觸發事件（使用事件類型）
+              eventStore.startEvent(responseData.triggeredEvent.type, 30);
             }
           }
         }

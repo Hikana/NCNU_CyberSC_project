@@ -5,7 +5,7 @@ const playerController = require('../controllers/playerController');
 const auth = require('../middleware/auth');
 
 // 取得自己的玩家資料
-router.get('/me', auth, playerController.getPlayer)
+router.get('/me', auth, playerController.getPlayer);
 
 // 更新自己的玩家科技點
 router.put('/me/techPoints', auth, playerController.updateTechPoints);
@@ -15,9 +15,6 @@ router.put('/me/defense', auth, playerController.updateDefense);
 
 // 更新自己的玩家城堡等級
 router.put('/me/castleLevel', auth, playerController.updateCastleLevel);
-
-
-router.get('/me', auth, playerController.getPlayer)
 
 // --- 成就系統路由（統一 /me） ---
 
