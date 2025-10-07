@@ -67,7 +67,6 @@ export const useGameStore = defineStore('game', () => {
 
     try {
       const result = await apiService.submitAnswer(
-        userId.value,
         currentQuestion.value.id,
         userAnswerIndex
       );
@@ -94,13 +93,25 @@ export const useGameStore = defineStore('game', () => {
 
       // 處理答題結果（不使用 alert，改由呼叫端決定顯示方式）
       if (result.isCorrect) {
-
         // 🎁 顯示獎勵信息
-        alert('答對了！土地已解鎖！\n🎁 獲得獎勵：\n+50 科技點\n+10 防禦值');
+        let rewardMessage = '答對了！土地已解鎖！\n🎁 獲得獎勵：\n+50 科技點\n+10 防禦值';
+        
+        // 如果有獲得防禦工具，顯示額外獎勵
+        if (result.defenseTool && result.defenseTool.success) {
+          rewardMessage += `\n🛡️ 獲得防禦工具：${result.defenseTool.tool.name}`;
+        }
+        
+        alert(rewardMessage);
 
         // 更新玩家數值（後端已經自動發放獎勵，這裡只需要重新載入資料）
         const playerStore = usePlayerStore();
         await playerStore.refreshPlayerData();
+        
+        // 更新背包資料（如果有獲得防禦工具）
+        if (result.defenseTool && result.defenseTool.success) {
+          const inventoryStore = useInventoryStore();
+          await inventoryStore.refreshInventory();
+        }
 
         if (tileToUnlock.value) {
           const currentUserId = playerStore.playerId || userId.value || 'test-user';

@@ -63,7 +63,16 @@ async function request(endpoint, options = {}) {
         const errorMessage = result.error || result.message || '認證失敗，請重新登入';
         throw new Error(errorMessage);
       }
-      const errorMessage = result.message || result || `API 請求失敗 (狀態碼: ${response.status})`;
+      
+      // 改進錯誤處理，顯示更詳細的錯誤信息
+      console.error(`❌ API 錯誤詳情:`, {
+        status: response.status,
+        statusText: response.statusText,
+        result: result,
+        url: url
+      });
+      
+      const errorMessage = result.message || result.error || result.details || `API 請求失敗 (狀態碼: ${response.status})`;
       throw new Error(errorMessage);
     }
 
@@ -117,10 +126,10 @@ export const apiService = {
   // --- 答題相關 ---
   getRandomQuestion: () => request('/random-question'),
 
-  submitAnswer: (userId, questionId, answer) =>
+  submitAnswer: (questionId, answer) =>
     request('/submit-answer', {
       method: 'POST',
-      body: { userId, questionId, answer }, // 一定要帶 userId
+      body: { questionId, answer },
     }),
 
   validateAnswer: (questionId, answer) =>

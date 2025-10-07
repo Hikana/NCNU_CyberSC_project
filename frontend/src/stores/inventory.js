@@ -2,15 +2,29 @@ import { defineStore } from 'pinia';
 // 從我們初始化好的 Firebase 取出 Firestore 實例
 import { db } from '@/firebase/firebase';
 // 從 Firestore 套件引入需要用到的函式
-import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { useAuthStore } from '@/stores/authStore';
 
-
+// 防禦工具定義
+const DEFENSE_TOOLS = {
+  waf: { name: 'WAF 應用程式防火牆', defenseValue: 15 },
+  prepared_statements: { name: 'Prepared Statements（參數化查詢）', defenseValue: 20 },
+  output_encoding: { name: 'Output Encoding（輸出編碼）', defenseValue: 12 },
+  csrf: { name: 'CSRF Token（隨機驗證碼）', defenseValue: 18 },
+  mfa: { name: 'MFA（多因素驗證）', defenseValue: 25 },
+  security_awareness: { name: 'Security Awareness Training（資安意識訓練）', defenseValue: 10 },
+  tls_https: { name: 'TLS/HTTPS 加密', defenseValue: 22 },
+  backup: { name: '定期備份（3-2-1 備份原則）', defenseValue: 16 },
+  least_privilege: { name: 'Least Privilege（最小權限原則）', defenseValue: 14 },
+  http_cookie: { name: 'HttpOnly & Secure Cookie 屬性', defenseValue: 8 },
+  dnssec: { name: 'DNSSEC（Domain Name System Security Extensions）', defenseValue: 13 },
+  code_signing: { name: 'Code Signing（軟體簽章驗證）', defenseValue: 17 }
+};
 
 export const useInventoryStore = defineStore('inventory', {
   state: () => ({
-    // 背包物品列表；每項包含 id(模板或物品鍵)、名稱、數量、等
-    items: [], // 每項: { id(templateId), name, qty, defenseValue, meta }
+    // 防禦工具列表；每項包含 id、名稱、數量、防禦值
+    items: [], // 每項: { id, name, qty, defenseValue }
     // 載入指示
     loading: false,
     // 是否已完成初始化（至少載入一次資料）
@@ -19,132 +33,99 @@ export const useInventoryStore = defineStore('inventory', {
     unsubscribe: null,  
   }),
   getters: {
-    // 依模板 ID 或物品 ID 取得單一物品
-    getByTemplate: (state) => (templateId) => state.items.find(i => i.templateId === templateId || i.id === templateId),
+    // 依工具 ID 取得單一物品
+    getByTemplate: (state) => (toolId) => state.items.find(i => i.id === toolId),
     totalItems: (state) => state.items.reduce((s, it) => s + (it.qty || 0), 0)
   },
-    actions: {
+  actions: {
     async init(userId) {
-      const authStore = useAuthStore(); 
-      // 初始化：讀取 players/{userId}/backpack 子集合
-      
-
       if (!userId) {
         console.warn('init inventory: 缺少 userId');
         return;
       }
       
       this.loading = true;
-      const backpackRef = collection(db, 'players', userId, 'backpack');
+      const playerRef = doc(db, 'players', userId);
       
       try {
-        // 即時監聽子集合變更
+        // 即時監聽玩家資料變更
         if (this.unsubscribe) {
           this.unsubscribe();
           this.unsubscribe = null;
         }
         
-        // onSnapshot：監聽子集合的變化
-        this.unsubscribe = onSnapshot(backpackRef, (querySnapshot) => {
-          this.items = [];
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            this.items.push({
-              id: data.itemId || doc.id,  // 使用 itemId 或文件 ID
-              ...data
-            });
-          });
+        // onSnapshot：監聽玩家資料的變化
+        this.unsubscribe = onSnapshot(playerRef, (docSnapshot) => {
+          if (docSnapshot.exists()) {
+            const playerData = docSnapshot.data();
+            this.updateItemsFromPlayerData(playerData);
+          } else {
+            this.items = [];
+          }
           
           this.isLoaded = true;
           this.loading = false;
-          console.log('📦 子集合背包資料已同步:', this.items.length, '個物品');
-          console.log('📦 物品列表:', this.items.map(item => item.name));
+          console.log('📦 防禦工具資料已同步:', this.items.length, '種工具');
         }, (err) => {
-          console.error('背包子集合同步失敗', err);
+          console.error('防禦工具同步失敗', err);
           this.loading = false;
         });
 
         // 首次載入：馬上取一次現有資料
-        const querySnapshot = await getDocs(backpackRef);
-        this.items = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          this.items.push({
-            id: data.itemId || doc.id,
-            ...data
-          });
-        });
+        const docSnapshot = await getDoc(playerRef);
+        if (docSnapshot.exists()) {
+          const playerData = docSnapshot.data();
+          this.updateItemsFromPlayerData(playerData);
+        } else {
+          this.items = [];
+        }
         
         this.isLoaded = true;
-        console.log('✅ 背包初始化完成', this.items.length, '個物品');
+        console.log('✅ 防禦工具初始化完成', this.items.length, '種工具');
       } catch (err) {
-        console.error('❌ 初始化背包失敗', err);
+        console.error('❌ 初始化防禦工具失敗', err);
       } finally {
         this.loading = false;
       }
     },
-    addItem(item) {
-      // 新增物品：若已存在同 id，則累加數量；否則新增一筆
-      console.log('➕ 嘗試加入物品到背包:', item);
-      const existsIndex = this.items.findIndex(it => it.id === item.id);
-      if (existsIndex >= 0) {
-        const current = this.items[existsIndex];
-        const nextQty = (current.qty || 0) + (item.qty || 1);
-        this.items.splice(existsIndex, 1, { ...current, qty: nextQty });
-        console.log('📈 物品數量已累加:', item.name, '新數量:', nextQty);
-      } else {
-        this.items.push({ qty: 1, ...item });
-        console.log('🆕 新物品已加入:', item.name, '數量:', item.qty || 1);
-      }
-      console.log('📦 目前背包總物品數:', this.items.length);
-    },
-    async save(userId) {
-      // 儲存目前 items 到 Firestore 子集合
-      const finalUserId = userId || DEFAULT_USER_ID;
-
-      if (!finalUserId) {
-        console.warn('save inventory: 缺少 userId');
-        return;
-      }
-
-      try {
-        // 清空現有的子集合
-        const backpackRef = collection(db, 'players', finalUserId, 'backpack');
-        const querySnapshot = await getDocs(backpackRef);
-        
-        // 刪除所有現有文件
-        const deletePromises = querySnapshot.docs.map(doc => doc.ref.delete());
-        await Promise.all(deletePromises);
-        
-        // 新增所有物品到子集合
-        const addPromises = this.items.map(item => {
-          const { id, ...rest } = item;
-          const docRef = doc(backpackRef);
-          return setDoc(docRef, {
-            itemId: id,
-            ...rest
+    
+    // 從玩家資料中更新物品列表
+    updateItemsFromPlayerData(playerData) {
+      this.items = [];
+      const defenseTools = playerData.defenseTools || {};
+      
+      // 遍歷所有防禦工具
+      Object.keys(DEFENSE_TOOLS).forEach(toolId => {
+        const qty = defenseTools[toolId] || 0;
+        if (qty > 0) {
+          const toolInfo = DEFENSE_TOOLS[toolId];
+          this.items.push({
+            id: toolId,
+            name: toolInfo.name,
+            qty: qty,
+            defenseValue: toolInfo.defenseValue,
+            type: 'defense'
           });
-        });
-        
-        await Promise.all(addPromises);
-        console.log('✅ 背包已更新至 Firestore 子集合');
-      } catch (err) {
-        // 若文件不存在，改用 setDoc
-        if (err && err.code === 'not-found') {
-          await setDoc(playerRef, { backpack }, { merge: true });
-          console.log('✅ 背包已建立並更新至 Firestore');
-        } else {
-          console.error('❌ 背包更新失敗', err);
         }
+      });
+      
+      console.log('📦 更新防禦工具列表:', this.items.map(item => `${item.name} x${item.qty}`));
+    },
+    
+    async refreshInventory() {
+      // 重新載入防禦工具資料
+      const authStore = useAuthStore();
+      if (authStore.user) {
+        await this.init(authStore.user.uid);
       }
     },
-    // 可在元件卸載時呼叫釋放監聽
-    dispose() {
+    
+    // 清理監聽器
+    cleanup() {
       if (this.unsubscribe) {
         this.unsubscribe();
         this.unsubscribe = null;
       }
     }
-  },
+  }
 });
-

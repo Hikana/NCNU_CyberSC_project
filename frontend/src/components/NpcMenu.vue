@@ -30,22 +30,23 @@
                    class="inventory-item" 
                    :class="{ selected: selectedItem?.id === item.id }"
                    @click="selectItem(item)">
-                <div class="item-icon">📦</div>
+                <div class="item-icon">🛡️</div>
                 <div class="item-info">
-                  <div class="item-name">{{ item.name || item.key || item.id }}</div>
-                  <div class="item-qty">x{{ item.qty || 0 }}</div>
+                  <div class="item-name">{{ item.name }}</div>
+                  <div class="item-qty">x{{ item.qty }}</div>
                 </div>
+                <div class="item-defense">防禦值: {{ item.defenseValue }}</div>
               </div>
             </div>
             
             <!-- 物品詳細資訊 -->
             <div v-if="selectedItem" class="item-detail">
-              <h3>{{ selectedItem.name || selectedItem.key || selectedItem.id }}</h3>
-              <p class="item-description">{{ selectedItem.desc || selectedItem.meta || '無描述' }}</p>
+              <h3>{{ selectedItem.name }}</h3>
+              <p class="item-description">防禦工具 - {{ selectedItem.type }}</p>
               <div class="item-stats">
-                <div class="stat">數量: x{{ selectedItem.qty || 0 }}</div>
-                <!--<div class="stat">防禦值: {{ selectedItem.defenseValue || 0 }}</div>-->
-                <div class="stat">類型: {{ selectedItem.type || '未知' }}</div>
+                <div class="stat">數量: x{{ selectedItem.qty }}</div>
+                <div class="stat">防禦值: {{ selectedItem.defenseValue }}</div>
+                <div class="stat">類型: {{ selectedItem.type }}</div>
               </div>
               <div class="item-actions">
                 <button class="use-btn" @click="useItem(selectedItem)">使用</button>

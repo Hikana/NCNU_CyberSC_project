@@ -55,6 +55,7 @@ class GameService {
     }
 
     const isCorrect = question.answer === userAnswerIndex;
+    let randomDefenseTool = null; // 初始化防禦工具變數
     
     if (isCorrect) {
       // 答對了，更新玩家的答題進度
@@ -69,6 +70,9 @@ class GameService {
         techPoints: 50,
         defense: 10
       });
+      
+      // 🛡️ 隨機獲得防禦工具
+      randomDefenseTool = await this.giveRandomDefenseTool(userId);
     }
     const description=question.description;
     const correctAnswerText = question.options[question.answer] || '未知';
@@ -90,7 +94,8 @@ class GameService {
       userAnswer: question.options[userAnswerIndex],
       yourAnswer: question.options[userAnswerIndex], // 為了相容性
       question: question.question,
-      newHistory 
+      newHistory,
+      defenseTool: isCorrect ? randomDefenseTool : null // 只有答對時才包含防禦工具資訊
     };
   }
 
@@ -132,6 +137,53 @@ class GameService {
     }
   }
 
+  /**
+   * 隨機給予防禦工具
+   * @param {string} userId - 玩家 ID
+   * @returns {object} - 獲得的防禦工具資訊
+   */
+  async giveRandomDefenseTool(userId) {
+    try {
+      // 防禦工具清單
+      const defenseTools = [
+        { id: 'waf', name: 'WAF 應用程式防火牆', defenseValue: 15 },
+        { id: 'prepared_statements', name: 'Prepared Statements（參數化查詢）', defenseValue: 20 },
+        { id: 'output_encoding', name: 'Output Encoding（輸出編碼）', defenseValue: 12 },
+        { id: 'csrf', name: 'CSRF Token（隨機驗證碼）', defenseValue: 18 },
+        { id: 'mfa', name: 'MFA（多因素驗證）', defenseValue: 25 },
+        { id: 'security_awareness', name: 'Security Awareness Training（資安意識訓練）', defenseValue: 10 },
+        { id: 'tls_https', name: 'TLS/HTTPS 加密', defenseValue: 22 },
+        { id: 'backup', name: '定期備份（3-2-1 備份原則）', defenseValue: 16 },
+        { id: 'least_privilege', name: 'Least Privilege（最小權限原則）', defenseValue: 14 },
+        { id: 'http_cookie', name: 'HttpOnly & Secure Cookie 屬性', defenseValue: 8 },
+        { id: 'dnssec', name: 'DNSSEC（Domain Name System Security Extensions）', defenseValue: 13 },
+        { id: 'code_signing', name: 'Code Signing（軟體簽章驗證）', defenseValue: 17 }
+      ];
+
+      // 隨機選擇一個防禦工具
+      const randomIndex = Math.floor(Math.random() * defenseTools.length);
+      const selectedTool = defenseTools[randomIndex];
+      
+      console.log(`🛡️ 隨機選擇防禦工具: ${selectedTool.name} (${selectedTool.id})`);
+
+      // 簡化：只存儲數量到玩家資料中
+      await playerData.updatePlayer(userId, {
+        [`defenseTools.${selectedTool.id}`]: FieldValue.increment(1)
+      });
+
+      console.log(`✅ 防禦工具已加入背包: ${selectedTool.name}`);
+      
+      return {
+        success: true,
+        tool: selectedTool,
+        message: `獲得防禦工具：${selectedTool.name}`
+      };
+    } catch (error) {
+      console.error('❌ 發放防禦工具失敗:', error);
+      throw error;
+    }
+  }
+
   // --- 地圖解鎖相關 ---
 
   async unlockTile(userId, position) {
@@ -140,7 +192,7 @@ class GameService {
       await playerData.updatePlayer(userId, { developedCount: FieldValue.increment(1) });
       
       // 🎲 檢查是否觸發隨機事件
-      const eventResult = await this.checkForRandomEvent(playerId, position);
+      const eventResult = await this.checkForRandomEvent(userId, position);
       
       // 返回解鎖後的狀態（簡化版本，不包含建築資訊）
       const landData = await playerData.getPlayerLand(userId);
@@ -167,11 +219,11 @@ class GameService {
 
   /**
    * 檢查是否觸發隨機事件
-   * @param {string} playerId - 玩家 ID
+   * @param {string} userId - 玩家 ID
    * @param {object} position - 解鎖位置 { x, y }
    * @returns {object|null} - 觸發的事件資訊或 null
    */
-  async checkForRandomEvent(playerId, position) {
+  async checkForRandomEvent(userId, position) {
     try {
       const { x, y } = position;
       

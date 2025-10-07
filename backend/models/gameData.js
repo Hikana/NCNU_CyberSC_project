@@ -45,8 +45,12 @@ class GameData {
   }
 
   async getQuestionById(id) {
-  // 先嘗試用 Firestore docId 找
-  const doc = await this.questionsCollection.doc(id.toString()).get();
+    if (!id) {
+      throw new Error('題目 ID 不能為空');
+    }
+    
+    // 先嘗試用 Firestore docId 找
+    const doc = await this.questionsCollection.doc(id.toString()).get();
   if (doc.exists) {
     return { id: doc.id, ...doc.data() };
   }
