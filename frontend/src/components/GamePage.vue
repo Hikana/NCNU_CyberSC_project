@@ -14,8 +14,7 @@
       <img :src="npcImage" alt="NPC" class="npc" @click="onNpcClick" />
       <ControlsHint /> 
       <NpcMenu @close="uiStore.closeAllMenus()" />
-      <!-- <WallMenu /> -->
-      <QuestionModal />
+      <QuizPanel />
     </div>
 
     <!-- ✅ 新增：隨機事件彈窗 (只在遊戲裡出現) -->
@@ -28,7 +27,7 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import PixiGameCanvas from '@/components/PixiGameCanvas.vue';
 import StatusBar from '@/components/StatusBar.vue';
 import NpcMenu from '@/components/NpcMenu.vue';
-import QuestionModal from '@/components/QuestionModal.vue';
+import QuizPanel from '@/components/QuizPanel.vue';
 import ControlsHint from '@/components/ControlsHint.vue';
 
 import { usePlayerStore } from '@/stores/player';
@@ -58,12 +57,6 @@ onMounted(async () => {
   await wallStore.loadCastleLevel();
   await wallStore.syncCastleLevel();
 });
-
-const quizPanelRef = ref(null)             
-
-function openQuiz() {
-  quizPanelRef.value.startQuiz("html")   
-}
 
 // NPC 點擊事件：直接打開選單（背包資料從 Firebase 讀取）
 function onNpcClick() {

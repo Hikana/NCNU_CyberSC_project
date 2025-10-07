@@ -1,128 +1,291 @@
-<!--
 <template>
-  <div v-if="visible" class="quiz-panel">
-    <button class="close-btn" @click="closePanel">×</button>
-    <div class="quiz-header">
-      <div class="quiz-category">{{ categoryName }}</div>
-      <h3>探索挑戰</h3>
-    </div>
-    <div class="quiz-question">
-      第 {{ questionIndex + 1 }}/{{ totalQuestions }} 題：{{ currentQuestion?.question }}
-    </div>
-    <div class="quiz-options">
-      <button
-        v-for="(option, i) in currentQuestion?.options"
-        :key="i"
-        :class="['quiz-option', { selected: selectedAnswer === i }]"
-        @click="selectAnswer(i)"
-      >
-        {{ String.fromCharCode(65 + i) }}. {{ option }}
-      </button>
-    </div>
-    <div v-if="showResult" class="quiz-result" :class="{ correct: isCorrect, wrong: !isCorrect }">
-      <div><strong>{{ isCorrect ? "✅ 答對了！" : "❌ 答錯了！" }}</strong></div>
-    </div>
-    <div class="quiz-buttons">
-      <button v-if="!showResult" class="quiz-btn" :disabled="selectedAnswer === null" @click="submitAnswer">
-        提交答案
-      </button>
-      <button v-if="showResult && questionIndex + 1 < totalQuestions" class="quiz-btn" @click="nextQuestion">
-        下一題
-      </button>
-      <button v-if="showResult && questionIndex + 1 >= totalQuestions" class="quiz-btn" @click="completeQuiz">
-        完成探索
-      </button>
+  <div v-if="gameStore.isAnswering" class="quiz-panel">
+    <div class="card-container" :class="{ flipped }">
+      <!-- 正面：題目 -->
+      <div class="card-face card-front">
+        <button class="close-btn" @click="gameStore.closeQuestion()">×</button>
+        <div class="quiz-header">
+          <h3>探索挑戰</h3>
+        </div>
+        <div class="quiz-question">
+          {{ gameStore.currentQuestion?.question || '載入中...' }}
+        </div>
+        <div class="quiz-options" v-if="hasOptions">
+          <button
+            v-for="(option, i) in gameStore.currentQuestion.options"
+            :key="i"
+            :class="['quiz-option', { selected: selectedAnswer === i }]"
+            @click="selectOption(i)"
+          >
+            {{ String.fromCharCode(65 + i) }}. {{ option }}
+          </button>
+        </div>
+        <div class="answer-section" v-else>
+          <input type="text" v-model="textAnswer" placeholder="請輸入你的答案..." @keyup.enter="submitText()" />
+          <button class="quiz-btn" @click="submitText()">提交答案</button>
+        </div>
+        <div class="quiz-buttons" v-if="hasOptions">
+          <button class="quiz-btn" :disabled="selectedAnswer === null" @click="submitChoice()">提交答案</button>
+        </div>
+      </div>
+
+      <!-- 背面：結果 -->
+      <div class="card-face card-back">
+        <div class="result-panel">
+          <div :class="['badge', result?.isCorrect ? 'ok' : 'ng']">
+            {{ result?.isCorrect ? '✅ 答對了！' : '❌ 答錯了' }}
+          </div>
+          <div class="explain">正確答案：{{ result?.correctAnswer || '未知' }}</div>
+          <div class="actions">
+            <button class="quiz-btn" @click="finish()">關閉</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-/* ✅ 改成 <script setup> 寫法 */
-import { ref } from "vue"
-import { getRandomQuestions } from "../services/questionService"
-
-/* 狀態變數 */
-const visible = ref(false)
-const categoryName = ref("")
-const questions = ref([])
-const currentQuestion = ref(null)
+import { ref, computed } from "vue"
+import { useGameStore } from '@/stores/game'
+const gameStore = useGameStore()
 const selectedAnswer = ref(null)
-const isCorrect = ref(false)
-const showResult = ref(false)
-const questionIndex = ref(0)
-const totalQuestions = ref(0)
-const correctAnswers = ref(0)
+const textAnswer = ref("")
+const flipped = ref(false)
+const result = ref(null)
+const hasOptions = computed(() => {
+  const q = gameStore.currentQuestion
+  return q && Array.isArray(q.options) && q.options.length > 0
+})
 
-/* 定義 startQuiz，GamePage 才能呼叫 */
-async function startQuiz() {
-  console.log("startQuiz 被呼叫了!")
-
-  questions.value = await getRandomQuestions(3)  // 例如隨機選 1 題
-  console.log("隨機題目：", questions.value)
-
-  categoryName.value = "隨機挑戰"
-  questionIndex.value = 0
-  correctAnswers.value = 0
-  totalQuestions.value = questions.value.length
-  visible.value = true
-  showQuestion()
-}
-
-function showQuestion() {
-  currentQuestion.value = questions.value[questionIndex.value]
-  selectedAnswer.value = null
-  showResult.value = false
-}
-
-function selectAnswer(index) {
-  if (showResult.value) return
+function selectOption(index) {
   selectedAnswer.value = index
 }
 
-function submitAnswer() {
+function submitChoice() {
   if (selectedAnswer.value === null) return
-  // 取玩家選的答案  Firestore 的 correctAnswer 是字串
-  const chosen = currentQuestion.value.options[selectedAnswer.value]
-  isCorrect.value = chosen === currentQuestion.value.correctAnswer
-  //isCorrect.value = currentQuestion.value.options[selectedAnswer.value] === currentQuestion.value.correctAnswer
-  
-  if (isCorrect.value) correctAnswers.value++
-  showResult.value = true
+  gameStore.submitAnswer(selectedAnswer.value).then(r => {
+    result.value = r
+    flipped.value = true
+  }).catch(() => {}).finally(() => {
+    selectedAnswer.value = null
+  })
 }
 
-function nextQuestion() {
-  questionIndex.value++
-  showQuestion()
+function submitText() {
+  if (!textAnswer.value || !textAnswer.value.trim()) return
+  gameStore.submitAnswer(textAnswer.value).then(r => {
+    result.value = r
+    flipped.value = true
+  }).catch(() => {}).finally(() => {
+    textAnswer.value = ""
+  })
 }
 
-function completeQuiz() {
-  alert(`探索完成！答對：${correctAnswers.value}/${totalQuestions.value} 題`)
-  closePanel()
+function finish() {
+  flipped.value = false
+  result.value = null
+  gameStore.closeQuestion()
 }
-
-function closePanel() {
-  visible.value = false
-}
-
-/* ✅ 關鍵：暴露 startQuiz/closePanel 給父層 (GamePage.vue) 呼叫 */
-defineExpose({
-  startQuiz,
-  closePanel
-})
 </script>
 
 <style scoped>
 .quiz-panel {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  max-width: 500px;
-  margin: auto;
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  perspective: 1000px;
+  max-width: 600px;
+  min-width: 500px;
+  z-index: 1000;
 }
-.quiz-option.selected { background-color: #cce5ff; }
-.quiz-result.correct { color: green; }
-.quiz-result.wrong { color: red; }
-</style> 
--->
-<template></template>
+
+.card-container {
+  position: relative;
+  width: 100%;
+  min-height: 400px;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-container.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  width: 100%;
+  backface-visibility: hidden;
+  background: linear-gradient(135deg, #2c3e50, #34495e);
+  color: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.card-front {
+  transform: rotateY(0deg);
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+.quiz-header {
+  text-align: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 15px;
+}
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #bdc3c7;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  z-index: 10;
+}
+
+.close-btn:hover {
+  color: #ffffff;
+}
+
+.quiz-question {
+  font-size: 18px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.quiz-options {
+  margin: 20px 0;
+}
+
+.quiz-option {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid transparent;
+  color: white;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: left;
+  width: 100%;
+  font-size: 18px;
+}
+
+.quiz-option:hover {
+  background: rgba(52, 152, 219, 0.3);
+  border-color: #3498db;
+}
+
+.quiz-option.selected {
+  background: rgba(52, 152, 219, 0.5);
+  border-color: #3498db;
+}
+
+.quiz-option.correct {
+  background: rgba(39, 174, 96, 0.5);
+  border-color: #27ae60;
+}
+
+.quiz-option.wrong {
+  background: rgba(231, 76, 60, 0.5);
+  border-color: #e74c3c;
+}
+
+.quiz-buttons {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.quiz-btn {
+  background: #3498db;
+  border: none;
+  color: white;
+  padding: 12px 25px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 0 10px;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.quiz-btn:hover {
+  background: #2980b9;
+}
+
+.quiz-btn:disabled {
+  background: #7f8c8d;
+  cursor: not-allowed;
+}
+
+.quiz-result {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.quiz-result.correct {
+  background: rgba(39, 174, 96, 0.2);
+  border: 1px solid #27ae60;
+}
+
+.quiz-result.wrong {
+  background: rgba(231, 76, 60, 0.2);
+  border: 1px solid #e74c3c;
+}
+
+.quiz-explanation {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.result-panel {
+  text-align: center;
+  margin-top: 40px;
+  padding: 20px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.badge.ok {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge.ng {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.explain {
+  margin: 20px 0 30px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+}
+</style>
+ 

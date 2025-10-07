@@ -5,7 +5,6 @@ import { apiService } from '@/services/apiService';
 import { useBuildingStore } from './buildings';
 import { useHistoryStore } from './historyStore';
 import { usePlayerStore } from './player'; // 確保 playerStore 也被引入
-import { useInventoryStore } from './inventory'; // 引入背包 store
 
 export const useGameStore = defineStore('game', () => {
   // --- State ---
@@ -78,10 +77,8 @@ export const useGameStore = defineStore('game', () => {
       /*historyStore.addHistoryEntry(newHistoryEntry);
       console.log('✅ 歷史記錄已即時更新:', newHistoryEntry);*/
 
-      // 處理答題結果
+      // 處理答題結果（不使用 alert，改由呼叫端決定顯示方式）
       if (result.isCorrect) {
-        alert('答對了！土地已解鎖！');
-
         if (tileToUnlock.value) {
           const playerStore = usePlayerStore();
           if (!playerStore.userId) {
@@ -105,15 +102,12 @@ export const useGameStore = defineStore('game', () => {
             }
           }
         }
-      } else {
-        alert(`答錯了！正確答案是: ${result.correctAnswer || '未知'}`);
       }
-
+      // 將結果回傳給呼叫端（例如 QuizPanel 用於翻面顯示）
+      return result;
     } catch (err) {
       console.error('提交答案失敗:', err);
-      alert('提交答案時發生錯誤，請稍後再試');
-    } finally {
-      closeQuestion();
+      throw err;
     }
   }
 

@@ -72,7 +72,9 @@ export class Game {
         this.app.stage.off('pointerupoutside', this._onDragEnd);
         this.app.stage.off('pointermove', this._onDragMove);
       }
-        this.app.destroy(true, { children: true, texture: true, baseTexture: true });
+      
+      
+      this.app.destroy(true, { children: true, texture: true, baseTexture: true });
     }
   }
 
@@ -95,6 +97,10 @@ export class Game {
         if (this._canMoveTo(x, newY)) {
           y = newY;
           hasMoved = true;
+          // 向上移動時面向左（預設方向）
+          if (this.player && this.player.isFlipped) {
+            this.player.flipDirection();
+          }
         }
     }
     if (this.keys['ArrowDown'] || this.keys['KeyS']) { 
@@ -102,6 +108,10 @@ export class Game {
         if (this._canMoveTo(x, newY)) {
           y = newY;
           hasMoved = true;
+          // 向下移動時面向左（預設方向）
+          if (this.player && this.player.isFlipped) {
+            this.player.flipDirection();
+          }
         }
     }
     if (this.keys['ArrowLeft'] || this.keys['KeyA']) { 
@@ -109,6 +119,10 @@ export class Game {
         if (this._canMoveTo(newX, y)) {
           x = newX;
           hasMoved = true;
+          // 向左移動時面向左（預設方向）
+          if (this.player && this.player.isFlipped) {
+            this.player.flipDirection();
+          }
         }
     }
     if (this.keys['ArrowRight'] || this.keys['KeyD']) { 
@@ -116,6 +130,10 @@ export class Game {
         if (this._canMoveTo(newX, y)) {
           x = newX;
           hasMoved = true;
+          // 向右移動時面向右
+          if (this.player && !this.player.isFlipped) {
+            this.player.flipDirection();
+          }
         }
     }
     
@@ -133,10 +151,6 @@ export class Game {
     // 更新攝影機位置，讓畫面跟著玩家移動
     this._updateCamera();
   }
-
-
-
-
 
   /**
    * 檢查玩家是否可以移動到指定位置
@@ -332,7 +346,7 @@ export class Game {
         this.world.position.set(newX, newY);
       }
     };
-    
+
     this.app.stage.on('pointerdown', this._onDragStart);
     this.app.stage.on('pointerup', this._onDragEnd);
     this.app.stage.on('pointerupoutside', this._onDragEnd);

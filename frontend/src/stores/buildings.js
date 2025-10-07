@@ -136,8 +136,7 @@ export const useBuildingStore = defineStore('buildings', {
         return;
       }
     
-      // 禁止在城堡九格放置
-      const isCastleTile = (row, col) => (row >= 1 && row <= 3) && (col >= 1 && col <= 3);
+      const isCastleTile = (row, col) => (row >= 0 && row <= 2) && (col >= 0 && col <= 2);
       if (isCastleTile(this.selectedTile.y, this.selectedTile.x)) {
         alert('此區域為城堡，無法放置建築');
         this.isPlacing = false;
