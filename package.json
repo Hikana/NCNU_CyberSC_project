@@ -9,9 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@pixi/gif": "^3.0.1",
     "crypto-js": "^4.2.0",
+    "firebase": "^12.3.0",
     "gsap": "^3.13.0",
-    "vue": "^3.5.17"
+    "pinia": "^3.0.3",
+    "pixi.js": "^8.14.0",
+    "vue": "^3.5.17",
+    "vue-router": "^4.5.1"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.0",
