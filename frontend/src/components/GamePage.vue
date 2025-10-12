@@ -19,6 +19,20 @@
 
     <!-- ✅ 新增：隨機事件彈窗 (只在遊戲裡出現) -->
     <RandomEventModal />
+
+    <!-- 城堡升級提示 -->
+    <div v-if="wallStore.castleUpgradeMessage" class="castle-upgrade-notification">
+      <div class="upgrade-message">
+        <div class="upgrade-text">{{ wallStore.castleUpgradeMessage }}</div>
+      </div>
+    </div>
+
+    <!-- 城堡降級提示 -->
+    <div v-if="wallStore.castleDowngradeMessage" class="castle-downgrade-notification">
+      <div class="downgrade-message">
+        <div class="downgrade-text">{{ wallStore.castleDowngradeMessage }}</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -134,4 +148,75 @@ function onNpcClick() {
 .npc:hover {
     transform: scale(1.1);
 }
+
+/* 城堡升級提示樣式 */
+.castle-upgrade-notification {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.upgrade-message {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  border: 3px solid #16a34a;
+  border-radius: 16px;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
+  animation: slideInFromTop 0.5s ease-out;
+}
+
+.upgrade-text {
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 城堡降級提示樣式 */
+.castle-downgrade-notification {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.downgrade-message {
+  background: linear-gradient(135deg, #f87171, #ef4444);
+  border: 3px solid #dc2626;
+  border-radius: 16px;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+  animation: slideInFromTop 0.5s ease-out;
+}
+
+.downgrade-text {
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 動畫效果 */
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+ 
 </style>

@@ -8,7 +8,10 @@ export const useWallStore = defineStore('wall', {
     // 城堡等級
     castleLevel: 0,
     // 是否已初始化
-    initialized: false
+    initialized: false,
+    // 城堡升級提示
+    castleUpgradeMessage: null,
+    castleDowngradeMessage: null,
   }),
 
   getters: {
@@ -121,16 +124,45 @@ export const useWallStore = defineStore('wall', {
 
     // 同步城堡等級（根據防禦值自動調整，可升級也可降級）
     async syncCastleLevel() {
+      const playerStore = usePlayerStore();
+      const currentDefense = playerStore.defense;
       const targetLevel = this.calculateCastleLevel();
       
+      console.log(`🔍 城堡等級同步檢查: 防禦值=${currentDefense}, 當前等級=${this.castleLevel}, 目標等級=${targetLevel}`);
+      
       if (targetLevel !== this.castleLevel) {
-        if (targetLevel > this.castleLevel) {
-          console.log(`🏰 城堡自動升級: ${this.castleLevel} -> ${targetLevel}`);
-        } else {
-          console.log(`🏰 城堡自動降級: ${this.castleLevel} -> ${targetLevel}`);
+        if (targetLevel > this.castleLevel) {          
+          this.showCastleUpgradeMessage(targetLevel);
+        } else {  
+          this.showCastleDowngradeMessage(targetLevel);
         }
         await this.updateCastleLevel(targetLevel);
+        
+        this.triggerMapRedraw();
+      } else {
+        console.log(`ℹ️ 城堡等級無需變更，保持等級 ${this.castleLevel}`);
       }
-    }
+    },
+
+    // 顯示城堡升級提示
+    showCastleUpgradeMessage(newLevel) {
+      this.castleUpgradeMessage = `城堡升級到等級 ${newLevel}！`;
+      setTimeout(() => {
+        this.castleUpgradeMessage = null;
+      }, 3000);
+    },
+
+    // 顯示城堡降級提示
+    showCastleDowngradeMessage(newLevel) {
+      this.castleDowngradeMessage = `城堡降級到等級 ${newLevel}...`;
+      setTimeout(() => {
+        this.castleDowngradeMessage = null;
+      }, 3000);
+    },
+
+    // 觸發地圖重繪
+    triggerMapRedraw() {      
+      console.log('觸發地圖重繪以更新城堡等級');
+    },
   }
 });

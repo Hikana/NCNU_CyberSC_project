@@ -7,7 +7,7 @@ module.exports = async function (req, res, next) {
   const idToken = match[1];
   try {
     const decoded = await admin.auth().verifyIdToken(idToken);
-    req.user = decoded; // contains uid, email, ...
+    req.user = decoded; 
     next();
   } catch (err) {
     console.error('verifyIdToken failed', err);

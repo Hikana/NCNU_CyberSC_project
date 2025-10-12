@@ -46,7 +46,15 @@ export class Player {
     this.walkSprite = walkAsset?.play ? walkAsset : PIXI.Sprite.from(walkUrl);
 
     this.idleSprite.anchor.set(0.5);
-    this.walkSprite.anchor.set(0.5); 
+    this.walkSprite.anchor.set(0.5);
+   
+    // 分別設定不同精靈的大小
+    const baseScale = this.scale;
+    const idleScale = this.scale * 1.5; // idle 精靈放大 1.5 倍
+    
+    this.idleSprite.scale.set(idleScale, idleScale);
+    this.walkSprite.scale.set(baseScale, baseScale);
+    
     this._updateSpriteRotation();
 
     // 若為 AnimatedSprite 則設定並播放
@@ -98,11 +106,15 @@ export class Player {
    */
   _updateSpriteRotation() {
     if (this.idleSprite && this.walkSprite) {
-      const scaleX = this.isFlipped ? -this.scale * 0.5 : this.scale * 0.5;
-      const walkScaleX = this.isFlipped ? -this.scale : this.scale;
+      // 分別設定不同精靈的大小和翻轉
+      const baseScale = this.scale;
+      const idleScale = this.scale * 1.5; // idle 精靈保持放大 1.5 倍
       
-      this.idleSprite.scale.set(scaleX, this.scale * 0.5);
-      this.walkSprite.scale.set(walkScaleX, this.scale);
+      const idleScaleX = this.isFlipped ? -idleScale : idleScale;
+      const walkScaleX = this.isFlipped ? -baseScale : baseScale;
+      
+      this.idleSprite.scale.set(idleScaleX, idleScale);
+      this.walkSprite.scale.set(walkScaleX, baseScale);
     }
   }
 
@@ -114,5 +126,38 @@ export class Player {
     const { x, y } = this.store.position;
     this.sprite.x = x;
     this.sprite.y = y;
-  } 
+  }
+
+  /**
+   * 銷毀玩家資源，釋放記憶體
+   */
+  destroy() {
+    // 停止動畫
+    if (this.idleSprite && this.idleSprite.stop) {
+      this.idleSprite.stop();
+    }
+    if (this.walkSprite && this.walkSprite.stop) {
+      this.walkSprite.stop();
+    }
+
+    // 清理精靈資源
+    if (this.idleSprite) {
+      this.idleSprite.destroy();
+      this.idleSprite = null;
+    }
+    if (this.walkSprite) {
+      this.walkSprite.destroy();
+      this.walkSprite = null;
+    }
+
+    // 清理主容器
+    if (this.sprite) {
+      this.sprite.destroy({ children: true });
+      this.sprite = null;
+    }
+
+    // 清理引用
+    this.store = null;
+    this.container = null;
+  }
 }

@@ -35,7 +35,28 @@
           <div :class="['badge', result?.isCorrect ? 'ok' : 'ng']">
             {{ result?.isCorrect ? '✅ 答對了！' : '❌ 答錯了' }}
           </div>
-          <div class="explain">正確答案：{{ result?.correctAnswer || '未知' }}</div>
+          
+          <!-- 答對時的獎勵信息 -->
+          <div v-if="result?.isCorrect" class="reward-section">
+            <div class="reward-title">🎁 獲得獎勵：</div>
+            <div class="reward-items">
+              <div class="reward-item positive">+15 科技點</div>
+              <div class="reward-item positive">+10 防禦值</div>
+              <div v-if="hasUnlockedTile" class="reward-item positive">土地已解鎖</div>
+            </div>
+          </div>
+          
+          <!-- 答錯時的懲罰信息 -->
+          <div v-else class="penalty-section">
+            <div class="penalty-title">⚠️ 答錯懲罰：</div>
+            <div class="penalty-items">
+              <div class="penalty-item">-5 科技點</div>
+              <div class="penalty-item">-5 防禦值</div>
+            </div>
+            <div class="explain">正確答案：{{ result?.correctAnswer || '未知' }}</div>
+            <div class="encouragement">再接再厲！</div>
+          </div>
+          
           <div class="actions">
             <button class="quiz-btn" @click="finish()">關閉</button>
           </div>
@@ -56,6 +77,11 @@ const result = ref(null)
 const hasOptions = computed(() => {
   const q = gameStore.currentQuestion
   return q && Array.isArray(q.options) && q.options.length > 0
+})
+
+// 判斷是否有解鎖土地（當有 tileToUnlock 且答對時）
+const hasUnlockedTile = computed(() => {
+  return result.value?.isCorrect && gameStore.tileToUnlock
 })
 
 function selectOption(index) {
@@ -254,7 +280,7 @@ function finish() {
 
 .result-panel {
   text-align: center;
-  margin-top: 40px;
+  margin-top: 20px;
   padding: 20px;
 }
 
@@ -277,15 +303,85 @@ function finish() {
   color: #991b1b;
 }
 
+.reward-section {
+  margin: 20px 0;
+}
+
+.reward-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #fbbf24;
+}
+
+.reward-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.reward-item {
+  border: 1px solid #22c55e;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 18px;
+  font-weight: 500; 
+  color: #22c55e;
+}
+
+.reward-item.positive {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.penalty-section {
+  margin: 20px 0;
+}
+
+.penalty-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #ef4444;
+}
+
+.penalty-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.penalty-item {
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #ef4444;
+}
+
+.wrong-info {
+  margin: 20px 0;
+}
+
 .explain {
-  margin: 20px 0 30px;
+  margin: 15px 0;
   font-size: 16px;
   line-height: 1.6;
+  color: #6b7280;
+}
+
+.encouragement {
+  font-size: 16px;
+  color: #f59e0b;
+  font-weight: 500;
 }
 
 .actions {
   display: flex;
   justify-content: center;
+  margin-top: 20px;
 }
 </style>
  

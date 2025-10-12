@@ -455,4 +455,64 @@ export class IsoGrid {
       }
     }
   }
+
+  /**
+   * 銷毀 IsoGrid 資源，釋放記憶體
+   */
+  destroy() {
+    // 清理紋理資源
+    if (this.buildingTextures) {
+      Object.values(this.buildingTextures).forEach(texture => {
+        if (texture && texture.destroy) {
+          texture.destroy();
+        }
+      });
+      this.buildingTextures = null;
+    }
+
+    if (this.grassTextures) {
+      Object.values(this.grassTextures).forEach(texture => {
+        if (texture && texture.destroy) {
+          texture.destroy();
+        }
+      });
+      this.grassTextures = null;
+    }
+
+    if (this.landTexture && this.landTexture.destroy) {
+      this.landTexture.destroy();
+      this.landTexture = null;
+    }
+
+    if (this.castleTextures) {
+      Object.values(this.castleTextures).forEach(texture => {
+        if (texture && texture.destroy) {
+          texture.destroy();
+        }
+      });
+      this.castleTextures = null;
+    }
+
+    // 清理容器
+    if (this.groundContainer) {
+      this.groundContainer.destroy({ children: true });
+      this.groundContainer = null;
+    }
+
+    if (this.objectContainer) {
+      this.objectContainer.destroy({ children: true });
+      this.objectContainer = null;
+    }
+
+    if (this.gridContainer) {
+      this.gridContainer.destroy({ children: true });
+      this.gridContainer = null;
+    }
+
+    // 清理引用
+    this.app = null;
+    this.onTileClick = null;
+    this.mapData = null;
+    this.selectedTile = null;
+  }
 }

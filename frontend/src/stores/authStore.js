@@ -46,6 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
     await createUserWithEmailAndPassword(auth, email, password);
   }
 
+
   /**
    * 處理使用者登入
    * @param {string} email - 使用者 Email
@@ -139,16 +140,7 @@ export const useAuthStore = defineStore('auth', () => {
         await historyStore.loadUserHistory();
         console.log('✅ 已重新載入歷史紀錄');
       }
-      
-      /*if (achievementStore.loadUserData) {
-        await achievementStore.loadUserData();
-        console.log('✅ 已重新載入成就資料');
-      }
-      
-      if (eventStore.loadUserData) {
-        await eventStore.loadUserData();
-        console.log('✅ 已重新載入事件資料');
-      }*/
+            
     } else {
       console.warn('⚠️ 沒有登入使用者，跳過資料載入');
     }

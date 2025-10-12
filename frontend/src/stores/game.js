@@ -93,14 +93,20 @@ export const useGameStore = defineStore('game', () => {
       console.log('✅ 歷史記錄已即時更新:', newHistoryEntry);*/
 
       // 處理答題結果（不使用 alert，改由呼叫端決定顯示方式）
+      // 無論答對答錯都要更新玩家數值（後端已經自動處理獎勵/懲罰）
+      const playerStore = usePlayerStore();
+      await playerStore.refreshPlayerData();
+      
+      // 同步城堡等級（因為防禦值可能已經改變）
+      try {
+        const { useWallStore } = await import('./wall');
+        const wallStore = useWallStore();
+        await wallStore.syncCastleLevel();
+      } catch (error) {
+        console.warn('同步城堡等級失敗:', error);
+      }
+      
       if (result.isCorrect) {
-
-        // 🎁 顯示獎勵信息
-        alert('答對了！土地已解鎖！\n🎁 獲得獎勵：\n+50 科技點\n+10 防禦值');
-
-        // 更新玩家數值（後端已經自動發放獎勵，這裡只需要重新載入資料）
-        const playerStore = usePlayerStore();
-        await playerStore.refreshPlayerData();
 
         if (tileToUnlock.value) {
           const currentUserId = playerStore.playerId || userId.value || 'test-user';

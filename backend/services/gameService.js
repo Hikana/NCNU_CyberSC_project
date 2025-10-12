@@ -64,10 +64,16 @@ class GameService {
         answeredCount: FieldValue.increment(1)
       });
       
-      // 🎁 發放獎勵：科技點 +50，防禦值 +10
+     
       await this.giveRewards(userId, {
-        techPoints: 50,
+        techPoints: 15,
         defense: 10
+      });
+    } else {
+      // 答錯了，扣除懲罰：科技點 -5，防禦值 -5
+      await this.giveRewards(userId, {
+        techPoints: -5,
+        defense: -5
       });
     }
     const description=question.description;
@@ -97,26 +103,32 @@ class GameService {
   // --- 獎勵系統 ---
 
   /**
-   * 發放獎勵給玩家
+   * 發放獎勵給玩家（支援正負數）
    * @param {string} userId - 玩家 ID
-   * @param {object} rewards - 獎勵內容 { techPoints, defense, ... }
+   * @param {object} rewards - 獎勵內容 
    */
   async giveRewards(userId, rewards) {
     try {
       console.log(`🎁 發放獎勵給玩家 ${userId}:`, rewards);
       
+      // 先獲取玩家當前數值，確保不會扣除到負數
+      const player = await playerData.getPlayer(userId);
       const updateData = {};
       
-      // 處理科技點獎勵
-      if (rewards.techPoints && rewards.techPoints > 0) {
-        updateData.techPoints = FieldValue.increment(rewards.techPoints);
-        console.log(`  +${rewards.techPoints} 科技點`);
+      // 處理科技點獎勵（支援正負數，但不會低於 0）
+      if (rewards.techPoints !== undefined && rewards.techPoints !== 0) {
+        const newTechPoints = Math.max(0, player.techPoints + rewards.techPoints);
+        updateData.techPoints = newTechPoints;
+        const sign = rewards.techPoints > 0 ? '+' : '';
+        console.log(`  ${sign}${rewards.techPoints} 科技點 (當前: ${player.techPoints} → ${newTechPoints})`);
       }
       
-      // 處理防禦值獎勵
-      if (rewards.defense && rewards.defense > 0) {
-        updateData.defense = FieldValue.increment(rewards.defense);
-        console.log(`  +${rewards.defense} 防禦值`);
+      // 處理防禦值獎勵（支援正負數，但不會低於 0）
+      if (rewards.defense !== undefined && rewards.defense !== 0) {
+        const newDefense = Math.max(0, player.defense + rewards.defense);
+        updateData.defense = newDefense;
+        const sign = rewards.defense > 0 ? '+' : '';
+        console.log(`  ${sign}${rewards.defense} 防禦值 (當前: ${player.defense} → ${newDefense})`);
       }
       
       // 更新玩家資料
@@ -140,7 +152,7 @@ class GameService {
       await playerData.updatePlayer(userId, { developedCount: FieldValue.increment(1) });
       
       // 🎲 檢查是否觸發隨機事件
-      const eventResult = await this.checkForRandomEvent(playerId, position);
+      const eventResult = await this.checkForRandomEvent(userId, position);
       
       // 返回解鎖後的狀態（簡化版本，不包含建築資訊）
       const landData = await playerData.getPlayerLand(userId);
@@ -167,11 +179,11 @@ class GameService {
 
   /**
    * 檢查是否觸發隨機事件
-   * @param {string} playerId - 玩家 ID
+   * @param {string} userId - 玩家 ID
    * @param {object} position - 解鎖位置 { x, y }
    * @returns {object|null} - 觸發的事件資訊或 null
    */
-  async checkForRandomEvent(playerId, position) {
+  async checkForRandomEvent(userId, position) {
     try {
       const { x, y } = position;
       

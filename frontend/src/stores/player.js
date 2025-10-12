@@ -5,32 +5,14 @@ import { auth } from '@/firebase/firebase';
 
 export const usePlayerStore = defineStore('player', () => {
   // --- State (狀態) ---
-  
-  /**
-   * 玩家在遊戲世界中的邏輯座標
-   */
-  const x = ref(18);
-  const y = ref(5);
-  
-  /**
-   * Firebase 使用者 ID，用於 Firestore 對應玩家文件
-   */
   const userId = ref(null);
-  
-  /**
-   * 玩家擁有的科技點（從後端同步）
-   */
   const techPoints = ref(0);
-
-  /**
-   * 玩家擁有的防禦值（從後端同步）
-   */
   const defense = ref(0);
 
   /**
    * 玩家在遊戲世界中的邏輯座標
    * 由 PixiJS 的遊戲循環 (gameLoop) 負責更新
-   * 初始位置設在網格 (3, 3) 避免在城堡區域內
+   * 使用 reactive 物件來儲存等角座標
    */
   const position = reactive({
     x: 0, // 等角座標 X，將在遊戲初始化時設置
@@ -43,24 +25,7 @@ export const usePlayerStore = defineStore('player', () => {
   
   let resourceInterval = null; // 用來存放 setInterval 的 ID，方便之後清除
 
-  /**
-   * 移動方法
-   */
-  function moveUp() {
-    if (y.value > 0) y.value--;
-  }
-  
-  function moveDown() {
-    if (y.value < 19) y.value++;
-  }
-  
-  function moveLeft() {
-    if (x.value > 0) x.value--;
-  }
-  
-  function moveRight() {
-    if (x.value < 19) x.value++;
-  }
+ 
 
   /**
    * 啟動資源的自動增長
@@ -151,6 +116,14 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   /**
+   * 立即更新科技點（用於動畫觸發，不保存到資料庫）
+   * @param {number} amount - 要增加的數量
+   */
+  function addTechPointsImmediate(amount) {
+    techPoints.value += amount;
+  }
+
+  /**
    * 更新科技點到資料庫
    * @param {number} newTechPoints - 新的科技點數
    */
@@ -171,6 +144,14 @@ export const usePlayerStore = defineStore('player', () => {
    * @param {number} amount - 要增加的數量
    */
   function addDefense(amount) {
+    defense.value += amount;
+  }
+
+  /**
+   * 立即更新防禦值（用於動畫觸發，不保存到資料庫）
+   * @param {number} amount - 要增加的數量
+   */
+  function addDefenseImmediate(amount) {
     defense.value += amount;
   }
 
@@ -225,8 +206,6 @@ export const usePlayerStore = defineStore('player', () => {
   
   // 將所有需要讓外部 (Vue元件或其他 stores) 使用的 state 和 actions 在這裡 return
   return {
-    x,
-    y,
     userId,
     techPoints,
     defense,
@@ -234,15 +213,13 @@ export const usePlayerStore = defineStore('player', () => {
     correctlyAnsweredCount,
     setUserId,
     initFromAuth,
-    moveUp,
-    moveDown,
-    moveLeft,
-    moveRight,
     incrementCorrectlyAnsweredCount,
     updatePosition,
     addTechPoints,
+    addTechPointsImmediate,
     updateTechPoints,
     addDefense,
+    addDefenseImmediate,
     updateDefense,
     hasEnoughTechPoints,
     loadPlayerData,

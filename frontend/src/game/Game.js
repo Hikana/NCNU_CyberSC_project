@@ -5,6 +5,7 @@ import { watch } from 'vue';
 import { usePlayerStore } from '../stores/player';
 import { useGameStore } from '../stores/game';
 import { useBuildingStore } from '../stores/buildings';
+import { useWallStore } from '../stores/wall';
 
 /**
  * 遊戲主引擎類別
@@ -12,12 +13,11 @@ import { useBuildingStore } from '../stores/buildings';
  */
 export class Game {
   constructor(containerElement) {
-    this.container = containerElement;
-    // 在 constructor 中直接獲取所有需要的 Pinia stores
+    this.container = containerElement;   
     this.playerStore = usePlayerStore();
-    this.gameStore = useGameStore();
-    // ✅ 修正點：使用正確的複數名稱
+    this.gameStore = useGameStore();   
     this.buildingStore = useBuildingStore();
+    this.wallStore = useWallStore();
  
     // 初始化所有遊戲相關的屬性
     this.app = null;
@@ -28,6 +28,7 @@ export class Game {
     this.isDragging = false;
     this.dragStart = { x: 0, y: 0 };
     this.TILE_SIZE = 150;
+    this.gameLoopCallback = null; // 儲存 ticker 回調函數的引用
   }
 
   /**
@@ -53,19 +54,30 @@ export class Game {
 
     this._createMap();
     await this._createPlayer();
-    this._setupControls();
+    this._setupControls();
     this._setupWatchers(); // 啟用響應式監聽
-    
-    this.app.ticker.add((ticker) => this._gameLoop(ticker.deltaTime));
+    
+    // 建立並儲存 ticker 回調函數的引用，以便後續正確移除
+    this.gameLoopCallback = (ticker) => this._gameLoop(ticker.deltaTime);
+    this.app.ticker.add(this.gameLoopCallback);
   }
 
   /**
    * 銷毀遊戲，釋放所有資源
    */
   destroy() {
+    // 清理事件監聽器
     window.removeEventListener('keydown', this._handleKeydown);
     window.removeEventListener('keyup', this._handleKeyup);
+    
     if (this.app) {
+      // 清理 ticker 回調函數 - 重要：防止記憶體洩漏
+      if (this.app.ticker && this.gameLoopCallback) {
+        this.app.ticker.remove(this.gameLoopCallback);
+        this.gameLoopCallback = null;
+      }
+      
+      // 清理 stage 事件監聽器
       if (this.app.stage) {
         this.app.stage.off('pointerdown', this._onDragStart);
         this.app.stage.off('pointerup', this._onDragEnd);
@@ -73,9 +85,38 @@ export class Game {
         this.app.stage.off('pointermove', this._onDragMove);
       }
       
+      // 清理玩家相關資源
+      if (this.player) {
+        this.player.destroy?.();
+        this.player = null;
+      }
       
-      this.app.destroy(true, { children: true, texture: true, baseTexture: true });
+      // 清理地圖網格
+      if (this.grid) {
+        this.grid.destroy?.();
+        this.grid = null;
+      }
+      
+      // 清理世界容器
+      if (this.world) {
+        this.world.destroy({ children: true });
+        this.world = null;
+      }
+      
+      // 完全銷毀 PIXI Application
+      this.app.destroy(true, { 
+        children: true, 
+        texture: true, 
+        baseTexture: true,
+        context: true
+      });
+      
+      this.app = null;
     }
+    
+    // 清理其他引用
+    this.container = null;
+    this.keys = {};
   }
 
   /**
@@ -311,6 +352,13 @@ export class Game {
         this.grid.setSelectedTile(tile.x, tile.y);
       } else {
         this.grid.clearSelectedTile();
+      }
+    });
+
+    // 監聽城堡等級變化，自動重繪地圖
+    watch(() => this.wallStore.castleLevel, (newLevel, oldLevel) => {
+      if (oldLevel !== undefined && newLevel !== oldLevel && this.grid) {        
+        this.grid.drawGrid(); // 重繪地圖以顯示新的城堡等級
       }
     });
   }
