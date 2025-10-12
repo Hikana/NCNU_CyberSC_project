@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { useAuthStore } from '@/stores/authStore';
 import { apiService } from '@/services/apiService';
+import { usePlayerStore } from '@/stores/player';
 
 export const useEventLogStore = defineStore('eventLog', {
   state: () => ({
@@ -11,6 +12,8 @@ export const useEventLogStore = defineStore('eventLog', {
     loading: false,
     // 是否已完成初始化
     isLoaded: false,
+    // 持續懲罰計時器
+    penaltyInterval: null,
   }),
   
   getters: {
@@ -45,6 +48,14 @@ export const useEventLogStore = defineStore('eventLog', {
         this.unresolvedEvents = events.filter(event => !event.resolved);
         this.isLoaded = true;
         console.log('📜 載入資安事件:', this.unresolvedEvents.length, '個未處理事件');
+        
+        // 如果有未處理的事件，啟動持續懲罰計時器
+        if (this.unresolvedEvents.length > 0) {
+          this.startPenaltyTimer();
+        } else {
+          // 如果沒有未處理的事件，確保計時器已停止
+          this.stopPenaltyTimer();
+        }
       } catch (error) {
         console.error('❌ 載入資安事件失敗:', error);
         this.unresolvedEvents = [];
@@ -74,6 +85,11 @@ export const useEventLogStore = defineStore('eventLog', {
             this.unresolvedEvents.push(newEvent);
             console.log('📜 新增資安事件成功:', newEvent.eventName || newEvent.id);
             console.log('📜 當前未處理事件數量:', this.unresolvedEvents.length);
+            
+            // 如果這是第一個未處理事件，啟動持續懲罰計時器
+            if (this.unresolvedEvents.length === 1) {
+              this.startPenaltyTimer();
+            }
           } else {
             console.log('📜 事件已存在，跳過重複添加:', newEvent.id);
           }
@@ -106,6 +122,13 @@ export const useEventLogStore = defineStore('eventLog', {
         this.unresolvedEvents = this.unresolvedEvents.filter(event => event.id !== eventId);
         
         console.log('✅ 解決資安事件:', eventId, '使用工具:', usedItemId);
+        console.log('📜 剩餘未處理事件數量:', this.unresolvedEvents.length);
+        
+        // 如果沒有未處理的事件了，停止持續懲罰計時器
+        if (this.unresolvedEvents.length === 0) {
+          this.stopPenaltyTimer();
+        }
+        
         return result;
       } catch (error) {
         console.error('❌ 解決資安事件失敗:', error);
@@ -127,6 +150,56 @@ export const useEventLogStore = defineStore('eventLog', {
     clearEvents() {
       this.unresolvedEvents = [];
       this.isLoaded = false;
+      this.stopPenaltyTimer();
+    },
+    
+    // 啟動持續懲罰計時器
+    startPenaltyTimer() {
+      // 防止重複啟動
+      if (this.penaltyInterval) {
+        return;
+      }
+      
+      console.log('⏰ 啟動資安事件持續懲罰計時器（每30秒檢查一次）');
+      
+      this.penaltyInterval = setInterval(async () => {
+        if (this.unresolvedEvents.length > 0) {
+          const playerStore = usePlayerStore();
+          
+          // 計算總懲罰（每個未處理事件扣除科技點50和防禦值10）
+          const totalPenalty = this.unresolvedEvents.length;
+          const techPointsPenalty = totalPenalty * 50;
+          const defensePenalty = totalPenalty * 10;
+          
+          console.log(`⚠️ 持續懲罰觸發！未處理事件數: ${totalPenalty}`);
+          console.log(`   扣除科技點: -${techPointsPenalty}, 防禦值: -${defensePenalty}`);
+          
+          // 扣除科技點和防禦值（不會低於0）
+          const newTechPoints = Math.max(0, playerStore.techPoints - techPointsPenalty);
+          const newDefense = Math.max(0, playerStore.defense - defensePenalty);
+          
+          console.log(`   科技點: ${playerStore.techPoints} → ${newTechPoints}`);
+          console.log(`   防禦值: ${playerStore.defense} → ${newDefense}`);
+          
+          // 更新玩家資料
+          try {
+            await playerStore.updateTechPoints(newTechPoints);
+            await playerStore.updateDefense(newDefense);
+            console.log('✅ 持續懲罰已套用');
+          } catch (error) {
+            console.error('❌ 套用持續懲罰失敗:', error);
+          }
+        }
+      }, 30000); // 每30秒執行一次
+    },
+    
+    // 停止持續懲罰計時器
+    stopPenaltyTimer() {
+      if (this.penaltyInterval) {
+        clearInterval(this.penaltyInterval);
+        this.penaltyInterval = null;
+        console.log('⏰ 資安事件持續懲罰計時器已停止');
+      }
     }
   }
 });

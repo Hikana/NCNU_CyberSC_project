@@ -3,6 +3,7 @@ import { ref, computed, onUnmounted } from 'vue';
 import { EVENTS } from '../game/events';
 import { useInventoryStore } from './inventory';
 import { useEventLogStore } from './eventLogStore';
+import { usePlayerStore } from './player';
 
 export const useEventStore = defineStore('event', () => {
   const isModalOpen = ref(false);
@@ -13,9 +14,10 @@ export const useEventStore = defineStore('event', () => {
   const intervalId = ref(null);
   const resultMessage = ref('');
 
-  // 獲取背包和事件紀錄 store
+  // 獲取背包、事件紀錄和玩家 store
   const inventoryStore = useInventoryStore();
   const eventLogStore = useEventLogStore();
+  const playerStore = usePlayerStore();
 
   // 防禦建材目錄（全清單）- 與 inventory store 的 DEFENSE_TOOLS 保持一致
   const allDefenseCatalog = [
@@ -54,17 +56,29 @@ export const useEventStore = defineStore('event', () => {
     }
   }
 
-  function finalize(success, message) {
+  async function finalize(success, message) {
     clearTimer();
     status.value = success ? 'success' : 'fail';
     resultMessage.value = message || '';
     flipped.value = true; // 翻到背面顯示結果與真實案例
     
-    // 如果事件失敗，記錄到資安事件
+    // 如果事件失敗，記錄到資安事件並立即扣除科技點和防禦值
     if (!success && activeEventId.value) {
       const event = EVENTS[activeEventId.value];
       if (event) {
         console.log('🔴 事件失敗，準備記錄到資安事件:', event.name);
+        
+        // 立即扣除科技點50和防禦值10
+        const newTechPoints = Math.max(0, playerStore.techPoints - 50);
+        const newDefense = Math.max(0, playerStore.defense - 10);
+        
+        console.log('💰 扣除懲罰: 科技點 -50, 防禦值 -10');
+        console.log(`   科技點: ${playerStore.techPoints} → ${newTechPoints}`);
+        console.log(`   防禦值: ${playerStore.defense} → ${newDefense}`);
+        
+        // 更新玩家資料
+        await playerStore.updateTechPoints(newTechPoints);
+        await playerStore.updateDefense(newDefense);
         
         // 異步記錄事件，不阻塞 UI
         const eventData = {
