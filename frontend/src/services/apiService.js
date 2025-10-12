@@ -282,6 +282,46 @@ export const apiService = {
     const url = `${PLAYER_BASE_URL}/me/achievements/check`;
     return requestInventory(url, { method: 'POST', body: { gameStats } });
   },
+  // --- 防禦工具相關 ---
+  
+  // 使用防禦工具
+  useDefenseTool: (toolId) => {
+    const url = `http://localhost:3000/api/inventory/use-tool`;
+    return requestInventory(url, { 
+      method: 'POST', 
+      body: { toolId } 
+    });
+  },
+
+  // --- 資安事件相關 ---
+  
+  // 獲取玩家的資安事件紀錄
+  getSecurityEvents: async (userId) => {
+    const uid = userId || getCurrentUid();
+    if (!uid) throw new Error('尚未登入，無法取得資安事件');
+    const url = `http://localhost:3000/api/events/${encodeURIComponent(uid)}`;
+    return requestInventory(url);
+  },
+
+  // 新增資安事件
+  addSecurityEvent: async (userId, eventData) => {
+    const uid = userId || getCurrentUid();
+    if (!uid) throw new Error('尚未登入，無法新增資安事件');
+    const url = `http://localhost:3000/api/events/${encodeURIComponent(uid)}`;
+    console.log('📡 發送新增資安事件請求:', { url, eventData });
+    const result = await requestInventory(url, { method: 'POST', body: eventData });
+    console.log('📡 新增資安事件回應:', result);
+    return result;
+  },
+
+  // 解決資安事件
+  resolveSecurityEvent: async (userId, eventId, usedItemId) => {
+    const uid = userId || getCurrentUid();
+    if (!uid) throw new Error('尚未登入，無法解決資安事件');
+    const url = `http://localhost:3000/api/events/${encodeURIComponent(uid)}/${encodeURIComponent(eventId)}/resolve`;
+    return requestInventory(url, { method: 'PUT', body: { usedItemId } });
+  },
+
   // --- 額外的工具方法 ---
   // 檢查 API 連接狀態
   checkConnection: async () => {

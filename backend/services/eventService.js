@@ -8,8 +8,8 @@ class EventService {
   }
 
   // 添加新的資安事件
-  async addSecurityEvent(userId, eventData) {
-    return eventData.addSecurityEvent(userId, eventData);
+  async addSecurityEvent(userId, eventPayload) {
+    return eventData.addSecurityEvent(userId, eventPayload);
   }
 
   // 解決資安事件

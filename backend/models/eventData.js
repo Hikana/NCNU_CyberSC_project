@@ -39,20 +39,46 @@ class EventData {
   async addSecurityEvent(userId, eventData) {
     if (!userId) throw new Error('缺少 userId');
     
+    console.log('📝 後端收到新增資安事件請求:', { userId, eventData });
+    
     const eventlogRef = this.players.doc(userId).collection('eventlog');
+    
+    // 處理時間戳：如果是 ISO 字串，轉換為 Date 物件
+    let timestamp = new Date();
+    if (eventData.timestamp) {
+      timestamp = typeof eventData.timestamp === 'string' 
+        ? new Date(eventData.timestamp) 
+        : eventData.timestamp;
+    }
+    
     const eventDoc = {
       eventId: eventData.eventId,
       eventName: eventData.eventName,
-      timestamp: new Date(),
+      timestamp: timestamp,
       description: eventData.description,
       correctDefenses: eventData.correctDefenses,
       resolved: false
     };
     
+    console.log('📝 準備保存的事件文件:', eventDoc);
+    
     // 使用指定的 ID 作為文件 ID
-    const docRef = await eventlogRef.doc(eventData.id.toString()).set(eventDoc);
-    console.log('✅ 資安事件已保存到資料庫:', eventData.eventName);
-    return { ...eventDoc, id: eventData.id };
+    await eventlogRef.doc(eventData.id.toString()).set(eventDoc);
+    console.log('✅ 資安事件已保存到資料庫:', eventData.eventName, '文件ID:', eventData.id);
+    
+    // 回傳完整的資料結構，確保與前端期望一致
+    const savedEvent = {
+      id: eventData.id.toString(),
+      eventId: eventDoc.eventId,
+      eventName: eventDoc.eventName,
+      timestamp: eventDoc.timestamp, // 保持為 Date 物件，讓前端處理
+      description: eventDoc.description,
+      correctDefenses: eventDoc.correctDefenses,
+      resolved: false
+    };
+    
+    console.log('📝 回傳給前端的事件資料:', savedEvent);
+    return savedEvent;
   }
 
   // 解決資安事件

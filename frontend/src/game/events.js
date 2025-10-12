@@ -55,7 +55,7 @@ export const EVENTS = {
       title: '2020年「TikTok CSRF 漏洞」事件',
       body: '研究人員發現 TikTok 存在可透過惡意訊息觸發的 CSRF 與 XSS 漏洞，允許攻擊者在使用者不知情下執行操作。',
     },
-    correctDefenses: ['csrf_token'],
+    correctDefenses: ['csrf'],
     timerSeconds: 22,
   },
   
@@ -85,7 +85,7 @@ export const EVENTS = {
       title: '2009年「Experi-Metal v. Comerica 銀行網路釣魚詐騙」事件',
       body: '一名 Experi-Metal 員工在 2009 年 1 月 22 日收到一封偽裝成 Comerica 銀行的網路釣魚電子郵件，點擊後輸入了安全金鑰與登入資訊。當天 7.5 小時內詐騙者進行 93 次非法轉帳，總金額高達 1,901,269 美元，最終只追回部分款項，損失約 561,399 美元。',
     },
-    correctDefenses: ['security_awareness_training'],
+    correctDefenses: ['security_awareness'],
     timerSeconds: 25,
   },
 
@@ -115,7 +115,7 @@ export const EVENTS = {
       title: '2021年「Kaseya 供應鏈 Ransomware 勒索攻擊」事件',
       body: '攻擊者利用 Kaseya VSA 軟體更新中的零日漏洞，大規模部署 REvil 勒索軟體，影響超過 1,000 家企業，展開大規模勒索行動。',
     },
-    correctDefenses: ['backup_321'],
+    correctDefenses: ['backup'],
     timerSeconds: 35,
   },
 
@@ -145,7 +145,7 @@ export const EVENTS = {
       title: '「Broken Authentication 導致 Session 會話劫持技術風險」情境',
       body: 'Brightsec 技術文章指出，若網站未妥善處理 session 過期時間與驗證機制，攻擊者可偷取 session token 實施未經驗證的操作，此為典型 Session Hijacking 的實戰風險示例。',
     },
-    correctDefenses: ['httponly_secure_cookie'],
+    correctDefenses: ['http_cookie'],
     timerSeconds: 25,
   },
 

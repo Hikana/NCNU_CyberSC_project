@@ -41,18 +41,17 @@
                   :key="opt.key"
                   class="defense-btn"
                   :class="{ 
-                    'available': opt.owned && eventStore.status === 'pending',
-                    'locked': !opt.owned,
+                    'available': eventStore.status === 'pending',
                     'disabled': eventStore.status !== 'pending'
                   }"
-                  :disabled="!opt.owned || eventStore.status !== 'pending'"
-                  @click="onDefenseClick(opt.key, opt.owned)"
+                  :disabled="eventStore.status !== 'pending'"
+                  @click="onDefenseClick(opt.key)"
                 >
                   <div class="btn-content">
                     <span class="defense-name">{{ opt.name }}</span>
                     <span class="defense-description">{{ opt.description }}</span>
-                    <span class="status-badge" :class="opt.owned ? 'owned' : 'not-owned'">
-                      {{ opt.owned ? '✓ 已取得' : '✗ 未取得' }}
+                    <span class="status-badge owned">
+                      ✓ 已取得
                     </span>
                   </div>
                 </button>
@@ -145,16 +144,31 @@ const percent = computed(() => {
 })
 
 // 點擊防禦建材
-function onDefenseClick(key) {
-  // 檢查背包裡有沒有這個道具
-  const owned = inventoryStore.items.find(item => item.id === key)
-  if (!owned) return // 沒有就不能用
+async function onDefenseClick(key) {
+  try {
+    // 檢查背包裡有沒有這個道具
+    const owned = inventoryStore.items.find(item => item.id === key)
+    if (!owned || owned.qty <= 0) {
+      console.warn(`沒有 ${key} 這個防禦工具`)
+      return // 沒有就不能用
+    }
 
-  // 使用背包道具（可能要扣掉數量）
-  inventoryStore.useItem(key)
-
-  // 同時告訴事件系統「我選了這個防禦」
-  eventStore.chooseDefense(key)
+    console.log(`🛡️ 嘗試使用防禦工具: ${key}`)
+    
+    // 先告訴事件系統「我選了這個防禦」
+    eventStore.chooseDefense(key)
+    
+    // 如果事件成功解決，才使用背包道具（會扣掉數量）
+    if (eventStore.status === 'success') {
+      await inventoryStore.useItem(key)
+      console.log(`✅ 成功使用防禦工具 ${key}`)
+    }
+    
+  } catch (error) {
+    console.error('❌ 使用防禦工具失敗:', error)
+    // 可以顯示錯誤訊息給用戶
+    alert(`使用防禦工具失敗: ${error.message}`)
+  }
 }
 </script>
 

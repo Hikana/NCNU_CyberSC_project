@@ -67,6 +67,44 @@
           />
         </div>
         
+        <!-- 資安事件紀錄頁面 -->
+        <div v-else-if="currentView === 'logs'" class="security-events-container">
+          <h2>資安事件紀錄</h2>
+          <div v-if="eventLogStore.loading">載入中...</div>
+          <div v-else-if="eventLogStore.unresolvedEvents.length === 0" class="empty-events">
+            <p>🎉 太棒了！目前沒有未處理的資安事件</p>
+          </div>
+          <div v-else class="events-content">
+            <div class="events-list">
+              <div v-for="event in eventLogStore.unresolvedEvents" :key="event.id" 
+                   class="event-item" 
+                   :class="{ selected: selectedEvent?.id === event.id }"
+                   @click="selectEvent(event)">
+                <div class="event-icon">⚠️</div>
+                <div class="event-info">
+                  <div class="event-name">{{ event.eventName }}</div>
+                  <div class="event-time">{{ formatTime(event.timestamp) }}</div>
+                </div>
+                <div class="event-status">未處理</div>
+              </div>
+            </div>
+            
+            <!-- 事件詳細資訊 -->
+            <div v-if="selectedEvent" class="event-detail">
+              <h3>{{ selectedEvent.eventName }}</h3>
+              <p class="event-description">{{ selectedEvent.description }}</p>
+              <div class="event-stats">
+                <div class="stat">發生時間: {{ formatTime(selectedEvent.timestamp) }}</div>
+                <div class="stat">需要工具: {{ getRequiredTools(selectedEvent) }}</div>
+              </div>
+              <div class="event-actions">
+                <button class="resolve-btn" @click="resolveEvent(selectedEvent)">處理事件</button>
+                <button class="close-btn" @click="selectedEvent = null">x</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <!-- 答題紀錄頁面 -->
         <div v-else-if="currentView === 'records'"> 
           <HistoryPanel />
@@ -84,23 +122,25 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue' 
+import { ref, computed, onMounted, watch } from 'vue' 
 import BuildingShop from '@/components/BuildingShop.vue'
 import AchievementMenu from '@/components/AchievementMenu.vue'
 import HistoryPanel from '@/components/HistoryPanel.vue'
 import { useUiStore } from '@/stores/ui';
 import { useInventoryStore } from '@/stores/inventory.js';
 import { useAuthStore } from '@/stores/authStore';
-
+import { useEventLogStore } from '@/stores/eventLogStore';
 import { usePlayerStore } from '@/stores/player'
 
 
 const player = usePlayerStore()
 const inv = useInventoryStore()
 const authStore = useAuthStore(); 
+const eventLogStore = useEventLogStore();
 
-// 選中的物品
+// 選中的物品和事件
 const selectedItem = ref(null)
+const selectedEvent = ref(null)
 
 // 點擊物品顯示詳細資訊
 function selectItem(item) {
@@ -108,11 +148,145 @@ function selectItem(item) {
   console.log('選中物品:', item)
 }
 
+// 點擊事件顯示詳細資訊
+function selectEvent(event) {
+  selectedEvent.value = event
+  console.log('選中事件:', event)
+}
+
+// 處理事件
+async function resolveEvent(event) {
+  try {
+    console.log('🛡️ 嘗試處理事件:', event.eventName)
+    
+    // 檢查是否有需要的工具
+    const requiredTools = event.correctDefenses || []
+    const availableTools = inv.items.filter(item => 
+      requiredTools.includes(item.id) && item.qty > 0
+    )
+    
+    if (availableTools.length === 0) {
+      alert(`處理此事件需要以下工具：\n${requiredTools.join(', ')}\n\n請先取得這些工具！`)
+      return
+    }
+    
+    // 如果有多個可用工具，讓玩家選擇
+    let selectedTool
+    if (availableTools.length === 1) {
+      selectedTool = availableTools[0]
+    } else {
+      const toolNames = availableTools.map(t => t.name).join('\n')
+      const choice = prompt(`有多個工具可以處理此事件：\n${toolNames}\n\n請輸入要使用的工具名稱：`)
+      selectedTool = availableTools.find(t => t.name === choice)
+      
+      if (!selectedTool) {
+        alert('無效的工具選擇！')
+        return
+      }
+    }
+    
+    // 使用工具處理事件
+    await eventLogStore.resolveSecurityEvent(event.id, selectedTool.id)
+    
+    // 使用物品（會扣掉數量）
+    await inventoryStore.useItem(selectedTool.id)
+    
+    alert(`✅ 成功使用 ${selectedTool.name} 處理了事件：${event.eventName}！`)
+    
+    // 更新玩家防禦值
+    const playerStore = usePlayerStore()
+    await playerStore.refreshPlayerData()
+    
+    // 清除選中狀態
+    selectedEvent.value = null
+    
+  } catch (error) {
+    console.error('❌ 處理事件失敗:', error)
+    alert(`處理事件失敗: ${error.message}`)
+  }
+}
+
+// 格式化時間
+function formatTime(timestamp) {
+  if (!timestamp) return '未知時間'
+  const date = new Date(timestamp)
+  return date.toLocaleString('zh-TW')
+}
+
+// 獲取需要的工具名稱
+function getRequiredTools(event) {
+  if (!event.correctDefenses || event.correctDefenses.length === 0) {
+    return '未知'
+  }
+  
+  // 從 inventory store 獲取工具名稱
+  const toolNames = event.correctDefenses.map(toolId => {
+    const tool = inv.items.find(item => item.id === toolId)
+    return tool ? tool.name : toolId
+  })
+  
+  return toolNames.join(', ')
+}
+
 // 使用物品
-function useItem(item) {
-  console.log('使用物品:', item.name)
-  // TODO: 實作使用物品的邏輯
-  alert(`使用了 ${item.name}！`)
+async function useItem(item) {
+  try {
+    console.log('🛡️ 嘗試使用物品:', item.name)
+    
+    // 檢查是否擁有該物品
+    if (!item || item.qty <= 0) {
+      alert(`你沒有 ${item.name} 這個物品`)
+      return
+    }
+    
+    // 檢查是否有需要該工具的未處理事件
+    const eventsNeedingTool = eventLogStore.getEventsNeedingTool(item.id)
+    
+    if (eventsNeedingTool.length > 0) {
+      // 如果有需要該工具的事件，讓玩家選擇要處理哪個事件
+      const eventNames = eventsNeedingTool.map(e => e.eventName).join('\n')
+      const shouldResolve = confirm(`這個工具可以處理以下事件：\n${eventNames}\n\n是否要使用 ${item.name} 來處理這些事件？`)
+      
+      if (shouldResolve) {
+        // 處理所有需要該工具的事件
+        for (const event of eventsNeedingTool) {
+          await eventLogStore.resolveSecurityEvent(event.id, item.id)
+        }
+        
+        // 使用物品（會扣掉數量）
+        await inventoryStore.useItem(item.id)
+        
+        alert(`✅ 成功使用 ${item.name} 處理了 ${eventsNeedingTool.length} 個資安事件！`)
+        
+        // 更新玩家防禦值
+        const playerStore = usePlayerStore()
+        await playerStore.refreshPlayerData()
+        
+        // 清除選中狀態
+        selectedItem.value = null
+        return
+      }
+    }
+    
+    // 如果沒有需要該工具的事件，或玩家選擇不處理，則正常使用物品
+    await inventoryStore.useItem(item.id)
+    
+    console.log(`✅ 成功使用物品 ${item.name}`)
+    
+    // 顯示使用結果
+    alert(`成功使用 ${item.name}！\n防禦值 +${item.defenseValue}`)
+    
+    // 更新玩家防禦值
+    const playerStore = usePlayerStore()
+    await playerStore.refreshPlayerData()
+    
+    // 清除選中狀態
+    selectedItem.value = null
+    
+  } catch (error) {
+    console.error('❌ 使用物品失敗:', error)
+    alert(`使用物品失敗: ${error.message}`)
+  }
 }
 
 
@@ -126,6 +300,11 @@ onMounted(async () => {
   console.log('🚀 初始化背包，玩家ID:', uid)
   await inventoryStore.init(uid)
   console.log('✅ 背包初始化完成，物品數量:', inventoryStore.items.length)
+  
+  // 載入資安事件
+  console.log('🚀 載入資安事件，玩家ID:', uid)
+  await eventLogStore.loadSecurityEvents()
+  console.log('✅ 資安事件載入完成，未處理事件數量:', eventLogStore.unresolvedEvents.length)
 })
 
 
@@ -140,6 +319,15 @@ const menuItems = ref([
 ]);
 
 const currentView = ref('inventory');
+
+// 監聽頁面切換，當切換到資安事件紀錄時重新載入
+watch(currentView, async (newView) => {
+  if (newView === 'logs') {
+    console.log('🔄 切換到資安事件紀錄頁面，重新載入事件...');
+    await eventLogStore.loadSecurityEvents();
+    console.log('✅ 資安事件重新載入完成，未處理事件數量:', eventLogStore.unresolvedEvents.length);
+  }
+});
 
 const props = defineProps({
   visible: Boolean
@@ -534,5 +722,148 @@ function closeMenu() {
   color: #27ae60;
   font-weight: bold;
   font-size: 14px;
+}
+
+/* 資安事件頁面樣式 */
+.security-events-container {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.security-events-container h2 {
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+  font-size: 20px;
+}
+
+.empty-events {
+  text-align: center;
+  color: #27ae60;
+  font-style: italic;
+  margin-top: 50px;
+}
+
+.events-content {
+  display: flex;
+  gap: 20px;
+  height: 100%;
+}
+
+.events-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.event-item {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(231, 76, 60, 0.3);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.event-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  border-color: #e74c3c;
+}
+
+.event-item.selected {
+  border-color: #e74c3c;
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.event-icon {
+  font-size: 24px;
+  width: 32px;
+  text-align: center;
+}
+
+.event-info {
+  flex: 1;
+}
+
+.event-name {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.event-time {
+  color: #7f8c8d;
+  font-size: 12px;
+}
+
+.event-status {
+  color: #e74c3c;
+  font-weight: bold;
+  font-size: 12px;
+  background: rgba(231, 76, 60, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.event-detail {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(231, 76, 60, 0.3);
+}
+
+.event-detail h3 {
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+  font-size: 20px;
+}
+
+.event-description {
+  color: #7f8c8d;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.event-stats {
+  margin-bottom: 20px;
+}
+
+.event-stats .stat {
+  background: rgba(231, 76, 60, 0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.event-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.resolve-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  background: #e74c3c;
+  color: white;
+}
+
+.resolve-btn:hover {
+  background: #c0392b;
 }
 </style>

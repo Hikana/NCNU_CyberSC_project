@@ -5,6 +5,7 @@ const gameRoutes = require('./routes/gameRoutes');
 const buildingRoutes = require('./routes/buildingRoutes');
 const playerRoutes = require('./routes/playerRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
+const eventRoutes = require('./routes/eventRoutes');
 
 const app = express();
 // 中介軟體
@@ -32,13 +33,12 @@ app.use('/api/game', gameRoutes);
 app.use('/api/buildings', buildingRoutes);
 app.use('/api/players', playerRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/events', eventRoutes);
 
 // 健康檢查
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
 });
-
-
 
 
 module.exports = app;

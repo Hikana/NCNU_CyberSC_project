@@ -120,6 +120,35 @@ export const useInventoryStore = defineStore('inventory', {
       }
     },
     
+    // 使用防禦工具
+    async useItem(toolId) {
+      try {
+        console.log(`🛡️ 嘗試使用防禦工具: ${toolId}`);
+        
+        // 檢查是否擁有該工具
+        const item = this.getByTemplate(toolId);
+        if (!item || item.qty <= 0) {
+          throw new Error(`你沒有 ${toolId} 這個防禦工具`);
+        }
+        
+        // 呼叫後端 API
+        const { apiService } = await import('@/services/apiService');
+        const result = await apiService.useDefenseTool(toolId);
+        
+        if (result.success) {
+          console.log(`✅ 成功使用防禦工具 ${toolId}`);
+          // Firestore 即時監聽會自動更新本地狀態
+          return result.data;
+        } else {
+          throw new Error(result.error || '使用防禦工具失敗');
+        }
+        
+      } catch (error) {
+        console.error('❌ 使用防禦工具失敗:', error);
+        throw error;
+      }
+    },
+    
     // 清理監聽器
     cleanup() {
       if (this.unsubscribe) {
