@@ -14,4 +14,7 @@ router.post('/me/add', auth, invCtrl.addItem);
 // 使用自己的背包物品
 router.post('/me/use', auth, invCtrl.useItem);
 
+// 使用防禦工具
+router.post('/use-tool', auth, invCtrl.useDefenseTool);
+
 module.exports = router;

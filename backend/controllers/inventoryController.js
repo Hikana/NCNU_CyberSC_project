@@ -91,3 +91,35 @@ exports.useItem = async (req, res) => {
     res.status(400).json({ error: err.message || 'useItem failed' });
   }
 };
+
+// 使用防禦工具
+exports.useDefenseTool = async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { toolId } = req.body;
+    
+    if (!toolId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '缺少 toolId 參數' 
+      });
+    }
+
+    console.log(`🛡️ 收到使用防禦工具請求: 玩家=${userId}, 工具=${toolId}`);
+
+    const inventoryService = require('../services/inventoryService');
+    const result = await inventoryService.useDefenseTool(userId, toolId);
+
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    console.error('❌ Controller 使用防禦工具失敗:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message || '使用防禦工具失敗'
+    });
+  }
+};
