@@ -38,8 +38,23 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
 });
 
+// 錯誤處理中間件
+app.use((err, req, res, next) => {
+  console.error('❌ 服務器錯誤:', err);
+  res.status(500).json({ 
+    success: false, 
+    message: '內部服務器錯誤',
+    error: process.env.NODE_ENV === 'development' ? err.message : '服務器錯誤'
+  });
+});
 
-
+// 404 處理
+app.use('*', (req, res) => {
+  res.status(404).json({ 
+    success: false, 
+    message: 'API 端點不存在' 
+  });
+});
 
 module.exports = app;
 
