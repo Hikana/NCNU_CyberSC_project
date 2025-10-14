@@ -158,10 +158,13 @@ async function onDefenseClick(key) {
     // 先告訴事件系統「我選了這個防禦」
     eventStore.chooseDefense(key)
     
-    // 如果事件成功解決，才使用背包道具（會扣掉數量）
+    // 無論成功或失敗，都扣除工具數量（因為已經使用了）
+    await inventoryStore.useItem(key)
+    
     if (eventStore.status === 'success') {
-      await inventoryStore.useItem(key)
       console.log(`✅ 成功使用防禦工具 ${key}`)
+    } else {
+      console.log(`❌ 防禦工具 ${key} 無效，但已消耗`)
     }
     
   } catch (error) {
