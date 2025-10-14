@@ -168,14 +168,6 @@ export const useEventStore = defineStore('event', () => {
     flipped.value = false;
   }
 
-  function scheduleFirstEvent() {
-    // 在遊戲開始時安排第一個事件
-    // 可以設定延遲時間，讓玩家先熟悉遊戲環境
-    setTimeout(() => {
-      startEvent('ddos', 30);
-    }, 5000); // 5秒後開始第一個事件
-  }
-
   // 元件卸載保險
   onUnmounted(() => {
     clearTimer();
@@ -198,6 +190,5 @@ export const useEventStore = defineStore('event', () => {
     startEvent,
     chooseDefense,
     closeModal,
-    scheduleFirstEvent,
   };
 });

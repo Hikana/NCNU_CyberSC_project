@@ -95,12 +95,56 @@
               <p class="event-description">{{ selectedEvent.description }}</p>
               <div class="event-stats">
                 <div class="stat">發生時間: {{ formatTime(selectedEvent.timestamp) }}</div>
-                <div class="stat">需要工具: {{ getRequiredTools(selectedEvent) }}</div>
+                <div class="stat">建議工具: {{ getRequiredTools(selectedEvent) }}</div>
               </div>
               <div class="event-actions">
-                <button class="resolve-btn" @click="resolveEvent(selectedEvent)">處理事件</button>
+                <button class="resolve-btn" @click="resolveEvent(selectedEvent)">選擇工具處理</button>
                 <button class="close-btn" @click="selectedEvent = null">x</button>
               </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 工具選擇彈出視窗 -->
+        <div v-if="showToolSelection && selectedEventForTool" class="tool-selection-modal">
+          <div class="tool-selection-backdrop" @click="cancelToolSelection"></div>
+          <div class="tool-selection-container">
+            <div class="tool-selection-header">
+              <h3>選擇工具處理事件</h3>
+              <button class="close-btn" @click="cancelToolSelection">×</button>
+            </div>
+            <div class="event-info">
+              <h4>{{ selectedEventForTool.eventName }}</h4>
+              <p>{{ selectedEventForTool.description }}</p>
+              <div class="suggested-tools">
+                <strong>建議工具：</strong>{{ getRequiredTools(selectedEventForTool) }}
+              </div>
+            </div>
+            <div class="tool-selection-content">
+              <h4>選擇要使用的工具：</h4>
+              <div class="tools-grid">
+                <div v-for="tool in inv.items.filter(item => item.qty > 0)" 
+                     :key="tool.id"
+                     class="tool-option"
+                     @click="useToolForEvent(tool)">
+                  <div class="tool-icon">🛡️</div>
+                  <div class="tool-info">
+                    <div class="tool-name">{{ tool.name }}</div>
+                    <div class="tool-qty">數量: {{ tool.qty }}</div>
+                    <div class="tool-defense">防禦值: {{ tool.defenseValue }}</div>
+                  </div>
+                  <div class="tool-status" 
+                       :class="{ 
+                         'correct': selectedEventForTool.correctDefenses.includes(tool.id),
+                         'incorrect': !selectedEventForTool.correctDefenses.includes(tool.id)
+                       }">
+                    {{ selectedEventForTool.correctDefenses.includes(tool.id) ? '✓ 適用' : '✗ 不適用' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tool-selection-footer">
+              <button class="cancel-btn" @click="cancelToolSelection">取消</button>
             </div>
           </div>
         </div>
@@ -110,11 +154,7 @@
           <HistoryPanel />
         </div>
 
-        <!-- 其他功能頁面 -->
-        <div v-else-if="currentView !== 'inventory'">
-          <h2>{{ menuItems.find(i => i.id === currentView)?.name }}</h2>
-          <p>此功能開發中...</p>
-        </div>
+        
 
       </div>
     </div>
@@ -141,6 +181,8 @@ const eventLogStore = useEventLogStore();
 // 選中的物品和事件
 const selectedItem = ref(null)
 const selectedEvent = ref(null)
+const showToolSelection = ref(false)
+const selectedEventForTool = ref(null)
 
 // 點擊物品顯示詳細資訊
 function selectItem(item) {
@@ -154,56 +196,61 @@ function selectEvent(event) {
   console.log('選中事件:', event)
 }
 
-// 處理事件
-async function resolveEvent(event) {
+// 處理事件 - 顯示工具選擇介面
+function resolveEvent(event) {
+  console.log('🛡️ 準備處理事件:', event.eventName)
+  selectedEventForTool.value = event
+  showToolSelection.value = true
+}
+
+// 選擇工具處理事件
+async function useToolForEvent(tool) {
   try {
-    console.log('🛡️ 嘗試處理事件:', event.eventName)
-    
-    // 檢查是否有需要的工具
-    const requiredTools = event.correctDefenses || []
-    const availableTools = inv.items.filter(item => 
-      requiredTools.includes(item.id) && item.qty > 0
-    )
-    
-    if (availableTools.length === 0) {
-      alert(`處理此事件需要以下工具：\n${requiredTools.join(', ')}\n\n請先取得這些工具！`)
+    if (!selectedEventForTool.value) {
+      console.error('沒有選中的事件')
       return
     }
     
-    // 如果有多個可用工具，讓玩家選擇
-    let selectedTool
-    if (availableTools.length === 1) {
-      selectedTool = availableTools[0]
-    } else {
-      const toolNames = availableTools.map(t => t.name).join('\n')
-      const choice = prompt(`有多個工具可以處理此事件：\n${toolNames}\n\n請輸入要使用的工具名稱：`)
-      selectedTool = availableTools.find(t => t.name === choice)
+    console.log(`🛡️ 使用工具 ${tool.name} 處理事件:`, selectedEventForTool.value.eventName)
+    
+    // 檢查工具是否為正確的防禦
+    const isCorrectTool = selectedEventForTool.value.correctDefenses.includes(tool.id)
+    
+    if (isCorrectTool) {
+      // 使用工具處理事件
+      await eventLogStore.resolveSecurityEvent(selectedEventForTool.value.id, tool.id)
       
-      if (!selectedTool) {
-        alert('無效的工具選擇！')
-        return
-      }
+      // 使用物品（會扣掉數量）
+      await inventoryStore.useItem(tool.id)
+      
+      alert(`✅ 成功使用 ${tool.name} 處理了事件：${selectedEventForTool.value.eventName}！`)
+      
+      // 更新玩家防禦值
+      const playerStore = usePlayerStore()
+      await playerStore.refreshPlayerData()
+      
+      // 清除選中狀態
+      selectedEvent.value = null
+    } else {
+      // 工具無效，但仍會消耗
+      await inventoryStore.useItem(tool.id)
+      alert(`❌ ${tool.name} 無法處理此事件，但工具已消耗！\n\n正確的工具應該是：${getRequiredTools(selectedEventForTool.value)}`)
     }
     
-    // 使用工具處理事件
-    await eventLogStore.resolveSecurityEvent(event.id, selectedTool.id)
-    
-    // 使用物品（會扣掉數量）
-    await inventoryStore.useItem(selectedTool.id)
-    
-    alert(`✅ 成功使用 ${selectedTool.name} 處理了事件：${event.eventName}！`)
-    
-    // 更新玩家防禦值
-    const playerStore = usePlayerStore()
-    await playerStore.refreshPlayerData()
-    
-    // 清除選中狀態
-    selectedEvent.value = null
+    // 關閉工具選擇介面
+    showToolSelection.value = false
+    selectedEventForTool.value = null
     
   } catch (error) {
     console.error('❌ 處理事件失敗:', error)
     alert(`處理事件失敗: ${error.message}`)
   }
+}
+
+// 取消工具選擇
+function cancelToolSelection() {
+  showToolSelection.value = false
+  selectedEventForTool.value = null
 }
 
 // 格式化時間
@@ -728,8 +775,10 @@ function closeMenu() {
 .security-events-container {
   width: 100%;
   height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
 }
 
 .security-events-container h2 {
@@ -748,13 +797,18 @@ function closeMenu() {
 .events-content {
   display: flex;
   gap: 20px;
-  height: 100%;
+  height: calc(100% - 60px);
+  overflow: hidden;
 }
 
 .events-list {
   flex: 1;
   overflow-y: auto;
-  max-height: 400px;
+  max-height: 100%;
+  min-width: 0; /* 防止 flex 項目超出容器 */
+  padding: 8px; /* 增加內邊距，確保邊框不被切掉 */
+  padding-right: 20px; /* 額外增加右邊內邊距，為滾動條預留空間 */
+  box-sizing: border-box; /* 確保內邊距包含在寬度內 */
 }
 
 .event-item {
@@ -762,6 +816,7 @@ function closeMenu() {
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 8px;
+  margin-right: 0; /* 移除右邊距，因為容器已經有足夠的內邊距 */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border: 2px solid rgba(231, 76, 60, 0.3);
   transition: all 0.2s ease;
@@ -769,6 +824,10 @@ function closeMenu() {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0; /* 防止 flex 項目超出容器 */
+  max-width: 100%; /* 確保不會超出容器寬度 */
+  overflow: visible; /* 改為 visible，讓狀態標籤可以顯示 */
+  box-sizing: border-box; /* 確保邊框和內邊距包含在寬度內 */
 }
 
 .event-item:hover {
@@ -790,6 +849,8 @@ function closeMenu() {
 
 .event-info {
   flex: 1;
+  min-width: 0; /* 防止 flex 項目超出容器 */
+  overflow: hidden; /* 防止文字溢出 */
 }
 
 .event-name {
@@ -811,6 +872,9 @@ function closeMenu() {
   background: rgba(231, 76, 60, 0.1);
   padding: 4px 8px;
   border-radius: 4px;
+  border: 1px solid #e74c3c; /* 增加紅色邊框 */
+  white-space: nowrap; /* 防止文字換行 */
+  flex-shrink: 0; /* 防止標籤被壓縮 */
 }
 
 .event-detail {
@@ -820,6 +884,8 @@ function closeMenu() {
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: 2px solid rgba(231, 76, 60, 0.3);
+  min-width: 0; /* 防止 flex 項目超出容器 */
+  overflow: hidden; /* 防止內容溢出 */
 }
 
 .event-detail h3 {
@@ -865,5 +931,205 @@ function closeMenu() {
 
 .resolve-btn:hover {
   background: #c0392b;
+}
+
+/* 工具選擇彈出視窗樣式 */
+.tool-selection-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.tool-selection-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+.tool-selection-container {
+  position: relative;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 100%;
+  height: 70vh;
+  max-height: 70vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.tool-selection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 2px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+.tool-selection-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 20px;
+}
+
+.tool-selection-header .close-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-selection-header .close-btn:hover {
+  background: #c0392b;
+}
+
+.event-info {
+  padding: 20px 24px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.event-info h4 {
+  margin: 0 0 12px 0;
+  color: #2c3e50;
+  font-size: 18px;
+}
+
+.event-info p {
+  margin: 0 0 12px 0;
+  color: #555;
+  line-height: 1.5;
+}
+
+.suggested-tools {
+  background: #e8f4fd;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 4px solid #3498db;
+  color: #2c3e50;
+}
+
+.tool-selection-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.tool-selection-content h4 {
+  margin: 0 0 16px 0;
+  color: #2c3e50;
+  font-size: 16px;
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.tool-option {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+  min-height: 60px;
+}
+
+.tool-option:hover {
+  border-color: #3498db;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+}
+
+.tool-icon {
+  font-size: 24px;
+  margin-right: 16px;
+}
+
+.tool-info {
+  flex: 1;
+}
+
+.tool-name {
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.tool-qty {
+  color: #e74c3c;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.tool-defense {
+  color: #27ae60;
+  font-size: 14px;
+}
+
+.tool-status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+  min-width: 80px;
+}
+
+.tool-status.correct {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.tool-status.incorrect {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.tool-selection-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #e0e0e0;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cancel-btn {
+  padding: 10px 20px;
+  background: #95a5a6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background: #7f8c8d;
 }
 </style>

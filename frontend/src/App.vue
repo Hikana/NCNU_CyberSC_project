@@ -1,14 +1,13 @@
 <script setup>
-import { onMounted } from 'vue'
+import { RouterView } from 'vue-router'
 import { useEventStore } from './stores/eventStore'
-
 
 const eventStore = useEventStore()
 
-
-onMounted(() => {
-  eventStore.scheduleFirstEvent()
-})
+// 移除自動事件機制
+// onMounted(() => {
+//   eventStore.scheduleFirstEvent()
+// })
 </script>
 
 <template>
