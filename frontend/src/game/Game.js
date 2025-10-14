@@ -29,6 +29,7 @@ export class Game {
     this.dragStart = { x: 0, y: 0 };
     this.TILE_SIZE = 150;
     this.gameLoopCallback = null; // 儲存 ticker 回調函數的引用
+    this.wasInCastle = false; // 追蹤玩家是否之前在城堡內
   }
 
   /**
@@ -181,6 +182,23 @@ export class Game {
     // 如果有移動，就更新玩家位置到 store（通常會觸發畫面重繪或狀態同步）
     if (hasMoved) {
         this.playerStore.updatePosition({ x, y });
+        
+        // 檢查城堡碰撞和離開
+        if (this.grid) {
+          const isInCastle = this.grid.checkCastleCollision(x, y);
+          
+          // 如果現在在城堡內，且之前不在城堡內
+          if (isInCastle && !this.wasInCastle) {
+            this.grid.replaceCastleWithCan1();
+          }
+          // 如果現在不在城堡內，且之前在城堡內
+          else if (!isInCastle && this.wasInCastle) {
+            this.grid.resetCastleImage();
+          }
+          
+          // 更新城堡狀態
+          this.wasInCastle = isInCastle;
+        }
     }
 
     // 如果玩家角色物件存在，更新角色的動畫/狀態
