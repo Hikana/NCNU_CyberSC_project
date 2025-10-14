@@ -13,6 +13,10 @@
           </button>
         </router-link>
       </div>
+      
+      <!-- 音頻控制組件 -->
+      <AudioControls />
+      
       <StatusBar />
       <img :src="npcImage" alt="NPC" class="npc" @click="onNpcClick" />
       <ControlsHint /> 
@@ -47,6 +51,7 @@ import StatusBar from '@/components/StatusBar.vue';
 import NpcMenu from '@/components/NpcMenu.vue';
 import QuizPanel from '@/components/QuizPanel.vue';
 import ControlsHint from '@/components/ControlsHint.vue';
+import AudioControls from '@/components/AudioControls.vue';
 
 import { usePlayerStore } from '@/stores/player';
 import { useUiStore } from '@/stores/ui';
