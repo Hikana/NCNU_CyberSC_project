@@ -30,6 +30,7 @@ export class Game {
     this.TILE_SIZE = 150;
     this.gameLoopCallback = null; // 儲存 ticker 回調函數的引用
     this.wasInCastle = false; // 追蹤玩家是否之前在城堡內
+    this.lastInteractAt = 0; // 節流用，避免連按重觸發
   }
 
   /**
@@ -257,51 +258,58 @@ export class Game {
   /**
    * 設定所有控制項 (鍵盤、滑鼠)
    */
-  _setupControls() {
-    this._handleKeydown = (e) => { this.keys[e.code] = true; };
-    this._handleKeyup = (e) => { 
-        this.keys[e.code] = false;
-        if (e.code === 'Enter') {
-            this._inspectCurrentTile();
-        }
-    };
-    window.addEventListener('keydown', this._handleKeydown);
-    window.addEventListener('keyup', this._handleKeyup);
+  _setupControls() {
+    this._handleKeydown = (e) => { this.keys[e.code] = true; };
+    this._handleKeyup = (e) => { 
+        this.keys[e.code] = false;
+        const isInteractKey = (e.code === 'Enter' || e.code === 'KeyE');
+        if (isInteractKey) {
+            // 題目開啟期間忽略互動鍵，避免重複顯示
+            if (this.gameStore?.isAnswering === true) return;
+            // 節流：避免短時間連按
+            const now = Date.now();
+            if (now - this.lastInteractAt < 400) return;
+            this.lastInteractAt = now;
+            this._inspectCurrentTile();
+        }
+    };
+    window.addEventListener('keydown', this._handleKeydown);
+    window.addEventListener('keyup', this._handleKeyup);
 
-    this.app.stage.eventMode = 'static';
-    this.app.stage.hitArea = this.app.screen;
+    this.app.stage.eventMode = 'static';
+    this.app.stage.hitArea = this.app.screen;
 
-    this._onDragStart = (e) => {
-        this.isDragging = true;
-        this.dragStart.x = e.global.x - this.world.x;
-        this.dragStart.y = e.global.y - this.world.y;
-    };
-    this._onDragEnd = () => { this.isDragging = false; };
-    this._onDragMove = (e) => {
-        if (this.isDragging) {
-             const newX = e.global.x - this.dragStart.x;
-             const newY = e.global.y - this.dragStart.y;
-             this.world.position.set(newX, newY);
-        }
-    };
-    this.app.stage.on('pointerdown', this._onDragStart);
-    this.app.stage.on('pointerup', this._onDragEnd);
-    this.app.stage.on('pointerupoutside', this._onDragEnd);
-    this.app.stage.on('pointermove', this._onDragMove);
-  }
+    this._onDragStart = (e) => {
+        this.isDragging = true;
+        this.dragStart.x = e.global.x - this.world.x;
+        this.dragStart.y = e.global.y - this.world.y;
+    };
+    this._onDragEnd = () => { this.isDragging = false; };
+    this._onDragMove = (e) => {
+        if (this.isDragging) {
+          const newX = e.global.x - this.dragStart.x;
+          const newY = e.global.y - this.dragStart.y;
+          this.world.position.set(newX, newY);
+        }
+    };
+    this.app.stage.on('pointerdown', this._onDragStart);
+    this.app.stage.on('pointerup', this._onDragEnd);
+    this.app.stage.on('pointerupoutside', this._onDragEnd);
+    this.app.stage.on('pointermove', this._onDragMove);
+  }
 
   /**
    * 建立地圖
    */
-  _createMap() {
-    this.grid = new IsoGrid(
-      this.app, 20, 20, this.TILE_SIZE,
-      this._handleTileClick.bind(this),
+  _createMap() {
+    this.grid = new IsoGrid(
+      this.app, 20, 20, this.TILE_SIZE,
+      this._handleTileClick.bind(this),
       this.buildingStore.map
-    );
-    this.grid.gridContainer.zIndex = 0;
-    this.world.addChild(this.grid.gridContainer);
-  }
+    );
+    this.grid.gridContainer.zIndex = 0;
+    this.world.addChild(this.grid.gridContainer);
+  }
 
   /*建立玩家 */
   _createPlayer() {
@@ -421,6 +429,8 @@ export class Game {
 
   /*偵測玩家目前所在的網格座標 (按下 Enter 觸發)*/
   _inspectCurrentTile() {
+    // 若題目正在顯示，直接忽略
+    if (this.gameStore?.isAnswering === true) return;
     const playerPos = this.playerStore.position;
     const isoX = playerPos.x;
     const isoY = playerPos.y;
@@ -449,10 +459,7 @@ export class Game {
         this._handleTileInteraction(row, col);
       }
     } else {
-      this.buildingStore.tileDevelopedMessage = '玩家不在有效的遊戲區域內！';
-      setTimeout(() => {
-        this.buildingStore.clearTileMessage();
-      }, 2500);
+      return;
     }
   }
 
@@ -460,6 +467,8 @@ export class Game {
    * 處理格子互動（鍵盤 Enter 觸發）
    */
   _handleTileInteraction(row, col) {
+    // 若題目正在顯示，直接忽略
+    if (this.gameStore?.isAnswering === true) return;
     const cell = this.buildingStore.map?.[row]?.[col];
     if (!cell) return;
     
@@ -480,7 +489,6 @@ export class Game {
         }, 2500);
         break;
       case 'placed':
-        // 觸發 UI 提示，不用瀏覽器 confirm
         this.buildingStore.promptDelete({ x: col, y: row, item: cell.item });
         break;
       default:

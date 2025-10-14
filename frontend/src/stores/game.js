@@ -22,7 +22,13 @@ export const useGameStore = defineStore('game', () => {
    * @param {object} coords - 要解鎖的地塊座標 { x, y }
    */
   function startUnlockProcess(coords) {
+    // 防止在題目已開啟時重複觸發
+    if (isAnswering.value) {
+      return;
+    }
     tileToUnlock.value = coords;
+    // 先標記為作答中，避免 API 回來前的重複觸發
+    isAnswering.value = true;
     fetchRandomQuestion();
   }
 
@@ -31,6 +37,8 @@ export const useGameStore = defineStore('game', () => {
    */
   async function fetchRandomQuestion() {
     try {
+      // 題目顯示中直接忽略
+      if (isAnswering.value) return;
       // 檢查用戶是否已登入
       const authStore = useAuthStore();
       if (!authStore.user) {
@@ -51,6 +59,8 @@ export const useGameStore = defineStore('game', () => {
       } else {
         alert('獲取題目時發生錯誤，請稍後再試');
       }
+      // 失敗時恢復狀態，允許再次嘗試
+      isAnswering.value = false;
     }
   }
 
