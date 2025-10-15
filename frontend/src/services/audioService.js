@@ -10,6 +10,7 @@ class AudioService {
     this.volume = 0.5 // 預設音量 50%
     this.isMuted = this.loadMuteState() // 從 localStorage 載入靜音狀態
     this.isInitialized = false
+    this.soundEffects = new Map() // 存儲音效對象
   }
   
   /**
@@ -241,6 +242,90 @@ class AudioService {
   }
 
   /**
+   * 載入音效文件
+   * @param {string} name - 音效名稱
+   * @param {string} path - 音效文件路徑
+   */
+  async loadSoundEffect(name, path) {
+    try {
+      console.log(`🎵 載入音效: ${name}`, path)
+      
+      const audio = new Audio(path)
+      audio.preload = 'auto'
+      audio.volume = this.isMuted ? 0 : this.volume
+      
+      // 等待音效載入完成
+      await new Promise((resolve, reject) => {
+        audio.addEventListener('canplaythrough', resolve)
+        audio.addEventListener('error', reject)
+        audio.load()
+      })
+      
+      this.soundEffects.set(name, audio)
+      console.log(`✅ 音效 ${name} 載入完成`)
+    } catch (error) {
+      console.error(`❌ 音效 ${name} 載入失敗:`, error)
+    }
+  }
+
+  /**
+   * 播放音效
+   * @param {string} name - 音效名稱
+   * @param {number} startTime - 開始時間（秒）
+   * @param {number} duration - 播放時長（秒）
+   * @param {number} volumeMultiplier - 音量倍數（預設1.0）
+   */
+  async playSoundEffect(name, startTime = 0, duration = null, volumeMultiplier = 1.0) {
+    if (this.isMuted) {
+      console.log(`🔇 音效 ${name} 被靜音，跳過播放`)
+      return
+    }
+
+    const audio = this.soundEffects.get(name)
+    if (!audio) {
+      console.warn(`⚠️ 音效 ${name} 未載入`)
+      return
+    }
+
+    try {
+      // 創建新的音頻實例以避免衝突
+      const soundEffect = audio.cloneNode()
+      soundEffect.currentTime = startTime
+      soundEffect.volume = this.volume * volumeMultiplier
+      
+      await soundEffect.play()
+      
+      // 如果指定了播放時長，則在指定時間後停止
+      if (duration) {
+        setTimeout(() => {
+          soundEffect.pause()
+          soundEffect.currentTime = 0
+        }, duration * 1000)
+      }
+      
+      console.log(`🎵 播放音效: ${name} (${startTime}s - ${duration ? startTime + duration : '結束'}s), 音量: ${Math.round(soundEffect.volume * 100)}%`)
+    } catch (error) {
+      console.error(`❌ 播放音效 ${name} 失敗:`, error)
+    }
+  }
+
+  /**
+   * 播放門音效（前0.5秒）- 進入城堡時
+   */
+  async playDoorOpenSound() {
+    console.log(`🚪 門開啟音效: 播放=0s-0.5s`)
+    await this.playSoundEffect('door', 0, 0.5, 1.5) // 增加50%音量
+  }
+
+  /**
+   * 播放門音效（0.5s-1s）- 離開城堡時
+   */
+  async playDoorCloseSound() {
+    console.log(`🚪 門關閉音效: 播放=0.5s-1s`)
+    await this.playSoundEffect('door', 0.5, 0.5, 1.5) // 增加50%音量
+  }
+
+  /**
    * 銷毀音頻服務
    */
   destroy() {
@@ -249,6 +334,13 @@ class AudioService {
       this.bgmAudio.src = ''
       this.bgmAudio = null
     }
+    
+    // 清理音效
+    this.soundEffects.forEach((audio, name) => {
+      audio.pause()
+      audio.src = ''
+    })
+    this.soundEffects.clear()
     
     this.isPlaying = false
     this.isInitialized = false

@@ -26,6 +26,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { audioService } from '@/services/audioService'
 import bgmFile from '@/assets/BGM.mp3'
+import doorSoundFile from '@/assets/door.mp3'
 
 const audioStatus = ref({
   isPlaying: false,
@@ -55,6 +56,11 @@ const initAudio = async () => {
   try {
     console.log('🎵 開始初始化音頻服務...')
     await audioService.init(bgmFile)
+    
+    // 載入門音效
+    console.log('🚪 載入門音效...')
+    await audioService.loadSoundEffect('door', doorSoundFile)
+    
     updateStatus()
     console.log('✅ 音頻服務初始化成功')
   } catch (error) {

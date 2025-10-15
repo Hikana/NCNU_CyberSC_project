@@ -5,6 +5,7 @@ import { useBuildingStore } from '@/stores/buildings'
 import { useWallStore } from '@/stores/wall'
 import castleImg from '@/assets/castle0.png'
 import can1Img from '@/assets/can1.png'
+import { audioService } from '@/services/audioService'
 
 const CASTLE_TILES = new Set([
   '0,0','0,1','0,2',
@@ -510,6 +511,9 @@ export class IsoGrid {
     this.castleHit = true
     console.log('🏰 玩家碰到城堡！將 castle0.png 替換為 can1.png')
     
+    // 播放門開啟音效（前0.5秒）
+    audioService.playDoorOpenSound()
+    
     // 清除現有的城堡層級
     this.castleContainer.removeChildren()
     
@@ -591,6 +595,9 @@ export class IsoGrid {
     
     this.castleHit = false
     console.log('🏰 玩家離開城堡，重置城堡圖片為原始狀態')
+    
+    // 播放門關閉音效（後0.5秒）
+    audioService.playDoorCloseSound()
     
     // 清除現有的城堡層級
     this.castleContainer.removeChildren()
