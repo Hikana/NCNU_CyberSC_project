@@ -1,6 +1,9 @@
 <template>
+  <!-- 載入故事畫面 -->
+  <LoadingStory :visible="isLoading" :progress="loadingProgress" @ready="onStoryReady" />
+  
   <div class="game-wrapper" :style="{ backgroundImage: `url(${backgroundImage})` }">
-    <PixiGameCanvas />
+    <PixiGameCanvas @game-ready="onGameReady" />
     
     <div class="ui-layer">
       <div style="position: absolute; top: 20px; left: 20px; z-index: 50; pointer-events: auto;">
@@ -19,11 +22,26 @@
 
     <!-- ✅ 新增：隨機事件彈窗 (只在遊戲裡出現) -->
     <RandomEventModal />
+
+    <!-- 城堡升級提示 -->
+    <div v-if="wallStore.castleUpgradeMessage" class="castle-upgrade-notification">
+      <div class="upgrade-message">
+        <div class="upgrade-text">{{ wallStore.castleUpgradeMessage }}</div>
+      </div>
+    </div>
+
+    <!-- 城堡降級提示 -->
+    <div v-if="wallStore.castleDowngradeMessage" class="castle-downgrade-notification">
+      <div class="downgrade-message">
+        <div class="downgrade-text">{{ wallStore.castleDowngradeMessage }}</div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue';
+import LoadingStory from '@/components/LoadingStory.vue';
 import PixiGameCanvas from '@/components/PixiGameCanvas.vue';
 import StatusBar from '@/components/StatusBar.vue';
 import NpcMenu from '@/components/NpcMenu.vue';
@@ -43,19 +61,51 @@ const playerStore = usePlayerStore();
 const uiStore = useUiStore();
 const inventoryStore = useInventoryStore(); 
 const achievementStore = useAchievementStore();
-const wallStore = useWallStore(); 
+const wallStore = useWallStore();
+
+// 載入狀態
+const isLoading = ref(true);
+const loadingProgress = ref(0);
+const gameEngineReady = ref(false); // 遊戲引擎是否準備完成
+
+// 遊戲準備完成回調
+function onGameReady() {
+  console.log('🎮 遊戲引擎準備完成');
+  gameEngineReady.value = true;
+  checkAllReady(); // 檢查是否所有資源都載入完成
+}
+
+// 檢查所有載入是否完成
+function checkAllReady() {
+  if (gameEngineReady.value && loadingProgress.value >= 80) {
+    loadingProgress.value = 100;
+  }
+}
+
+// 玩家確認已了解故事
+function onStoryReady() {
+  isLoading.value = false;
+}
 
 // 初始化玩家資料、成就系統和城堡系統
 onMounted(async () => {
+  loadingProgress.value = 20;
   // 1. 載入玩家基本資料
   await playerStore.loadPlayerData();
   
+  loadingProgress.value = 40;
   // 2. 載入成就系統
   await achievementStore.loadAchievements();
   
+  loadingProgress.value = 60;
   // 3. 載入城堡系統並同步等級
   await wallStore.loadCastleLevel();
   await wallStore.syncCastleLevel();
+  
+  loadingProgress.value = 80;
+  console.log('📦 所有資料載入完成，等待遊戲引擎');
+  // 檢查遊戲引擎是否已經準備好
+  checkAllReady();
 });
 
 // NPC 點擊事件：直接打開選單（背包資料從 Firebase 讀取）
@@ -134,4 +184,75 @@ function onNpcClick() {
 .npc:hover {
     transform: scale(1.1);
 }
+
+/* 城堡升級提示樣式 */
+.castle-upgrade-notification {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.upgrade-message {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  border: 3px solid #16a34a;
+  border-radius: 16px;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
+  animation: slideInFromTop 0.5s ease-out;
+}
+
+.upgrade-text {
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 城堡降級提示樣式 */
+.castle-downgrade-notification {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.downgrade-message {
+  background: linear-gradient(135deg, #f87171, #ef4444);
+  border: 3px solid #dc2626;
+  border-radius: 16px;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+  animation: slideInFromTop 0.5s ease-out;
+}
+
+.downgrade-text {
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 動畫效果 */
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+ 
 </style>

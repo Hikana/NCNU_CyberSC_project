@@ -4,6 +4,7 @@ import landImg from '@/assets/land.png'
 import { useBuildingStore } from '@/stores/buildings'
 import { useWallStore } from '@/stores/wall'
 import castleImg from '@/assets/castle0.png'
+import can1Img from '@/assets/can1.png'
 
 const CASTLE_TILES = new Set([
   '0,0','0,1','0,2',
@@ -59,6 +60,10 @@ export class IsoGrid {
     this.gridContainer.interactive = true
     this.gridContainer.eventMode = 'static'
     
+    // 城堡碰撞檢測相關屬性
+    this.castleHit = false // 是否已經碰到城堡
+    this.castleContainer = null // 城堡容器引用
+    
     this.app.stage.addChild(this.gridContainer)
     this.gridContainer.addChild(this.groundContainer)
     this.gridContainer.addChild(this.objectContainer)
@@ -83,26 +88,25 @@ export class IsoGrid {
   }
 
   // 預載入建築圖片
-  loadBuildingTextures() {
+  async loadBuildingTextures() {
+    // 如果已經有紋理緩存，直接返回（重新進入時使用緩存）
+    if (this.buildingTextures && Object.keys(this.buildingTextures).length > 0) {
+      console.log('✅ 使用建築紋理緩存');
+      return;
+    }
+    
     this.buildingTextures = {}
     
     // 使用 Vite 的動態導入來載入圖片
     const importBuildingImage = async (id) => {
       try {
         // 使用 Vite 的動態導入，獲取正確的資源 URL
-        const module = await import(`../assets/B${id}.png`)
+        const module = await import(`@/assets/B${id}.png`)
         const imageUrl = module.default
         
-        // 創建 Image 對象來預載入
-        const img = new Image()
-        img.crossOrigin = 'anonymous'
-        
-        img.onload = () => {
-          // 圖片載入完成後創建 PIXI 紋理
-          const texture = PIXI.Texture.from(img)
-          this.buildingTextures[id] = texture
-        }
-        img.src = imageUrl
+        // 使用 PIXI.Assets.load 載入並等待完成
+        const texture = await PIXI.Assets.load(imageUrl);
+        this.buildingTextures[id] = texture;
         
       } catch (error) {
         console.warn(`⚠️ 建築圖片 ${id} 導入失敗:`, error)
@@ -118,9 +122,15 @@ export class IsoGrid {
     const buildingStore = useBuildingStore()
     const buildingIds = buildingStore.shopBuildings.map(building => building.id)
     
-    buildingIds.forEach(id => {
-      importBuildingImage(id)
-    })
+    // 等待所有建築圖片載入完成
+    await Promise.all(buildingIds.map(id => importBuildingImage(id)));
+    
+    console.log('✅ 所有建築圖片載入完成');
+    
+    // 載入完成後重繪地圖
+    if (this.mapData) {
+      this.drawGrid();
+    }
   }
 
   // 預載入草地圖片
@@ -169,29 +179,37 @@ export class IsoGrid {
       this.castleTextures[0] = PIXI.Texture.from(castleImg)
     }
     
-    // 動態載入城堡升級層級圖片（castle1.png 到 castle10.png）
-    const loadCastleLevel = async (level) => {
-      try {
-        const module = await import(`../assets/castle${level}.png`)
-        const imageUrl = module.default
-        
-        const img = new Image()
-        img.crossOrigin = 'anonymous'
-        
-        return new Promise((resolve, reject) => {
-          img.onload = () => {
-            const texture = PIXI.Texture.from(img)
-            this.castleTextures[level] = texture
-            resolve(texture)
-          }
-          img.onerror = reject
-          img.src = imageUrl
-        })
-      } catch (error) {
-        console.warn(`⚠️ 城堡圖片 castle${level}.png 載入失敗:`, error)
-        return null
-      }
+    // 載入 can1.png 作為城堡被碰到的替換圖片
+    try {
+      this.castleTextures['can1'] = await PIXI.Assets.load(can1Img)
+    } catch (e) {
+      console.warn('⚠️ can1.png 載入失敗，使用後備方案:', e)
+      this.castleTextures['can1'] = PIXI.Texture.from(can1Img)
     }
+    
+  // 動態載入城堡升級層級圖片（castle1.png 到 castle10.png）
+  const loadCastleLevel = async (level) => {
+    try {
+      const module = await import(`@/assets/castle${level}.png`)
+      const imageUrl = module.default
+      
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      
+      return new Promise((resolve, reject) => {
+        img.onload = () => {
+          const texture = PIXI.Texture.from(img)
+          this.castleTextures[level] = texture
+          resolve(texture)
+        }
+        img.onerror = reject
+        img.src = imageUrl
+      })
+    } catch (error) {
+      console.warn(`⚠️ 城堡圖片 castle${level}.png 載入失敗:`, error)
+      return null
+    }
+  }
     
     // 載入所有城堡等級圖片
     const loadPromises = []
@@ -386,6 +404,9 @@ export class IsoGrid {
       // 確保城堡不攔截點擊事件
       castleContainer.eventMode = 'none'
       
+      // 保存城堡容器引用以便後續操作
+      this.castleContainer = castleContainer
+      
       const castleX = (castleCenterCol - castleCenterRow) * halfW
       const castleY = (castleCenterCol + castleCenterRow) * halfH
       
@@ -454,5 +475,161 @@ export class IsoGrid {
         }
       }
     }
+  }
+
+  /**
+   * 檢查玩家是否碰到城堡
+   * @param {number} playerX - 玩家 X 座標
+   * @param {number} playerY - 玩家 Y 座標
+   * @returns {boolean} 是否碰到城堡
+   */
+  checkCastleCollision(playerX, playerY) {
+    const halfW = this.tileSize / 2
+    const halfH = this.tileSize / 4
+    
+    // 將等角座標轉換為網格座標
+    const cartX = (playerX / halfW + playerY / halfH) / 2
+    const cartY = (playerY / halfH - playerX / halfW) / 2
+    
+    // 四捨五入取得整數網格座標
+    const col = Math.round(cartX)
+    const row = Math.round(cartY)
+    
+    // 檢查是否在城堡區域內
+    return isCastleTile(row, col)
+  }
+
+  /**
+   * 當玩家碰到城堡時，將城堡圖片替換為 can1.png（僅替換 castle0.png 層）
+   */
+  replaceCastleWithCan1() {
+    if (this.castleHit || !this.castleContainer || !this.castleTextures['can1']) {
+      return
+    }
+    
+    this.castleHit = true
+    console.log('🏰 玩家碰到城堡！將 castle0.png 替換為 can1.png')
+    
+    // 清除現有的城堡層級
+    this.castleContainer.removeChildren()
+    
+    const wallStore = useWallStore()
+    const castleLevel = wallStore.castleLevel || 0
+    
+    // 重新繪製城堡，但將第0層替換為 can1.png
+    for (let level = 0; level <= castleLevel; level++) {
+      let texture
+      
+      if (level === 0) {
+        // 第0層使用 can1.png
+        texture = this.castleTextures['can1']
+      } else {
+        // 其他層級使用原本的城堡圖片
+        texture = this.castleTextures[level]
+      }
+      
+      if (texture) {
+        const castleLayer = new PIXI.Sprite(texture)
+        castleLayer.eventMode = 'none'
+        castleLayer.anchor.set(0.5, 0.55)
+        const castleScale = 2.5
+        castleLayer.width = this.tileSize * 3 * castleScale
+        castleLayer.height = this.tileSize * 2 * castleScale
+        castleLayer.zIndex = 5 + level // 每層級增加 zIndex，確保正確疊加
+        
+        // 讓上層稍微偏移，營造疊加效果
+        if (level > 0) {
+          // Y軸稍微向上偏移（讓上層看起來更高）
+          castleLayer.y = -level * 112
+        }
+        this.castleContainer.addChild(castleLayer)
+      }
+    }
+    
+    console.log('✅ 城堡第0層已替換為 can1.png')
+  }
+
+  /**
+   * 繪製城堡（用於重置時）
+   */
+  drawCastle() {
+    if (!this.castleContainer || !this.castleTextures) {
+      return
+    }
+    
+    const wallStore = useWallStore()
+    const castleLevel = wallStore.castleLevel || 0
+    
+    // 繪製城堡層級（從基礎層到當前等級）
+    for (let level = 0; level <= castleLevel; level++) {
+      if (this.castleTextures[level]) {
+        const castleLayer = new PIXI.Sprite(this.castleTextures[level])
+        castleLayer.eventMode = 'none'
+        castleLayer.anchor.set(0.5, 0.55)
+        const castleScale = 2.5
+        castleLayer.width = this.tileSize * 3 * castleScale
+        castleLayer.height = this.tileSize * 2 * castleScale
+        castleLayer.zIndex = 5 + level // 每層級增加 zIndex，確保正確疊加
+        
+        // 讓上層稍微偏移，營造疊加效果
+        if (level > 0) {
+          // Y軸稍微向上偏移（讓上層看起來更高）
+          castleLayer.y = -level * 112
+        }
+        this.castleContainer.addChild(castleLayer)
+      }
+    }
+  }
+
+  /**
+   * 重置城堡圖片為原始狀態（當玩家離開城堡時）
+   */
+  resetCastleImage() {
+    if (!this.castleHit || !this.castleContainer) {
+      return
+    }
+    
+    this.castleHit = false
+    console.log('🏰 玩家離開城堡，重置城堡圖片為原始狀態')
+    
+    // 清除現有的城堡層級
+    this.castleContainer.removeChildren()
+    
+    // 重新繪製原始城堡
+    this.drawCastle()
+  }
+
+  /**
+   * 銷毀 IsoGrid 資源，釋放記憶體
+   */
+  destroy() {
+    // 不銷毀紋理資源，保留緩存以便重新進入時使用
+    // 只清空引用
+    this.buildingTextures = null;
+    this.grassTextures = null;
+    this.landTexture = null;
+    this.castleTextures = null;
+
+    // 清理容器，但保留紋理
+    if (this.groundContainer) {
+      this.groundContainer.destroy({ children: true, texture: false, baseTexture: false });
+      this.groundContainer = null;
+    }
+
+    if (this.objectContainer) {
+      this.objectContainer.destroy({ children: true, texture: false, baseTexture: false });
+      this.objectContainer = null;
+    }
+
+    if (this.gridContainer) {
+      this.gridContainer.destroy({ children: true, texture: false, baseTexture: false });
+      this.gridContainer = null;
+    }
+
+    // 清理引用
+    this.app = null;
+    this.onTileClick = null;
+    this.mapData = null;
+    this.selectedTile = null;
   }
 }

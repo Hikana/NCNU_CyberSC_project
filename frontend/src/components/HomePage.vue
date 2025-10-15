@@ -1,94 +1,97 @@
 <template>
-  <h1>{{ msg }}</h1>
+  <div class="font-sans w-full overflow-x-hidden">
 
-  <h1>HelloWorld</h1>
 
-  <div class="card">
-    <button type="button" @click="count++">count is {{ count }}</button>
-    <p>
-      Edit
-      <code>components/HelloWorld.vue</code> to test HMR
-    </p>
-  </div>
 
-  <p>
-    Check out
-    <a href="https://vuejs.org/guide/quick-start.html#local" target="_blank"
-      >create-vue</a
-    >, the official Vue + Vite starter
-  </p>
-  <p>
-    Learn more about IDE Support for Vue in the
-    <a
-      href="https://vuejs.org/guide/scaling-up/tooling.html#ide-support"
-      target="_blank"
-      >Vue Docs Scaling up Guide</a
-    >.
-  </p>
-  <p class="read-the-docs">Click on the Vite and Vue logos to learn more</p>
+    <TitleBar />
+    <header class="w-full bg-bgg py-64"></header>
+    <header class="w-full bg-bgg py-16"></header>
 
-  <!-- ✅ 新增：認證狀態調試資訊 -->
-  <div v-if="showDebug" class="debug-panel">
-    <h3>🔍 認證狀態調試</h3>
-    <p><strong>載入狀態:</strong> {{ isLoading ? '載入中...' : '已載入' }}</p>
-    <p><strong>認證狀態:</strong> {{ user ? '已登入' : '未登入' }}</p>
-    <p><strong>用戶郵箱:</strong> {{ user?.email || '無' }}</p>
-    <p><strong>用戶ID:</strong> {{ user?.uid || '無' }}</p>
-    <button @click="refreshAuth" class="debug-btn">🔄 重新檢查</button>
-  </div>
+    <!-- CIA -->
+    <CIABar ref="ciaSection" :ciaElements="ciaElements" @ciaFinished="showMenu = true" />
+    <header class="w-full bg-wordcolor py-64"></header>
 
-  <!-- ✅ 修復：根據認證狀態顯示不同按鈕 -->
-  <div class="navigation-section">
-    <!-- 載入中狀態 -->
-    <div v-if="isLoading" class="loading-state">
-      <div class="spinner"></div>
-      <p>正在檢查登入狀態...</p>
-    </div>
+    <!-- 密碼學 -->
+     <header class="w-full bg-bgg py-16"></header>
+    <SymmetricEncryptionAndAES ref="hashSection" />
+    <header class="w-full bg-bgg py-16"></header>
+    <AsymmetricEncryptionAndRSA />
+    <header class="w-full bg-bgg py-16"></header>
+    <!-- Hash -->
+    <HashAll />
+    <header class="w-full bg-bgg py-16"></header>
+    <DH />
+    <header class="w-full bg-bgg py-16"></header>
+    <header class="w-full bg-wordcolor py-64"></header>
+
+    <!-- Top10 -->
+    <TOP10 ref="top10Section" />
+
     
-    <!-- 已登入狀態 -->
-    <div v-else-if="user" class="authenticated-state">
-      <div class="user-welcome">
-        <h3>👋 歡迎回來!</h3>
-        <p>{{ user.email }}</p>
-      </div>
-      
-      <div class="button-group">
-        <router-link to="/game" class="nav-link">
-          <button class="primary-btn">🎮 前往 GamePage</button>
-        </router-link>
+    <!-- 遊戲 (假設之後會加) -->
+    <section ref="gameSection" class="bg-bgg flex items-center justify-center py-8">
+      <!-- ✅ 修復：根據認證狀態顯示不同按鈕 -->
+      <div class="navigation-section">
+        <!-- 載入中狀態 -->
+        <div v-if="isLoading" class="loading-state">
+          <div class="spinner"></div>
+          <p>正在檢查登入狀態...</p>
+        </div>
         
-        <button @click="handleLogout" class="secondary-btn">
-          🚪 登出
-        </button>
-      </div>
-    </div>
-    
-    <!-- 未登入狀態 -->
-    <div v-else class="unauthenticated-state">
-      <div class="welcome-message">
-        <h3>🔐 請先登入</h3>
-        <p>登入後即可開始遊戲</p>
-      </div>
-      
-      <div class="button-group">
-        <router-link to="/Login" class="nav-link">
-          <button class="primary-btn">🔑 登入</button>
-        </router-link>
+        <!-- 已登入狀態 -->
+        <div v-else-if="user" class="authenticated-state">
+          <div class="user-welcome">
+            <h3>👋 歡迎回來!</h3>
+            <p>{{ user.email }}</p>
+          </div>
+          
+          <div class="button-group">
+            <router-link to="/game" class="nav-link">
+              <button class="primary-btn">🎮 前往 GamePage</button>
+            </router-link>
+            
+            <button @click="handleLogout" class="secondary-btn">
+              🚪 登出
+            </button>
+          </div>
+        </div>
         
-        <router-link to="/register" class="nav-link">
-          <button class="secondary-btn">📝 註冊</button>
-        </router-link>
+        <!-- 未登入狀態 -->
+        <div v-else class="unauthenticated-state">
+          <div class="welcome-message">
+            <h3>🔐 請先登入</h3>
+            <p>登入後即可開始遊戲</p>
+          </div>
+          
+          <div class="button-group">
+            <router-link to="/Login" class="nav-link">
+              <button class="primary-btn">🔑 登入</button>
+            </router-link>
+            
+            <router-link to="/register" class="nav-link">
+              <button class="secondary-btn">📝 註冊</button>
+            </router-link>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <!-- ✅ 開發模式下顯示調試按鈕 -->
-  <button v-if="isDev" @click="toggleDebug" class="debug-toggle">
-    {{ showDebug ? '隱藏' : '顯示' }} 調試資訊
-  </button>
+    <!-- 右下角路標選單 -->
+    <Menu :showMenu="showMenu" />
+  </div>
 </template>
 
 <script setup>
+import TitleBar from "./TitleBar.vue"
+import CIABar from "./CIABar.vue"
+import HashAll from "./HashAll.vue"
+import TOP10 from "./TOP10.vue"
+import Menu from "./Menu.vue"
+import SymmetricEncryptionAndAES from "./SymmetricEncryptionAndAES.vue"
+import AsymmetricEncryptionAndRSA from "./AsymmetricEncryptionAndRSA.vue"
+import TitleReverse from "./TitleReverse.vue"
+import DH from "./DH.vue"
+
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth'
@@ -101,15 +104,17 @@ defineProps({
 // 基本狀態
 const count = ref(0)
 const router = useRouter()
+const showMenu = ref(false)
+const ciaElements = ref([
+  { title: "Confidentiality", subtitle: "機密性", description: "僅授權的使用者才能存取資料，保護資訊不被未經授權者揭露或取得。" },
+  { title: "Integrity", subtitle: "完整性", description: "確保資料未經授權不得修改，且修改必須透過授權機制進行。" },
+  { title: "Availability", subtitle: "可用性", description: "確保合法使用者在需要時能夠存取系統與資訊，防止資源被拒絕使用。" },
+])
 
 // 認證相關狀態
 const user = ref(null)
 const isLoading = ref(true)
 const error = ref(null)
-
-// 調試相關
-const isDev = computed(() => import.meta.env.DEV)
-const showDebug = ref(false)
 
 // Firebase Auth 實例
 const auth = getAuth()
@@ -160,45 +165,12 @@ const handleLogout = async () => {
   }
 }
 
-// 重新檢查認證狀態
-const refreshAuth = () => {
-  console.log('🔄 手動刷新認證狀態')
-  isLoading.value = true
-  
-  const currentUser = auth.currentUser
-  if (currentUser) {
-    user.value = {
-      uid: currentUser.uid,
-      email: currentUser.email,
-      displayName: currentUser.displayName,
-      emailVerified: currentUser.emailVerified
-    }
-    console.log('✅ 手動刷新成功:', user.value)
-  } else {
-    user.value = null
-    console.log('ℹ️ 手動刷新：未發現登入用戶')
-  }
-  
-  isLoading.value = false
-}
-
-// 切換調試面板
-const toggleDebug = () => {
-  showDebug.value = !showDebug.value
-}
-
 // 組件載入時初始化
 onMounted(() => {
   console.log('🏠 HelloWorld 組件已載入')
   
   // 初始化認證監聽
   const unsubscribe = initAuth()
-  
-  // 在開發模式下顯示調試資訊
-  if (isDev.value) {
-    showDebug.value = true
-    console.log('🛠️ 開發模式：調試面板已啟用')
-  }
   
   // 清理函數
   return () => {
@@ -320,59 +292,6 @@ onMounted(() => {
 .secondary-btn:hover {
   background-color: #545b62;
   transform: translateY(-2px);
-}
-
-/* 調試相關樣式 */
-.debug-panel {
-  background-color: #fff3cd;
-  border: 1px solid #ffeaa7;
-  border-radius: 6px;
-  padding: 1rem;
-  margin: 1rem 0;
-  font-family: monospace;
-}
-
-.debug-panel h3 {
-  margin: 0 0 0.5rem 0;
-  color: #856404;
-}
-
-.debug-panel p {
-  margin: 0.25rem 0;
-  color: #856404;
-}
-
-.debug-btn {
-  background-color: #ffc107;
-  border: 1px solid #ffc107;
-  color: #212529;
-  padding: 0.375rem 0.75rem;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 0.5rem;
-}
-
-.debug-btn:hover {
-  background-color: #e0a800;
-  border-color: #d39e00;
-}
-
-.debug-toggle {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background-color: #17a2b8;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-  z-index: 1000;
-}
-
-.debug-toggle:hover {
-  background-color: #138496;
 }
 
 /* 響應式設計 */

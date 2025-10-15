@@ -65,12 +65,16 @@
 
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useBuildingStore } from '@/stores/buildings';
 import { Game } from '@/game/Game.js';
+
+const emit = defineEmits(['game-ready']);
 
 const pixiContainer = ref(null);
 const buildingStore = useBuildingStore();
 let gameInstance = null;
+const router = useRouter();
 
 onMounted(async () => {
   if (pixiContainer.value) {
@@ -78,6 +82,9 @@ onMounted(async () => {
     gameInstance = new Game(pixiContainer.value);
     await gameInstance.init();
     console.log('✅ PixiGameCanvas.vue: Game 引擎已啟動，並由 Game.js 自主管理');
+    
+    // 觸發遊戲準備完成事件
+    emit('game-ready');
   }
 });
 
@@ -107,9 +114,8 @@ function cancelDelete() {
 }
 
 function enterTrainingRoom() {
-  // TODO: 實現進入練功坊的邏輯
-  console.log('進入練功坊');
   buildingStore.hideCastleInteraction();
+  router.push('/questions');
 }
 
 function cancelCastleInteraction() {
@@ -187,7 +193,7 @@ function cancelCastleInteraction() {
   padding: 15px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  z-index: 150; /* 恢復原來的高層級 */
+  z-index: 150; 
   min-width: 250px;
   pointer-events: auto;
 }
@@ -252,9 +258,9 @@ function cancelCastleInteraction() {
 } 
 
 .tile-developed {
-  background: linear-gradient(135deg, #4ade80, #22c55e);
+  background:  #22c55e;
   border: 2px solid #16a34a;
-  animation: slideInFromTop 0.3s ease-out;
+  animation: slideDownWithCenter 0.3s ease-out;
 }
 
 .tile-developed .message-content {
@@ -274,7 +280,18 @@ function cancelCastleInteraction() {
   text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
-@keyframes slideInFromTop {
+@keyframes slideDownOnly {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDownWithCenter {
   from {
     opacity: 0;
     transform: translateX(-50%) translateY(-20px);
@@ -294,13 +311,13 @@ function cancelCastleInteraction() {
 }
 
 .castle-panel {
-  background:#68bce9;
-  border: 2px solid #0c51a2;
+  background:rgba(255, 255, 255, 0.95);
+  border: 0 20px 60px rgba(0, 0, 0, 0.3);
   border-radius: 16px;
   padding: 24px;
   min-width: 320px;
   text-align: center;
-  animation: castlePanelAppear 0.3s ease-out;
+  animation: slideDownOnly 0.3s ease-out;
 }
 
 .castle-title {
@@ -324,7 +341,7 @@ function cancelCastleInteraction() {
 }
 
 .castle-actions .confirm-btn {
-  background: #059669;
+  background:  #667eea;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -336,15 +353,14 @@ function cancelCastleInteraction() {
 }
 
 .castle-actions .confirm-btn:hover {
-  background: #047857;
+  background: #526ce1;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
 }
 
 .castle-actions .cancel-btn {
-  background: #f44336;
-  color: rgb(0, 0, 0);
-  border: 2px solid rgba(255,255,255,0.3);
+  background: #eab35c;
+  color: white;
+  border: none;
   padding: 12px 24px;
   border-radius: 8px;
   cursor: pointer;
@@ -354,19 +370,8 @@ function cancelCastleInteraction() {
 }
 
 .castle-actions .cancel-btn:hover {
-  background: #da190b;
-  border-color: rgba(255,255,255,0.5);
+  background: #daa249;
   transform: translateY(-2px);
 }
 
-@keyframes castlePanelAppear {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
 </style>

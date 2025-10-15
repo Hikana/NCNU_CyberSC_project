@@ -64,9 +64,15 @@ async function handleLogin() {
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 100vh;
   height: 100vh;
+  width: 100vw;
   background-color: #2c3e50;
   font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 .login-form {
   background: white;
@@ -74,11 +80,18 @@ async function handleLogin() {
   border-radius: 10px;
   text-align: center;
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  width: 300px;
+  width: 320px;
+}
+h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #2c3e50;
 }
 .subtitle {
   color: #7f8c8d;
   margin-bottom: 25px;
+  font-size: 14px;
 }
 input {
   display: block;
@@ -89,6 +102,10 @@ input {
   border-radius: 5px;
   font-size: 16px;
   box-sizing: border-box;
+}
+input:focus {
+  outline: none;
+  border-color: #3498db;
 }
 .buttons {
   display: flex;

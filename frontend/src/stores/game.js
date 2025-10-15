@@ -22,7 +22,13 @@ export const useGameStore = defineStore('game', () => {
    * @param {object} coords - 要解鎖的地塊座標 { x, y }
    */
   function startUnlockProcess(coords) {
+    // 防止在題目已開啟時重複觸發
+    if (isAnswering.value) {
+      return;
+    }
     tileToUnlock.value = coords;
+    // 先標記為作答中，避免 API 回來前的重複觸發
+    isAnswering.value = true;
     fetchRandomQuestion();
   }
 
@@ -31,6 +37,8 @@ export const useGameStore = defineStore('game', () => {
    */
   async function fetchRandomQuestion() {
     try {
+      // 題目顯示中直接忽略
+      if (isAnswering.value) return;
       // 檢查用戶是否已登入
       const authStore = useAuthStore();
       if (!authStore.user) {
@@ -51,6 +59,8 @@ export const useGameStore = defineStore('game', () => {
       } else {
         alert('獲取題目時發生錯誤，請稍後再試');
       }
+      // 失敗時恢復狀態，允許再次嘗試
+      isAnswering.value = false;
     }
   }
 
@@ -92,6 +102,19 @@ export const useGameStore = defineStore('game', () => {
       console.log('✅ 歷史記錄已即時更新:', newHistoryEntry);*/
 
       // 處理答題結果（不使用 alert，改由呼叫端決定顯示方式）
+      // 無論答對答錯都要更新玩家數值（後端已經自動處理獎勵/懲罰）
+      const playerStore = usePlayerStore();
+      await playerStore.refreshPlayerData();
+      
+      // 同步城堡等級（因為防禦值可能已經改變）
+      try {
+        const { useWallStore } = await import('./wall');
+        const wallStore = useWallStore();
+        await wallStore.syncCastleLevel();
+      } catch (error) {
+        console.warn('同步城堡等級失敗:', error);
+      }
+      
       if (result.isCorrect) {
         // 🎁 顯示獎勵信息
         let rewardMessage = '答對了！土地已解鎖！\n🎁 獲得獎勵：\n+50 科技點\n+10 防禦值';

@@ -5,6 +5,7 @@ import { watch } from 'vue';
 import { usePlayerStore } from '../stores/player';
 import { useGameStore } from '../stores/game';
 import { useBuildingStore } from '../stores/buildings';
+import { useWallStore } from '../stores/wall';
 
 /**
  * 遊戲主引擎類別
@@ -12,12 +13,11 @@ import { useBuildingStore } from '../stores/buildings';
  */
 export class Game {
   constructor(containerElement) {
-    this.container = containerElement;
-    // 在 constructor 中直接獲取所有需要的 Pinia stores
+    this.container = containerElement;   
     this.playerStore = usePlayerStore();
-    this.gameStore = useGameStore();
-    // ✅ 修正點：使用正確的複數名稱
+    this.gameStore = useGameStore();   
     this.buildingStore = useBuildingStore();
+    this.wallStore = useWallStore();
  
     // 初始化所有遊戲相關的屬性
     this.app = null;
@@ -28,6 +28,9 @@ export class Game {
     this.isDragging = false;
     this.dragStart = { x: 0, y: 0 };
     this.TILE_SIZE = 150;
+    this.gameLoopCallback = null; // 儲存 ticker 回調函數的引用
+    this.wasInCastle = false; // 追蹤玩家是否之前在城堡內
+    this.lastInteractAt = 0; // 節流用，避免連按重觸發
   }
 
   /**
@@ -53,19 +56,30 @@ export class Game {
 
     this._createMap();
     await this._createPlayer();
-    this._setupControls();
+    this._setupControls();
     this._setupWatchers(); // 啟用響應式監聽
-    
-    this.app.ticker.add((ticker) => this._gameLoop(ticker.deltaTime));
+    
+    // 建立並儲存 ticker 回調函數的引用，以便後續正確移除
+    this.gameLoopCallback = (ticker) => this._gameLoop(ticker.deltaTime);
+    this.app.ticker.add(this.gameLoopCallback);
   }
 
   /**
    * 銷毀遊戲，釋放所有資源
    */
   destroy() {
+    // 清理事件監聽器
     window.removeEventListener('keydown', this._handleKeydown);
     window.removeEventListener('keyup', this._handleKeyup);
+    
     if (this.app) {
+      // 清理 ticker 回調函數 - 重要：防止記憶體洩漏
+      if (this.app.ticker && this.gameLoopCallback) {
+        this.app.ticker.remove(this.gameLoopCallback);
+        this.gameLoopCallback = null;
+      }
+      
+      // 清理 stage 事件監聽器
       if (this.app.stage) {
         this.app.stage.off('pointerdown', this._onDragStart);
         this.app.stage.off('pointerup', this._onDragEnd);
@@ -73,9 +87,38 @@ export class Game {
         this.app.stage.off('pointermove', this._onDragMove);
       }
       
+      // 清理玩家相關資源
+      if (this.player) {
+        this.player.destroy?.();
+        this.player = null;
+      }
       
-      this.app.destroy(true, { children: true, texture: true, baseTexture: true });
+      // 清理地圖網格
+      if (this.grid) {
+        this.grid.destroy?.();
+        this.grid = null;
+      }
+      
+      // 清理世界容器
+      if (this.world) {
+        this.world.destroy({ children: true });
+        this.world = null;
+      }
+      
+      // 銷毀 PIXI Application，但保留紋理緩存以便重新進入時快速載入
+      this.app.destroy(true, { 
+        children: true, 
+        texture: false,  // ✅ 改為 false，保留紋理緩存
+        baseTexture: false,  // ✅ 改為 false，保留基礎紋理
+        context: false  // ✅ 改為 false，保留 WebGL 上下文
+      });
+      
+      this.app = null;
     }
+    
+    // 清理其他引用
+    this.container = null;
+    this.keys = {};
   }
 
   /**
@@ -140,6 +183,23 @@ export class Game {
     // 如果有移動，就更新玩家位置到 store（通常會觸發畫面重繪或狀態同步）
     if (hasMoved) {
         this.playerStore.updatePosition({ x, y });
+        
+        // 檢查城堡碰撞和離開
+        if (this.grid) {
+          const isInCastle = this.grid.checkCastleCollision(x, y);
+          
+          // 如果現在在城堡內，且之前不在城堡內
+          if (isInCastle && !this.wasInCastle) {
+            this.grid.replaceCastleWithCan1();
+          }
+          // 如果現在不在城堡內，且之前在城堡內
+          else if (!isInCastle && this.wasInCastle) {
+            this.grid.resetCastleImage();
+          }
+          
+          // 更新城堡狀態
+          this.wasInCastle = isInCastle;
+        }
     }
 
     // 如果玩家角色物件存在，更新角色的動畫/狀態
@@ -198,51 +258,58 @@ export class Game {
   /**
    * 設定所有控制項 (鍵盤、滑鼠)
    */
-  _setupControls() {
-    this._handleKeydown = (e) => { this.keys[e.code] = true; };
-    this._handleKeyup = (e) => { 
-        this.keys[e.code] = false;
-        if (e.code === 'Enter') {
-            this._inspectCurrentTile();
-        }
-    };
-    window.addEventListener('keydown', this._handleKeydown);
-    window.addEventListener('keyup', this._handleKeyup);
+  _setupControls() {
+    this._handleKeydown = (e) => { this.keys[e.code] = true; };
+    this._handleKeyup = (e) => { 
+        this.keys[e.code] = false;
+        const isInteractKey = (e.code === 'Enter' || e.code === 'KeyE');
+        if (isInteractKey) {
+            // 題目開啟期間忽略互動鍵，避免重複顯示
+            if (this.gameStore?.isAnswering === true) return;
+            // 節流：避免短時間連按
+            const now = Date.now();
+            if (now - this.lastInteractAt < 400) return;
+            this.lastInteractAt = now;
+            this._inspectCurrentTile();
+        }
+    };
+    window.addEventListener('keydown', this._handleKeydown);
+    window.addEventListener('keyup', this._handleKeyup);
 
-    this.app.stage.eventMode = 'static';
-    this.app.stage.hitArea = this.app.screen;
+    this.app.stage.eventMode = 'static';
+    this.app.stage.hitArea = this.app.screen;
 
-    this._onDragStart = (e) => {
-        this.isDragging = true;
-        this.dragStart.x = e.global.x - this.world.x;
-        this.dragStart.y = e.global.y - this.world.y;
-    };
-    this._onDragEnd = () => { this.isDragging = false; };
-    this._onDragMove = (e) => {
-        if (this.isDragging) {
-             const newX = e.global.x - this.dragStart.x;
-             const newY = e.global.y - this.dragStart.y;
-             this.world.position.set(newX, newY);
-        }
-    };
-    this.app.stage.on('pointerdown', this._onDragStart);
-    this.app.stage.on('pointerup', this._onDragEnd);
-    this.app.stage.on('pointerupoutside', this._onDragEnd);
-    this.app.stage.on('pointermove', this._onDragMove);
-  }
+    this._onDragStart = (e) => {
+        this.isDragging = true;
+        this.dragStart.x = e.global.x - this.world.x;
+        this.dragStart.y = e.global.y - this.world.y;
+    };
+    this._onDragEnd = () => { this.isDragging = false; };
+    this._onDragMove = (e) => {
+        if (this.isDragging) {
+          const newX = e.global.x - this.dragStart.x;
+          const newY = e.global.y - this.dragStart.y;
+          this.world.position.set(newX, newY);
+        }
+    };
+    this.app.stage.on('pointerdown', this._onDragStart);
+    this.app.stage.on('pointerup', this._onDragEnd);
+    this.app.stage.on('pointerupoutside', this._onDragEnd);
+    this.app.stage.on('pointermove', this._onDragMove);
+  }
 
   /**
    * 建立地圖
    */
-  _createMap() {
-    this.grid = new IsoGrid(
-      this.app, 20, 20, this.TILE_SIZE,
-      this._handleTileClick.bind(this),
+  _createMap() {
+    this.grid = new IsoGrid(
+      this.app, 20, 20, this.TILE_SIZE,
+      this._handleTileClick.bind(this),
       this.buildingStore.map
-    );
-    this.grid.gridContainer.zIndex = 0;
-    this.world.addChild(this.grid.gridContainer);
-  }
+    );
+    this.grid.gridContainer.zIndex = 0;
+    this.world.addChild(this.grid.gridContainer);
+  }
 
   /*建立玩家 */
   _createPlayer() {
@@ -313,6 +380,13 @@ export class Game {
         this.grid.clearSelectedTile();
       }
     });
+
+    // 監聽城堡等級變化，自動重繪地圖
+    watch(() => this.wallStore.castleLevel, (newLevel, oldLevel) => {
+      if (oldLevel !== undefined && newLevel !== oldLevel && this.grid) {        
+        this.grid.drawGrid(); // 重繪地圖以顯示新的城堡等級
+      }
+    });
   }
 
   /**
@@ -355,6 +429,8 @@ export class Game {
 
   /*偵測玩家目前所在的網格座標 (按下 Enter 觸發)*/
   _inspectCurrentTile() {
+    // 若題目正在顯示，直接忽略
+    if (this.gameStore?.isAnswering === true) return;
     const playerPos = this.playerStore.position;
     const isoX = playerPos.x;
     const isoY = playerPos.y;
@@ -383,10 +459,7 @@ export class Game {
         this._handleTileInteraction(row, col);
       }
     } else {
-      this.buildingStore.tileDevelopedMessage = '玩家不在有效的遊戲區域內！';
-      setTimeout(() => {
-        this.buildingStore.clearTileMessage();
-      }, 2500);
+      return;
     }
   }
 
@@ -394,6 +467,8 @@ export class Game {
    * 處理格子互動（鍵盤 Enter 觸發）
    */
   _handleTileInteraction(row, col) {
+    // 若題目正在顯示，直接忽略
+    if (this.gameStore?.isAnswering === true) return;
     const cell = this.buildingStore.map?.[row]?.[col];
     if (!cell) return;
     
@@ -414,7 +489,6 @@ export class Game {
         }, 2500);
         break;
       case 'placed':
-        // 觸發 UI 提示，不用瀏覽器 confirm
         this.buildingStore.promptDelete({ x: col, y: row, item: cell.item });
         break;
       default:
