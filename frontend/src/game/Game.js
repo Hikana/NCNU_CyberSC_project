@@ -389,7 +389,18 @@ export class Game {
     this._handleKeyup = (e) => { 
       this.keys[e.code] = false;
       if (e.code === 'Enter' || e.code === 'KeyE') {
-        this._inspectCurrentTile();
+        // 只有在沒有輸入框或按鈕獲得焦點時才觸發檢視功能
+        const activeElement = document.activeElement;
+        const isInputFocused = activeElement && (
+          activeElement.tagName === 'INPUT' || 
+          activeElement.tagName === 'TEXTAREA' || 
+          activeElement.tagName === 'BUTTON' ||
+          activeElement.contentEditable === 'true'
+        );
+        
+        if (!isInputFocused) {
+          this._inspectCurrentTile();
+        }
       }
     };
     

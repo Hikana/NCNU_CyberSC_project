@@ -26,6 +26,12 @@
 
     <!-- ✅ 新增：隨機事件彈窗 (只在遊戲裡出現) -->
     <RandomEventModal />
+    
+    <!-- Bingo 動畫組件 -->
+    <BingoAnimation 
+      :isVisible="gameStore.showBingoAnimation" 
+      @close="gameStore.closeBingoAnimation()" 
+    />
 
     <!-- 城堡升級提示 -->
     <div v-if="wallStore.castleUpgradeMessage" class="castle-upgrade-notification">
@@ -52,21 +58,24 @@ import NpcMenu from '@/components/NpcMenu.vue';
 import QuizPanel from '@/components/QuizPanel.vue';
 import ControlsHint from '@/components/ControlsHint.vue';
 import AudioControls from '@/components/AudioControls.vue';
+import BingoAnimation from '@/components/BingoAnimation.vue';
 
 import { usePlayerStore } from '@/stores/player';
 import { useUiStore } from '@/stores/ui';
 import { useInventoryStore } from '@/stores/inventory'; 
 import { useAchievementStore } from '@/stores/achievement';
-import { useWallStore } from '@/stores/wall'; 
+import { useWallStore } from '@/stores/wall';
+import { useGameStore } from '@/stores/game'; 
 import RandomEventModal from './RandomEventModal.vue'
 import npcImage from '@/assets/NPC.gif';
 import backgroundImage from '@/assets/background.png';
 
 const playerStore = usePlayerStore();
 const uiStore = useUiStore();
-const inventoryStore = useInventoryStore(); 
+const inventoryStore = useInventoryStore();
 const achievementStore = useAchievementStore();
 const wallStore = useWallStore();
+const gameStore = useGameStore();
 
 // 載入狀態
 const isLoading = ref(true);

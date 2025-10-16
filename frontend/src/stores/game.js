@@ -14,6 +14,7 @@ export const useGameStore = defineStore('game', () => {
   const isAnswering = ref(false);
   const tileToUnlock = ref(null); // 要解鎖的地塊座標
   const userId = ref(null); // 將從 playerStore 獲取真實的 userId
+  const showBingoAnimation = ref(false); // 控制 bingo 動畫顯示
 
   // --- Actions ---
 
@@ -106,6 +107,20 @@ export const useGameStore = defineStore('game', () => {
         console.warn('同步城堡等級失敗:', error);
       }
       
+      // 播放答題音效
+      try {
+        const { audioService } = await import('@/services/audioService');
+        if (result.isCorrect) {
+          await audioService.playCorrectAnswerSound();
+          // 顯示 bingo 動畫
+          showBingoAnimation.value = true;
+        } else {
+          await audioService.playWrongAnswerSound();
+        }
+      } catch (error) {
+        console.warn('播放答題音效失敗:', error);
+      }
+
       if (result.isCorrect) {
 
         if (tileToUnlock.value) {
@@ -156,15 +171,23 @@ export const useGameStore = defineStore('game', () => {
     isAnswering.value = false;
     currentQuestion.value = null;
     tileToUnlock.value = null;
+    // 關閉問題時也關閉 bingo 動畫
+    showBingoAnimation.value = false;
+  }
+
+  function closeBingoAnimation() {
+    showBingoAnimation.value = false;
   }
 
   return {
     currentQuestion,
     isAnswering,
     tileToUnlock,
+    showBingoAnimation,
     startUnlockProcess,
     fetchRandomQuestion,
     submitAnswer,
-    closeQuestion
+    closeQuestion,
+    closeBingoAnimation
   };
 });

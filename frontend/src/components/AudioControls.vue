@@ -15,6 +15,8 @@
         class="mute-btn"
         :class="{ 'muted': audioStatus.isMuted }"
         :title="audioStatus.isMuted ? '取消靜音' : '靜音'"
+        type="button"
+        tabindex="-1"
       >
         {{ audioStatus.isMuted ? '🔇' : '🔊' }}
       </button>
@@ -27,6 +29,9 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { audioService } from '@/services/audioService'
 import bgmFile from '@/assets/BGM.mp3'
 import doorSoundFile from '@/assets/door.mp3'
+import rightSoundFile from '@/assets/right.mp3'
+import wrongSoundFile from '@/assets/wrong.mp3'
+import successSoundFile from '@/assets/success.mp3'
 
 const audioStatus = ref({
   isPlaying: false,
@@ -60,6 +65,17 @@ const initAudio = async () => {
     // 載入門音效
     console.log('🚪 載入門音效...')
     await audioService.loadSoundEffect('door', doorSoundFile)
+    
+    // 載入答題音效
+    console.log('✅ 載入答對音效...')
+    await audioService.loadSoundEffect('right', rightSoundFile)
+    
+    console.log('❌ 載入答錯音效...')
+    await audioService.loadSoundEffect('wrong', wrongSoundFile)
+    
+    // 載入成就音效
+    console.log('🎉 載入成就音效...')
+    await audioService.loadSoundEffect('success', successSoundFile)
     
     updateStatus()
     console.log('✅ 音頻服務初始化成功')

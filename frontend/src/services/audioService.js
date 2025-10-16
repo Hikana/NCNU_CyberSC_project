@@ -314,15 +314,39 @@ class AudioService {
    */
   async playDoorOpenSound() {
     console.log(`🚪 門開啟音效: 播放=0s-0.5s`)
-    await this.playSoundEffect('door', 0, 0.5, 1.5) // 增加50%音量
+    await this.playSoundEffect('door', 0, 0.5, 2.0) // 增加100%音量
   }
 
   /**
-   * 播放門音效（0.5s-1s）- 離開城堡時
+   * 播放門音效（0.5s-結束）- 離開城堡時
    */
   async playDoorCloseSound() {
-    console.log(`🚪 門關閉音效: 播放=0.5s-1s`)
-    await this.playSoundEffect('door', 0.5, 0.5, 1.5) // 增加50%音量
+    console.log(`🚪 門關閉音效: 播放=0.5s-結束`)
+    await this.playSoundEffect('door', 0.5, null, 2.0) // 從0.5秒播放到結束，增加100%音量
+  }
+
+  /**
+   * 播放答對音效
+   */
+  async playCorrectAnswerSound() {
+    console.log(`✅ 播放答對音效`)
+    await this.playSoundEffect('right', 0, null, 1.5) // 播放完整音效，增加50%音量
+  }
+
+  /**
+   * 播放答錯音效
+   */
+  async playWrongAnswerSound() {
+    console.log(`❌ 播放答錯音效`)
+    await this.playSoundEffect('wrong', 0, null, 1.5) // 播放完整音效，增加50%音量
+  }
+
+  /**
+   * 播放成就獲得音效
+   */
+  async playAchievementSuccessSound() {
+    console.log(`🎉 播放成就獲得音效`)
+    await this.playSoundEffect('success', 0, null, 1.8) // 播放完整音效，增加80%音量
   }
 
   /**
