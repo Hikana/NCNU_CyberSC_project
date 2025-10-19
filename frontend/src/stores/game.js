@@ -37,8 +37,9 @@ export const useGameStore = defineStore('game', () => {
    */
   async function fetchRandomQuestion() {
     try {
-      // 題目顯示中直接忽略
-      if (isAnswering.value) return;
+      // 若已在作答中且已有題目，則不重複請求；
+      // 但若尚未有題目，仍需發出請求
+      if (isAnswering.value && currentQuestion.value) return;
       // 檢查用戶是否已登入
       const authStore = useAuthStore();
       if (!authStore.user) {
@@ -70,19 +71,26 @@ export const useGameStore = defineStore('game', () => {
    */
   async function submitAnswer(userAnswerIndex) {
     if (!currentQuestion.value) return;
+    if (typeof userAnswerIndex !== 'number' || Number.isNaN(userAnswerIndex)) {
+      alert('請選擇一個選項');
+      return;
+    }
 
     const buildingStore = useBuildingStore();
     const historyStore = useHistoryStore();
     
 
     try {
-      const result = await apiService.submitAnswer(
+      const apiResult = await apiService.submitAnswer(
         currentQuestion.value.id,
         userAnswerIndex
       );
-      /*const correctAnswerText = result.correctAnswer || '未知';
-      alert(result.isCorrect ? '答對了！' : `答錯了！正確答案是: ${correctAnswerText}`);
-*/
+      // 統一結果結構：將後端包在 gameData 的欄位提升到頂層
+      const result = {
+        ...apiResult,
+        ...(apiResult?.gameData || {})
+      };
+      
       console.log('後端回應:', result);
 
       // ✅ 檢查必要屬性
@@ -97,9 +105,6 @@ export const useGameStore = defineStore('game', () => {
           console.warn('後端未回傳 newHistory 物件');
       }
 
-      // ✅ 立即更新歷史記錄
-      /*historyStore.addHistoryEntry(newHistoryEntry);
-      console.log('✅ 歷史記錄已即時更新:', newHistoryEntry);*/
 
       // 處理答題結果（不使用 alert，改由呼叫端決定顯示方式）
       // 無論答對答錯都要更新玩家數值（後端已經自動處理獎勵/懲罰）
@@ -116,16 +121,7 @@ export const useGameStore = defineStore('game', () => {
       }
       
       if (result.isCorrect) {
-        // 🎁 顯示獎勵信息
-        let rewardMessage = '答對了！土地已解鎖！\n🎁 獲得獎勵：\n+50 科技點\n+10 防禦值';
         
-        // 如果有獲得防禦工具，顯示額外獎勵
-        if (result.defenseTool && result.defenseTool.success) {
-          rewardMessage += `\n🛡️ 獲得防禦工具：${result.defenseTool.tool.name}`;
-        }
-        
-        alert(rewardMessage);
-
         // 更新玩家數值（後端已經自動發放獎勵，這裡只需要重新載入資料）
         const playerStore = usePlayerStore();
         await playerStore.refreshPlayerData();

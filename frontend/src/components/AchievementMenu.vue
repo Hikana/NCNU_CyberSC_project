@@ -1,6 +1,5 @@
 <template>
   <div class="achievement-menu" v-if="isVisible">
-    <h2 class="page-title">🎉 成就列表</h2>
     <div class="achievement-content">
       <!-- 成就統計 -->
       <div class="achievement-stats">
@@ -131,14 +130,6 @@ const rewardText = (a) => {
 </script>
 
 <style scoped>
-.page-title {
-  margin: 0px 0px 10px 0px;
-  font-size: 24px;
-  font-weight: 600;
-  color: #2c3e50;
-  text-align: left;
-  align-self: flex-start;
-}
 
 .achievement-menu {
   width: 100%;
@@ -151,11 +142,11 @@ const rewardText = (a) => {
 
 .achievement-content {
   border-radius: 12px;
-  padding: 30px;
+  padding: 20px; 
   width: 100%;
   height: 100%;
   max-height: 100%;
-  overflow-y: scroll; /* 改為 scroll 強制顯示滾動條 */
+  overflow-y: auto; 
   box-sizing: border-box;
 }
 
@@ -177,13 +168,13 @@ const rewardText = (a) => {
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 13px;   
   color: #666;
   margin-bottom: 4px;
 }
 
 .stat-value {
-  font-size: 18px;
+  font-size: 20px; 
   font-weight: bold;
   color: #2c3e50;
 }
@@ -200,7 +191,7 @@ const rewardText = (a) => {
 .achievement-item {
   display: flex;
   align-items: center;
-  padding: 20px;
+  padding: 24px; 
   border: 2px solid #e9ecef;
   border-radius: 12px;
   background: white;
@@ -220,15 +211,15 @@ const rewardText = (a) => {
 }
 
 .achievement-title {
-  margin: 0 0 4px 0;
-  font-size: 16px;
+  margin: 0 0 6px 0;
+  font-size: 20px; 
   font-weight: 600;
   color: #333;
 }
 
 .achievement-description {
-  margin: 0 0 8px 0;
-  font-size: 14px;
+  margin: 0 0 10px 0;
+  font-size: 16px; 
   color: #666;
 }
 
@@ -275,7 +266,7 @@ const rewardText = (a) => {
 }
 
 .reward-text { 
-  font-size: 12px;
+  font-size: 14px; 
   color: #856404;
   font-weight: 500;
 }
@@ -303,6 +294,8 @@ const rewardText = (a) => {
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 14px; 
+  padding: 8px 14px;
 }
 
 .claim-btn:hover {

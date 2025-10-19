@@ -20,10 +20,7 @@
             {{ String.fromCharCode(65 + i) }}. {{ option }}
           </button>
         </div>
-        <div class="answer-section" v-else>
-          <input type="text" v-model="textAnswer" placeholder="請輸入你的答案..." @keyup.enter="submitText()" />
-          <button class="quiz-btn" @click="submitText()">提交答案</button>
-        </div>
+        
         <div class="quiz-buttons" v-if="hasOptions">
           <button class="quiz-btn" :disabled="selectedAnswer === null" @click="submitChoice()">提交答案</button>
         </div>
@@ -43,6 +40,7 @@
               <div class="reward-item positive">+15 科技點</div>
               <div class="reward-item positive">+10 防禦值</div>
               <div v-if="hasUnlockedTile" class="reward-item positive">土地已解鎖</div>
+              <div v-if="result?.defenseTool?.success" class="reward-item positive">獲得防禦工具：{{ result.defenseTool.tool.name }}</div>
             </div>
           </div>
           
@@ -53,9 +51,10 @@
               <div class="penalty-item">-5 科技點</div>
               <div class="penalty-item">-5 防禦值</div>
             </div>
-            <div class="explain">正確答案：{{ result?.correctAnswer || '未知' }}</div>
-            <div class="encouragement">再接再厲！</div>
+            <div class="answer-text">正確答案：{{ result?.correctAnswer || '未知' }}</div>
           </div>
+          
+          <div class="explain">詳解：{{ result?.description }}</div>
           
           <div class="actions">
             <button class="quiz-btn" @click="finish()">關閉</button>
@@ -71,7 +70,6 @@ import { ref, computed } from "vue"
 import { useGameStore } from '@/stores/game'
 const gameStore = useGameStore()
 const selectedAnswer = ref(null)
-const textAnswer = ref("")
 const flipped = ref(false)
 const result = ref(null)
 const hasOptions = computed(() => {
@@ -98,15 +96,7 @@ function submitChoice() {
   })
 }
 
-function submitText() {
-  if (!textAnswer.value || !textAnswer.value.trim()) return
-  gameStore.submitAnswer(textAnswer.value).then(r => {
-    result.value = r
-    flipped.value = true
-  }).catch(() => {}).finally(() => {
-    textAnswer.value = ""
-  })
-}
+// 已移除文字作答流程，僅保留選擇題提交流程
 
 function finish() {
   flipped.value = false
@@ -118,7 +108,7 @@ function finish() {
 <style scoped>
 .quiz-panel {
   position: absolute;
-  top: 40%;
+  top: 32%; /* 整體上移 */
   left: 50%;
   transform: translate(-50%, -50%);
   pointer-events: auto;
@@ -286,11 +276,12 @@ function finish() {
 
 .badge {
   display: inline-block;
-  padding: 12px 24px;
+  padding: 8px 16px; 
   border-radius: 999px;
   font-weight: 700;
-  font-size: 18px;
-  margin-bottom: 20px;
+  font-size: 16px; 
+  margin-top: -6px; 
+  margin-bottom: 8px; 
 }
 
 .badge.ok {
@@ -304,7 +295,7 @@ function finish() {
 }
 
 .reward-section {
-  margin: 20px 0;
+  margin: 12px 0; 
 }
 
 .reward-title {
@@ -317,8 +308,8 @@ function finish() {
 .reward-items {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: 6px; 
+  margin-bottom: 12px; 
 }
 
 .reward-item {
@@ -335,7 +326,7 @@ function finish() {
 }
 
 .penalty-section {
-  margin: 20px 0;
+  margin: 12px 0; 
 }
 
 .penalty-title {
@@ -367,21 +358,25 @@ function finish() {
 
 .explain {
   margin: 15px 0;
-  font-size: 16px;
-  line-height: 1.6;
-  color: #6b7280;
-}
-
-.encouragement {
-  font-size: 16px;
-  color: #f59e0b;
-  font-weight: 500;
+  font-size: 18px;
+  line-height: 1.7;
+  color: #e5e7eb; 
+  font-weight: 600;
+  text-align: left; 
 }
 
 .actions {
   display: flex;
   justify-content: center;
   margin-top: 20px;
+}
+
+.answer-text {
+  margin: 6px 0 0 0;
+  font-size: 16px;
+  color: #9ca3af;
+  font-weight: 400;
+  text-align: center;
 }
 </style>
  

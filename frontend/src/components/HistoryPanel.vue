@@ -1,6 +1,5 @@
 <template>
   <div class="history-panel">
-    <h2>📝 答題紀錄</h2>
     <div v-if="historyStore.isLoading" class="loading">載入中...</div>
     <div v-else-if="historyStore.error" class="error">
       載入失敗: {{ historyStore.error }}
@@ -56,7 +55,7 @@ onMounted(() => {
 }
 .history-list {
   flex-grow: 1;
-  overflow-y: auto;
+  overflow: visible;
   padding-right: 10px;
 }
 .history-item {

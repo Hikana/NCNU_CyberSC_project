@@ -1,6 +1,5 @@
 <template>
   <div class="shop-container">
-    <h2 class="page-title"> 💰 商店</h2>
     <div class="shop-list">
       <div class="shop-item" v-for="item in buildingStore.shopBuildings" :key="item.id">
         <div class="item-image">
@@ -59,36 +58,20 @@ const emit = defineEmits(['purchaseSuccess'])
 </script>
 
 <style scoped>
-.page-title {
-  margin: 0 0 10px 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #2c3e50;
-  text-align: left;
-  align-self: flex-start;
-}
 
 .shop-container {
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0;
-  pointer-events: auto;
+  display: block; /* 內部排版交由父層控制滾動 */
 }
 
 .shop-list {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(3, 1fr); /* 固定三欄，維持九宮格 */
+  gap: 16px; /* 稍微縮小間距，讓卡片更寬 */
   width: 100%;
-  height: 100%;
-  overflow-y: auto;
-  padding: 20px;
+  min-height: 0;
   box-sizing: border-box;
-  pointer-events: auto;
 }
 
 .shop-item {

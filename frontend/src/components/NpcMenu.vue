@@ -19,7 +19,7 @@
       
         <!-- 背包頁面 -->
         <div v-if="currentView === 'inventory'" class="inventory-container">
-          <h2>背包</h2>
+          <h2 class="page-title">背包</h2>
           <div v-if="inv.loading">載入中...</div>
           <div v-else-if="inv.items.length === 0" class="empty-inventory">
             <p>背包是空的</p>
@@ -57,19 +57,33 @@
         </div>
         <!-- 建築商店畫面 -->
         <div v-if="currentView === 'shop'" class="shop-container">
-          <BuildingShop @purchaseSuccess="closeMenu" />
+          <h2 class="page-title">建築商店</h2>
+          <div class="shop-content">
+            <BuildingShop @purchaseSuccess="closeMenu" />
+          </div>
         </div>
         <!-- 成就頁面 -->
         <div v-else-if="currentView === 'achievement'" class="achievement-container">
-          <AchievementMenu 
-            :isVisible="true" 
-            @close="currentView = 'shop'" 
-          />
+          <h2 class="page-title">成就</h2>
+          <div class="achievement-content-wrap">
+            <AchievementMenu 
+              :isVisible="true" 
+              @close="currentView = 'shop'" 
+            />
+          </div>
+        </div>
+        
+        <!-- 說明頁面（動態載入） -->
+        <div v-else-if="currentView === 'help'" class="help-container">
+          <h2 class="page-title">遊戲規則說明</h2>
+          <div class="help-content">
+            <HelpPanel />
+          </div>
         </div>
         
         <!-- 資安事件紀錄頁面 -->
         <div v-else-if="currentView === 'logs'" class="security-events-container">
-          <h2>資安事件紀錄</h2>
+          <h2 class="page-title">資安事件紀錄</h2>
           <div v-if="eventLogStore.loading">載入中...</div>
           <div v-else-if="eventLogStore.unresolvedEvents.length === 0" class="empty-events">
             <p>🎉 太棒了！目前沒有未處理的資安事件</p>
@@ -150,8 +164,11 @@
         </div>
         
         <!-- 答題紀錄頁面 -->
-        <div v-else-if="currentView === 'records'"> 
-          <HistoryPanel />
+        <div v-else-if="currentView === 'records'" class="records-container"> 
+          <h2 class="page-title">答題紀錄</h2>
+          <div class="records-content">
+            <HistoryPanel />
+          </div>
         </div>
 
         
@@ -162,7 +179,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue' 
+import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue' 
 import BuildingShop from '@/components/BuildingShop.vue'
 import AchievementMenu from '@/components/AchievementMenu.vue'
 import HistoryPanel from '@/components/HistoryPanel.vue'
@@ -177,6 +194,9 @@ const player = usePlayerStore()
 const inv = useInventoryStore()
 const authStore = useAuthStore(); 
 const eventLogStore = useEventLogStore();
+
+// 動態載入說明頁面
+const HelpPanel = defineAsyncComponent(() => import('@/components/HelpPanel.vue'))
 
 // 選中的物品和事件
 const selectedItem = ref(null)
@@ -363,6 +383,7 @@ const menuItems = ref([
   { id: 'logs', name: '資安事件紀錄', icon: '📜' },
   { id: 'records', name: '答題紀錄', icon: '📝' },
   { id: 'achievement', name: '成就', icon: '🏆' }, 
+  { id: 'help', name: '說明', icon: '❓' },
 ]);
 
 const currentView = ref('inventory');
@@ -483,15 +504,38 @@ function closeMenu() {
   width: 100%;
   height: 100%;
   pointer-events: auto;
+  display: grid;
+  grid-template-rows: auto 1fr; /* 標題在上、內容填滿 */
+  padding: 0 20px 20px;
+}
+
+.shop-content {
+  overflow-y: auto;
+  padding: 20px;
+  min-height: 0;
 }
 
 .achievement-container {
   width: 100%;
   height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  display: grid;
+  grid-template-rows: auto 1fr;
   overflow: hidden;
+  padding: 0 20px 20px; 
+}
+
+/* 遊戲規則說明容器 */
+.help-container {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  padding: 0 20px 20px;
+}
+.help-content {
+  overflow-y: auto;
+  padding: 20px;
 }
 
 .achievement-container .achievement-menu {
@@ -502,9 +546,9 @@ function closeMenu() {
 
 .achievement-container .achievement-content {
   width: 100%;
-  height: 100%;
-  max-height: 100%;
-  overflow-y: auto;
+  height: auto;
+  max-height: none;
+  overflow: visible; /* 滾動交由外層 wrap 控制 */
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -523,11 +567,21 @@ function closeMenu() {
 .menu-right {
   flex-grow: 1;
   padding-left: 20px;
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 .menu-right h2 {
     margin-top: 0;
     color: #2c3e50;
+}
+
+/* 將標題統一成成就系統風格 */
+.page-title {
+  margin: 0px 0px 10px 0px;
+  font-size: 24px;
+  font-weight: 600;
+  color: #2c3e50;
+  text-align: left;
+  align-self: flex-start;
 }
 .grid {
   display: grid;
@@ -610,10 +664,26 @@ function closeMenu() {
   color: white;
 }
 
-/* 背包面板樣式 */
+/* 背包 */
 .inventory-container {
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  padding: 0 20px 20px; 
+  display: grid;
+  grid-template-rows: auto 1fr; /* 標題固定，內容滾動 */
+}
+
+/* 答題紀錄 */
+.records-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 0 20px 20px;
+  display: grid;
+  grid-template-rows: auto 1fr; /* 標題固定，內容滾動 */
+}
+.records-content {
   overflow-y: auto;
   padding: 20px;
 }
@@ -621,7 +691,6 @@ function closeMenu() {
 .inventory-container h2 {
   margin: 0 0 15px 0;
   color: #2c3e50;
-  font-size: 20px;
 }
 
 .empty-inventory {
@@ -634,13 +703,16 @@ function closeMenu() {
 .inventory-content {
   display: flex;
   gap: 20px;
-  height: 100%;
+  height: auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
 }
 
 .inventory-list {
   flex: 1;
-  overflow-y: auto;
-  max-height: 400px;
+  overflow: visible;
+  max-height: none;
 }
 
 .inventory-item {
@@ -776,15 +848,14 @@ function closeMenu() {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
+  padding: 0 20px 20px; 
+  display: grid;
+  grid-template-rows: auto 1fr; /* 標題固定，內容滾動 */
 }
 
 .security-events-container h2 {
   margin: 0 0 15px 0;
   color: #2c3e50;
-  font-size: 20px;
 }
 
 .empty-events {
@@ -797,17 +868,18 @@ function closeMenu() {
 .events-content {
   display: flex;
   gap: 20px;
-  height: calc(100% - 60px);
-  overflow: hidden;
+  height: auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
 }
 
 .events-list {
   flex: 1;
-  overflow-y: auto;
-  max-height: 100%;
+  overflow: visible;
+  max-height: none;
   min-width: 0; /* 防止 flex 項目超出容器 */
-  padding: 8px; /* 增加內邊距，確保邊框不被切掉 */
-  padding-right: 20px; /* 額外增加右邊內邊距，為滾動條預留空間 */
+  padding: 8px; /* 保留基本內邊距，確保邊框不被切掉 */
   box-sizing: border-box; /* 確保內邊距包含在寬度內 */
 }
 
@@ -1131,5 +1203,11 @@ function closeMenu() {
 
 .cancel-btn:hover {
   background: #7f8c8d;
+}
+
+.achievement-content-wrap {
+  overflow: visible; /* 由內層 .achievement-content 滾動，對齊其他頁 */
+  padding: 0; /* 外層不加右側 padding，避免滾輪位置左移 */
+  min-height: 0;
 }
 </style>

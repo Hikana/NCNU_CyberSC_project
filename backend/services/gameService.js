@@ -100,6 +100,7 @@ class GameService {
       userAnswer: question.options[userAnswerIndex],
       yourAnswer: question.options[userAnswerIndex], // 為了相容性
       question: question.question,
+      description, // 回傳題目詳解
       newHistory,
       defenseTool: isCorrect ? randomDefenseTool : null // 只有答對時才包含防禦工具資訊
     };
