@@ -1,5 +1,6 @@
 const buildingData = require('../models/buildingData');
 const playerData = require('../models/playerData');
+const shopData = require('../models/shopData');
 
 // 與前端 IsoGrid 對齊的城堡座標（以 row,col = y,x）
 const CASTLE_TILES = new Set([
@@ -10,25 +11,7 @@ const CASTLE_TILES = new Set([
 
 class BuildingService {
   // 建築商店配置
-  constructor() {
-    this.buildingShop = [
-      { id: 1, name: '建築A', techCost: 50, defenseValue: 10 },
-      { id: 2, name: '建築B', techCost: 60, defenseValue: 15 },
-      { id: 3, name: '建築C', techCost: 70, defenseValue: 20 },
-      { id: 5, name: '建築E', techCost: 90, defenseValue: 25 },
-      { id: 6, name: '建築F', techCost: 90, defenseValue: 30 },
-      { id: 7, name: '建築G', techCost: 90, defenseValue: 35 },
-      { id: 11, name: '建築K', techCost: 120, defenseValue: 40 },
-      { id: 12, name: '建築L', techCost: 120, defenseValue: 45 },
-      { id: 13, name: '建築M', techCost: 140, defenseValue: 50 },
-      { id: 14, name: '建築N', techCost: 150, defenseValue: 55 },
-      { id: 15, name: '建築O', techCost: 160, defenseValue: 60 },
-      { id: 16, name: '建築P', techCost: 180, defenseValue: 65 },
-      { id: 17, name: '建築Q', techCost: 200, defenseValue: 70 },
-      { id: 18, name: '建築R', techCost: 220, defenseValue: 75 },
-      { id: 19, name: '建築S', techCost: 230, defenseValue: 80 }
-    ];
-  }
+  constructor() {}
 
   // 取得地圖狀態
   async getMapState(userId) {
@@ -95,8 +78,8 @@ class BuildingService {
       const { x, y } = position;
       console.log('🔹 放置建築請求:', { userId, buildingId, position });
   
-      // 1. 檢查建築是否存在
-      const buildingInfo = this.buildingShop.find(b => b.id === buildingId);
+      // 1. 檢查建築是否存在（改從 Firestore 讀取）
+      const buildingInfo = await shopData.getById(buildingId);
       if (!buildingInfo) throw new Error('找不到指定的建築');
   
       // 2. 取得玩家資料
@@ -164,12 +147,15 @@ class BuildingService {
 
   // 取得建築商店列表
   async getBuildingShop() {
-    return this.buildingShop;
+    // 從 Firestore 讀取，若為空則回傳空陣列（由 seed 腳本或第一次使用時補種）
+    const items = await shopData.getAllItems();
+    return items;
   }
 
   // 取得建築資訊
   async getBuildingInfo(buildingId) {
-    return this.buildingShop.find(b => b.id == buildingId);
+    const item = await shopData.getById(Number(buildingId));
+    return item;
   }
 
   // 檢查是否為城堡區域

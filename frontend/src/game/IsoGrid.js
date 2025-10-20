@@ -118,9 +118,25 @@ export class IsoGrid {
       }
     }
     
-    // 動態載入建築圖片，根據商店中定義的建築 ID
+    // 動態載入建築圖片：合併商店定義與當前地圖上已放置的建築 ID
     const buildingStore = useBuildingStore()
-    const buildingIds = buildingStore.shopBuildings.map(building => building.id)
+    const idsFromShop = (buildingStore.shopBuildings || []).map(b => b.id)
+    const idsFromMap = []
+    if (this.mapData) {
+      for (let r = 0; r < this.rows; r++) {
+        for (let c = 0; c < this.cols; c++) {
+          const cell = this.mapData[r]?.[c]
+          if (cell && cell.status === 'placed' && cell.buildingId) {
+            idsFromMap.push(cell.buildingId)
+          }
+        }
+      }
+    }
+    let buildingIds = Array.from(new Set([...idsFromShop, ...idsFromMap]))
+    // 若仍為空，載入常用的預設編號，避免初次未載入商店時建築缺圖
+    if (buildingIds.length === 0) {
+      buildingIds = [1,2,3,5,6,7,11,12,13,14,15,16,17,18,19]
+    }
     
     // 等待所有建築圖片載入完成
     await Promise.all(buildingIds.map(id => importBuildingImage(id)));
@@ -131,6 +147,42 @@ export class IsoGrid {
     if (this.mapData) {
       this.drawGrid();
     }
+  }
+
+  // 確保地圖上需要的建築紋理已載入（在地圖更新後呼叫）
+  async ensureBuildingTexturesForMap() {
+    if (!this.mapData) return
+    if (!this.buildingTextures) this.buildingTextures = {}
+
+    const neededIdsSet = new Set()
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        const cell = this.mapData[r]?.[c]
+        if (cell && cell.status === 'placed' && cell.buildingId) {
+          if (!this.buildingTextures[cell.buildingId]) {
+            neededIdsSet.add(cell.buildingId)
+          }
+        }
+      }
+    }
+
+    const missingIds = Array.from(neededIdsSet)
+    if (missingIds.length === 0) return
+
+    const importBuildingImage = async (id) => {
+      try {
+        const module = await import(`@/assets/B${id}.png`)
+        const imageUrl = module.default
+        const texture = await PIXI.Assets.load(imageUrl)
+        this.buildingTextures[id] = texture
+      } catch (error) {
+        const graphics = new PIXI.Graphics()
+        graphics.rect(0, 0, this.tileSize, this.tileSize).fill({ color: 0x00ff00 + (id * 0x111111) })
+        this.buildingTextures[id] = this.createTextureFromGraphics(graphics)
+      }
+    }
+
+    await Promise.all(missingIds.map(id => importBuildingImage(id)))
   }
 
   // 預載入草地圖片
@@ -255,7 +307,10 @@ export class IsoGrid {
   updateMapData(newMapData) { 
     if (!newMapData || Object.keys(newMapData).length === 0) return;
     this.mapData = newMapData;
-    this.drawGrid();
+    // 嘗試補載任何缺失的建築紋理，再重繪
+    this.ensureBuildingTexturesForMap()
+      .then(() => this.drawGrid())
+      .catch(() => this.drawGrid());
   }
 
   setSelectedTile(x, y) { this.selectedTile = { x, y }; this.drawGrid(); }

@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import { usePlayerStore } from './player';
 import { apiService } from '@/services/apiService'; // 引入我們統一的 apiService
+import routerImg from '@/assets/router.png';
+import switchImg from '@/assets/switch.png';
 
 // 從 assets 引入圖片資源
 import buildingAImg from '@/assets/B1.png'
@@ -32,26 +34,51 @@ export const useBuildingStore = defineStore('buildings', {
     tileDevelopedMessage: null,
     castleInteraction: null,
     
-    // 商店建築列表的 id 改為字串，以匹配 IsoGrid.js
-    shopBuildings: [
-      { id: 1, name: '建築A', img: buildingAImg, techCost: 50 },
-      { id: 2, name: '建築B', img: buildingBImg, techCost: 60 },
-      { id: 3, name: '建築C', img: buildingCImg, techCost: 70 },
-      { id: 5, name: '建築E', img: buildingEImg, techCost: 90 },
-      { id: 6, name: '建築F', img: buildingFImg, techCost: 90 },
-      { id: 7, name: '建築G', img: buildingGImg, techCost: 90 },
-      { id: 11, name: '建築K', img: buildingKImg, techCost: 120 },
-      { id: 12, name: '建築L', img: buildingLImg, techCost: 120 },
-      { id: 13, name: '建築M', img: buildingMImg, techCost: 140 },
-      { id: 14, name: '建築N', img: buildingNImg, techCost: 150 },
-      { id: 15, name: '建築O', img: buildingOImg, techCost: 160 },
-      { id: 16, name: '建築P', img: buildingPImg, techCost: 180 },
-      { id: 17, name: '建築Q', img: buildingQImg, techCost: 200 },
-      { id: 18, name: '建築R', img: buildingRImg, techCost: 220 },
-      { id: 19, name: '建築S', img: buildingSImg, techCost: 230 }
-    ]
+    // 商店建築列表：由後端載入
+    shopBuildings: []
   }),
   actions: {
+    async loadShop() {
+      try {
+        // 從後端 API 取得 shop 清單
+        const items = await apiService.getBuildingShop();
+        // 加入 type 與對應圖片：host 使用原本 B 系列圖，router/switch 使用相應 icon
+        const typeToImg = (item) => {
+          if (item.type === 'router') return routerImg;
+          if (item.type === 'switch') return switchImg;
+          // host：依 id 匹配原本圖片
+          const map = {
+            1: buildingAImg,
+            2: buildingBImg,
+            3: buildingCImg,
+            5: buildingEImg,
+            6: buildingFImg,
+            7: buildingGImg,
+            11: buildingKImg,
+            12: buildingLImg,
+            13: buildingMImg,
+            14: buildingNImg,
+            15: buildingOImg,
+            16: buildingPImg,
+            17: buildingQImg,
+            18: buildingRImg,
+            19: buildingSImg,
+          };
+          return map[item.id] || buildingAImg;
+        };
+
+        this.shopBuildings = (items || []).map((item) => ({
+          id: item.id,
+          name: item.name,
+          techCost: item.techCost,
+          defenseValue: item.defenseValue,
+          type: item.type || 'host',
+          img: typeToImg(item),
+        }));
+      } catch (e) {
+        console.error('載入商店失敗:', e);
+      }
+    },
     // 新增：從後端載入地圖狀態的 action
     async loadMap() {
       try {

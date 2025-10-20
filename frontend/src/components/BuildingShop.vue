@@ -1,7 +1,18 @@
 <template>
   <div class="shop-container">
-    <div class="shop-list">
-      <div class="shop-item" v-for="item in buildingStore.shopBuildings" :key="item.id">
+    <div class="shop-body">
+      <div class="shop-categories">
+        <button 
+          v-for="t in categoryTypes" 
+          :key="t.value" 
+          class="category-btn" 
+          :class="{ active: activeType === t.value }"
+          @click="activeType = t.value">
+          {{ t.label }}
+        </button>
+      </div>
+      <div class="shop-list">
+      <div class="shop-item" v-for="item in filteredItems" :key="item.id">
         <div class="item-image">
           <img :src="item.img" :alt="item.name" class="building-img" />
         </div>
@@ -16,6 +27,7 @@
           <span v-else>購買</span>
         </button>
       </div>
+      </div>
     </div>
   </div>
 </template>
@@ -23,9 +35,29 @@
 <script setup>
 import { useBuildingStore } from '@/stores/buildings'
 import { usePlayerStore } from '@/stores/player'
+import { onMounted, computed, ref } from 'vue'
 
 const buildingStore = useBuildingStore()
 const playerStore = usePlayerStore()
+
+// 類別資料及當前選擇（預設 host）
+const categoryTypes = ref([
+  { value: 'host', label: '主機' },
+  { value: 'router', label: '路由器' },
+  { value: 'switch', label: '交換器' },
+])
+const activeType = ref('host')
+
+// 依類別過濾顯示
+const filteredItems = computed(() => {
+  const list = buildingStore.shopBuildings || []
+  if (!activeType.value) return list
+  return list.filter(i => (i.type || 'host') === activeType.value)
+})
+
+onMounted(() => {
+  buildingStore.loadShop()
+})
 
 function canAfford(item) {
   return playerStore.techPoints >= item.techCost
@@ -64,6 +96,37 @@ const emit = defineEmits(['purchaseSuccess'])
   height: 100%;
   display: block; /* 內部排版交由父層控制滾動 */
 }
+
+.shop-body {
+  display: grid;
+  grid-template-columns: 80px 1fr; 
+  gap: 10px;
+  height: 100%;
+  margin-left: -40px; 
+}
+
+.shop-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 80px; /* 與左欄一致，避免多佔寬度 */
+}
+
+.category-btn {
+  padding: 4px 5px;
+  border-radius: 12px;
+  border: 2px solid #3498db33;
+  background: #ffffff;
+  color: #2c3e50;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+.category-btn:hover { border-color: #3498db; box-shadow: 0 2px 8px rgba(52,152,219,0.25); }
+.category-btn.active { background: #3498db; color: #fff; border-color: #2980b9; }
 
 .shop-list {
   display: grid;

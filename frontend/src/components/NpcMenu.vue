@@ -388,6 +388,7 @@ const menuItems = ref([
 
 const currentView = ref('inventory');
 
+
 // 監聽頁面切換，當切換到資安事件紀錄時重新載入
 watch(currentView, async (newView) => {
   if (newView === 'logs') {
@@ -504,15 +505,15 @@ function closeMenu() {
   width: 100%;
   height: 100%;
   pointer-events: auto;
-  display: grid;
-  grid-template-rows: auto 1fr; /* 標題在上、內容填滿 */
+  display: grid; /* 標題 + 內容 */
+  grid-template-rows: auto 1fr; /* 標題固定，內容填滿可滾動 */
   padding: 0 20px 20px;
 }
 
 .shop-content {
-  overflow-y: auto;
+  overflow-y: auto; /* 讓內容可滾動 */
   padding: 20px;
-  min-height: 0;
+  min-height: 0; /* 關鍵：允許在 Grid/Flex 下正確計算剩餘高度 */
 }
 
 .achievement-container {
@@ -1206,8 +1207,8 @@ function closeMenu() {
 }
 
 .achievement-content-wrap {
-  overflow: visible; /* 由內層 .achievement-content 滾動，對齊其他頁 */
-  padding: 0; /* 外層不加右側 padding，避免滾輪位置左移 */
+  overflow: visible; 
+  padding: 0;
   min-height: 0;
 }
 </style>
