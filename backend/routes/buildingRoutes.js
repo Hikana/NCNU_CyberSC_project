@@ -13,7 +13,7 @@ router.get('/map', auth, buildingController.getMap);
 router.post('/place', auth, buildingController.placeBuilding);
 
 // 移除建築（需登入）
-router.delete('/:x/:y', auth, buildingController.removeBuilding);
+router.delete('/remove/:x/:y', auth, buildingController.removeBuilding);
 
 // 取得建築列表（商店用）
 router.get('/shop', buildingController.getBuildingShop);

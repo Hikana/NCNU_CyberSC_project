@@ -102,6 +102,14 @@ export const useAchievementStore = defineStore('achievement', {
       // 先應用獎勵（等待完成）
       await this.applyReward(a);
       
+      // 播放成就獲得音效
+      try {
+        const { audioService } = await import('@/services/audioService');
+        await audioService.playAchievementSuccessSound();
+      } catch (error) {
+        console.warn('播放成就音效失敗:', error);
+      }
+      
       // 透過 API 更新玩家成就狀態
       const playerStore = usePlayerStore();
       const uid = playerStore.userId || playerStore.initFromAuth();

@@ -171,7 +171,7 @@ export const apiService = {
   removeBuilding: async (x, y, userId) => {
     const uid = userId || getCurrentUid();
     if (!uid) throw new Error('尚未登入，無法移除建築');
-    const url = `${BUILDING_BASE_URL}/${x}/${y}?userId=${encodeURIComponent(uid)}`;
+    const url = `${BUILDING_BASE_URL}/remove/${x}/${y}?userId=${encodeURIComponent(uid)}`;
     return requestInventory(url, { method: 'DELETE' });
   },
 

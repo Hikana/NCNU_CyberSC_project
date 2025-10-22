@@ -26,11 +26,23 @@ class BuildingService {
           const playerTileData = playerLand[tileKey];
           const isCastle = this.isCastleTile(y, x);
 
+          // 任何情況下，城堡 3x3 一律固定為 developed/castle
+          if (isCastle) {
+            return {
+              status: 'developed',
+              type: 'castle',
+              baseType: 'castle',
+              buildingId: null,
+              x,
+              y
+            };
+          }
+
           if (playerTileData) {
             return {
               status: playerTileData.status,
-              type: playerTileData.type,
-              baseType: isCastle ? 'castle' : (playerTileData.baseType || playerTileData.type || 'empty'),
+              type: playerTileData.type || 'empty',
+              baseType: playerTileData.baseType || playerTileData.type || 'empty',
               buildingId: playerTileData.buildingId ?? null,
               x,
               y
@@ -38,9 +50,9 @@ class BuildingService {
           }
 
           return {
-            status: isCastle ? 'developed' : 'locked',
-            type: isCastle ? 'castle' : 'empty',
-            baseType: isCastle ? 'castle' : 'empty',
+            status: 'locked',
+            type: 'empty',
+            baseType: 'empty',
             buildingId: null,
             x,
             y
