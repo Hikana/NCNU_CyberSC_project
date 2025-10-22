@@ -1,16 +1,16 @@
 <template>
-  <section class="rsa-section w-full min-h-screen bg-bgg text-wordcolor flex flex-col relative z-10 overflow-hidden">
+  <section class="rsa-section w-screen min-h-screen bg-bgg text-wordcolor flex flex-col relative z-10">
     <!-- 背景 ENCRYPTION 字 -->
     <div
       class="absolute inset-0 flex flex-col justify-center items-center pointer-events-none"
     >
       <span
-        class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[15rem]"
+        class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[12rem]"
       >
         ASYMMETRIC
       </span>
       <span
-        class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[15rem]"
+        class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[12rem]"
       >
         ENCRYPTION
       </span>
@@ -53,7 +53,7 @@
               <div>
                 <h3 class="text-2xl font-semibold mb-4">缺點：</h3>
                 <ul class="list-disc pl-6 space-y-1">
-                  <li>加密速度比對稱式慢，不適合大量資料</li>
+                  <li>加密速度比對稱式慢，<br>不適合大量資料</li>
                 </ul>
               </div>
             </div>
@@ -81,7 +81,7 @@
         <div class="mb-6 text-center">
           <button
             @click="generateKeys"
-            class="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded text-white font-semibold"
+            class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded text-white font-semibold"
           >
             產生新的 RSA 公私鑰
           </button>
@@ -96,14 +96,14 @@
             <label class="block font-semibold mb-2">Public Key</label>
             <textarea
               readonly
-              class="w-full h-40 p-2 rounded bg-black/70 text-green-300 font-mono text-xs"
+              class="w-full h-40 p-2 rounded bg-wordcolor text-green-300 font-mono text-xs"
             >{{ publicKeyPem }}</textarea>
           </div>
           <div>
             <label class="block font-semibold mb-2">Private Key</label>
             <textarea
               readonly
-              class="w-full h-40 p-2 rounded bg-black/70 text-red-300 font-mono text-xs"
+              class="w-full h-40 p-2 rounded bg-wordcolor text-red-300 font-mono text-xs"
             >{{ privateKeyPem }}</textarea>
           </div>
         </div>
@@ -119,7 +119,7 @@
             />
             <button
               @click="encrypt"
-              class="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded text-white font-semibold"
+              class="px-4 py-2 bg-blueGray hover:bg-blueGrayPressed rounded text-white font-semibold"
             >
               Encrypt
             </button>
@@ -140,7 +140,7 @@
             />
             <button
               @click="decrypt"
-              class="px-4 py-2 bg-green-500 hover:bg-green-600 rounded text-white font-semibold"
+              class="px-4 py-2 bg-pinkGray hover:bg-pinkGrayPressed rounded text-white font-semibold"
             >
               Decrypt
             </button>

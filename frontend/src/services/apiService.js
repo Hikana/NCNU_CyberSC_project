@@ -110,12 +110,23 @@ async function requestInventory(url, options = {}) {
     }
 
     const response = await fetch(url, config);
-    const json = await response.json();
-    
-    if (!response.ok || !json.success) {
-      throw new Error(json.message || '背包 API 請求失敗');
+    const contentType = response.headers.get('content-type');
+    let result;
+    if (contentType && contentType.includes('application/json')) {
+      result = await response.json();
+    } else {
+      const text = await response.text();
+      // 盡量給出可用錯誤訊息
+      throw new Error(text || '非 JSON 回應');
     }
-    return json.data;
+
+    if (!response.ok) {
+      const message = result?.message || result?.error || `API 請求失敗 (狀態碼: ${response.status})`;
+      throw new Error(message);
+    }
+
+    // 後端多數回傳 { success, data }
+    return result?.data ?? result;
   } catch (error) {
     console.error(`❌ 背包 API 錯誤 at ${url}:`, error);
     throw error;

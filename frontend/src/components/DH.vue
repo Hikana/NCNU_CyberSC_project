@@ -1,12 +1,12 @@
 <template>
-  <section class="dh-section w-full min-h-screen bg-bgg text-wordcolor flex flex-col relative z-10 overflow-hidden">
+  <section class="dh-section w-screen min-h-screen bg-bgg text-wordcolor flex flex-col relative z-10">
     <!-- 背景大字 -->
     <div class="absolute inset-0 flex flex-col justify-center items-center pointer-events-none">
-      <span class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[20rem]">
-        DIFFIE
+      <span class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[10rem]">
+        DIFFIE-HELLMAN
       </span>
-      <span class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[20rem]">
-        HELLMAN
+      <span class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[10rem]">
+        KEY EXCHANGE
       </span>
     </div>
 
@@ -62,7 +62,7 @@
     <div class="mb-6 text-center">
       <button
         @click="generateKeys"
-        class="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 rounded text-white font-semibold"
+        class="px-6 py-2 bg-gray-400 hover:bg-gray-500 rounded text-white font-semibold"
       >
         產生 Alice 與 Bob 的金鑰
       </button>
@@ -77,14 +77,14 @@
         <label class="block font-semibold mb-2">Alice's Key (a)</label>
         <textarea
           readonly
-          class="w-full h-32 p-2 rounded bg-black/70 text-green-300 font-mono text-xs"
+          class="w-full h-32 p-2 rounded bg-wordcolor text-green-300 font-mono text-xs"
         >{{ alicePublic }}</textarea>
       </div>
       <div>
         <label class="block font-semibold mb-2">Bob's Key (b)</label>
         <textarea
           readonly
-          class="w-full h-32 p-2 rounded bg-black/70 text-green-300 font-mono text-xs"
+          class="w-full h-32 p-2 rounded bg-wordcolor text-green-300 font-mono text-xs"
         >{{ bobPublic }}</textarea>
       </div>
     </div>
@@ -93,7 +93,7 @@
     <div v-if="sharedSecretAlice && sharedSecretBob" class="mt-6">
       <label class="block font-semibold mb-2">共享金鑰 (k)</label>
       <div
-        class="p-3 rounded bg-black/60 text-pink-300 font-mono break-all"
+        class="p-3 rounded bg-wordcolor text-pink-300 font-mono break-all"
       >
         {{ sharedSecretAlice }}
       </div>

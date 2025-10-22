@@ -1,4 +1,3 @@
-const buildingData = require('../models/buildingData');
 const playerData = require('../models/playerData');
 const shopData = require('../models/shopData');
 
@@ -16,55 +15,39 @@ class BuildingService {
   // 取得地圖狀態
   async getMapState(userId) {
     try {
-      // 初始化地圖（如果不存在）
-      await buildingData.initializeMap();
-      const mapData = await buildingData.getMap();
+      // 確保玩家存在（若不存在會自動初始化並建立 land 瓦片）
+      await playerData.getPlayer(userId);
       const playerLand = await playerData.getPlayerLand(userId);
-      
-      // 確保 mapData 是二維陣列格式
-      if (!Array.isArray(mapData)) {
-        throw new Error('地圖資料不是陣列格式');
-      }
-      
-      if (mapData.length === 0) {
-        throw new Error('地圖資料是空陣列');
-      }
-      
-      if (!Array.isArray(mapData[0])) {
-        throw new Error('地圖資料不是二維陣列格式');
-      }
-      
-      // 合併地圖資料和玩家土地資料
-      const mergedMap = mapData.map((row, y) => 
-        row.map((cell, x) => {
+
+      // 以玩家 land 為唯一來源生成 20x20 地圖
+      const mergedMap = Array.from({ length: 20 }, (_, y) =>
+        Array.from({ length: 20 }, (_, x) => {
           const tileKey = `${x}_${y}`;
           const playerTileData = playerLand[tileKey];
-          
-          // 檢查是否為城堡區域
           const isCastle = this.isCastleTile(y, x);
-          
+
           if (playerTileData) {
-            // 玩家有個人資料，使用玩家的狀態
             return {
-              ...playerTileData,
-              baseType: cell.baseType, // 保留基礎類型            
+              status: playerTileData.status,
+              type: playerTileData.type,
+              baseType: isCastle ? 'castle' : (playerTileData.baseType || playerTileData.type || 'empty'),
+              buildingId: playerTileData.buildingId ?? null,
               x,
               y
             };
           }
-          
-          // 玩家沒有個人資料，使用預設狀態
+
           return {
             status: isCastle ? 'developed' : 'locked',
-            type: isCastle ? 'castle' : cell.baseType,
-            baseType: cell.baseType,           
+            type: isCastle ? 'castle' : 'empty',
+            baseType: isCastle ? 'castle' : 'empty',
             buildingId: null,
             x,
             y
           };
         })
       );
-      
+
       return mergedMap;
     } catch (error) {
       console.error('取得地圖狀態失敗:', error);

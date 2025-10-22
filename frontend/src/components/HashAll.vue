@@ -1,12 +1,12 @@
 <!--A=g^a 各自加強演算法內容算法解釋-->
 <template>
-  <section class="hash-section w-full min-h-screen bg-bgg text-wordcolor flex flex-col relative z-10 overflow-hidden">
+  <section class="hash-section w-screen min-h-screen bg-bgg text-wordcolor flex flex-col relative z-10">
     <!-- 背景 HASH 字 -->
     <div
       class="absolute inset-0 flex flex-col justify-center items-center pointer-events-none"
     >
       <span
-        class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[40rem]"
+        class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[25rem]"
       >
         HASH
       </span>
@@ -60,7 +60,7 @@
 
         <!-- 輸入 -->
         <div class="mb-6">
-          <label class="block font-semibold mb-2">輸入文字</label>
+          <label class="block font-semibold mb-2">Plaintext</label>
           <input
             v-model="plain"
             type="text"
@@ -85,7 +85,7 @@
         <div class="mb-6 text-center">
           <button
             @click="hashTextFn"
-            class="px-6 py-2 bg-blue-500 hover:bg-blue-600 rounded text-white font-semibold"
+            class="px-6 py-2 bg-blueGray hover:bg-blueGrayPressed rounded text-white font-semibold"
           >
             Hash
           </button>
@@ -98,7 +98,7 @@
           </label>
           <div
             class="p-3 rounded font-mono break-all"
-            :class="algorithm.safe ? 'bg-black/70 text-green-400' : 'bg-black/70 text-red-400'"
+            :class="algorithm.safe ? 'bg-wordcolor text-green-400' : 'bg-wordcolor text-red-400'"
           >
             {{ hashed }}
           </div>
@@ -124,14 +124,14 @@ export default {
     const plain = ref("Hello World!");
     const hashed = ref("");
 
-    const algorithms = [
+    const algorithms = [      
       { name: "MD-5（不安全）", method: (t) => CryptoJS.MD5(t).toString(), safe: false },
       { name: "SHA-1（不安全）", method: (t) => CryptoJS.SHA1(t).toString(), safe: false },
       { name: "SHA-256", method: (t) => CryptoJS.SHA256(t).toString(), safe: true },
       { name: "RIPEMD-160", method: (t) => CryptoJS.RIPEMD160(t).toString(), safe: true },
     ];
 
-    const algorithm = ref(algorithms[1]);
+    const algorithm = ref(algorithms[0]);
 
     const hashTextFn = () => {
       hashed.value = algorithm.value.method(plain.value);

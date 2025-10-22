@@ -1,16 +1,16 @@
 <template>
-  <section class="aes-section w-full min-h-screen bg-bgg text-wordcolor flex flex-col relative z-10 overflow-hidden">
+  <section class="aes-section w-screen min-h-screen bg-bgg text-wordcolor flex flex-col relative z-10">
     <!-- 背景 ENCRYPTION 字 -->
     <div
       class="absolute inset-0 flex flex-col justify-center items-center pointer-events-none"
     >
       <span
-        class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[15rem]"
+        class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[12rem]"
       >
         SYMMETRIC
       </span>
       <span
-        class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[15rem]"
+        class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[12rem]"
       >
         ENCRYPTION
       </span>
@@ -98,7 +98,7 @@
           />
           <button
             @click="encrypt"
-            class="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded text-white font-semibold"
+            class="px-4 py-2 bg-blueGray hover:bg-blueGrayPressed rounded text-white font-semibold"
           >
             Encrypt
           </button>
@@ -119,7 +119,7 @@
           />
           <button
             @click="decrypt"
-            class="px-4 py-2 bg-green-500 hover:bg-green-600 rounded text-white font-semibold"
+            class="px-4 py-2 bg-pinkGray hover:bg-pinkGrayPressed rounded text-white font-semibold"
           >
             Decrypt
           </button>
