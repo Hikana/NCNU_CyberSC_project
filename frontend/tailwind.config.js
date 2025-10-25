@@ -9,7 +9,7 @@ export default {
       colors:{
         bggray: '#F2F0F0',
         wordcolor: '#464655',
-        bgg:'#EDDFEF',
+        bgg: 'rgba(237, 223, 239, 0)',
         lightGray:'#D5CFE1',
         middleGray:'#B7B6C1',
         blueGray:"#7F9EB2",

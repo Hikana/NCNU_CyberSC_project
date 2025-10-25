@@ -10,6 +10,7 @@
         :style="{ top: stone.top, left: stone.left, width: stone.width, height: stone.height }"
         @mouseenter="activateGray(stone.id)"
         @mouseleave="deactivateGray(stone.id)"
+        @click="showOverlay(stone.id)"
     >
       <!-- title 上方置中 -->
       <h3 class="text-[27px] font-bold text-center mt-2" v-html="stone.title"></h3>
@@ -30,6 +31,46 @@
       <!-- text 在下方靠左，可以用 <br> 換行 -->
       <p class="font-bold w-full px-4 mt-4 text-left" :style="{ fontSize: stone.currentTrigger ? (stone.contents[stone.currentTrigger]?.textSize || '21px') : '21px' }" v-html="stone.currentTrigger ? stone.contents[stone.currentTrigger]?.text : ''"></p>
     </div>
+
+    <!-- 🔹 點擊 A01～A10 顯示的彈出內容區 -->
+    <div
+      v-if="selectedStone"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+    >
+      <div
+        v-if="selectedStone"
+        class="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50"
+      >
+        <div
+          class="relative bg-lightGray rounded-xl p-8 flex flex-col w-[80vw] h-[80vh] overflow-hidden"
+          >
+
+          <div class="text-center mb-2"> <h2 class="text-3xl font-bold text-wordcolor mb-0"> {{ selectedStone }} 的詳細說明
+            </h2>
+          </div>
+
+          <button
+            class="absolute top-2 right-2 p-2 text-xl bg-lightGray font-bold text-gray-800 hover:text-black transition"
+            @click="closeOverlay"
+          >
+            X
+          </button>
+
+          <div
+            class="flex-grow grid grid-cols-2 gap-4 overflow-y-auto pt-2" >
+            <div
+              v-for="(item, index) in overlayContents"
+              :key="index"
+              class="bg-wordcolor rounded-2xl p-5 shadow-lg text-white text-lg"
+            >
+              <h3 class="font-bold mb-2">內容 {{ index + 1 }}</h3>
+              <p v-html="item"></p>
+            </div>
+          </div>
+        </div>
+        </div>
+        </div>
+
   </div>
   </section>
   
@@ -120,8 +161,10 @@ export default {
         { id:"G16", top:"412vh", left:"13vw", width:"620px", height:"215px", active:false, currentTrigger:null, contents:{
             A10: { title:"常見範例", titleSize:"27px", textSize:"20px", text:"<ul><li>內部端口掃描：透過 URL 變數控制請求目標地址來確認內部服務是否開放。</li><li>訪問雲端 metadata：獲取 AWS IAM 憑證，進一步利用 API 權限進行攻擊。</li></ul>" },
           }},
+          ],
+selectedStone: null,
+overlayContents: [],
 
-]
 };
 },
 methods: {
@@ -140,6 +183,21 @@ methods: {
         stone.currentTrigger = null;
       }
     });
+  },
+  showOverlay(stoneId) {
+    // 這裡你可以自訂彈出視窗的內容
+    // 暫時示範 4 塊內容，可自由改
+    this.selectedStone = stoneId;
+    this.overlayContents = [
+      `${stoneId} 的詳細說明 A`,
+      `${stoneId} 的詳細說明 B`,
+      `${stoneId} 的詳細說明 C`,
+      `${stoneId} 的詳細說明 D`,
+    ];
+  },
+  closeOverlay() {
+    this.selectedStone = null;
+    this.overlayContents = [];
   }
 }
 };

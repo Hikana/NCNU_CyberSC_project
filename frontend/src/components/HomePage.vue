@@ -1,6 +1,7 @@
 <template>
   <div class="font-sans w-full overflow-x-hidden">
     <TitleBar />
+
     <header class="w-screen bg-bgg py-64"></header>
     <header class="w-screen bg-bgg py-12"></header>
 
@@ -10,16 +11,14 @@
         '首先，讓我們一起認識駭客的種類吧！',
       ]"
     />
-    <!-- 引言 -->
-     <BlackOrWhite ref="blackOrWhite" />
+    <BlackOrWhite ref="blackOrWhite" />
     <header class="relative w-screen bg-bgg py-32">
           <div class="absolute top-14 left-8 text-wordcolor px-8">
-            <h2 class="text-4xl md:text-5xl font-bold">未來</h2>
+            <h2 class="text-4xl md:text-5xl font-bold">探索資安領域：必備技能、工具與證照</h2>
           </div>
         </header>
     <Future />
 
-    <!-- 7層 -->
     <SectionAnimation
       :lines="[
         '想守護資訊安全，',
@@ -27,28 +26,23 @@
       ]"
     />
     <header class="relative w-screen bg-bgg py-32"></header>
-     <SevenStage ref="sevenStage" />
+     <SevenStage ref="SevenStage" />
 
     <header class="w-screen bg-bgg py-16"></header>
 
-    <!-- CIA -->
     <CIABar ref="ciaSection" />
 
-    <!-- AAA -->
     <AAA />
-    <!-- 密碼學 -->
     <header class="w-screen bg-bgg py-16"></header>
     <SymmetricEncryptionAndAES ref="hashSection" />
     <header class="w-screen bg-bgg py-16"></header>
     <AsymmetricEncryptionAndRSA ref="rsaSection" />
     <header class="w-screen bg-bgg py-16"></header>
-    <!-- Hash -->
     <HashAll />
     <header class="w-screen bg-bgg py-16"></header>
     <DH />
     <header class="w-screen bg-bgg py-16"></header>
 
-    <!-- Top10 -->
     <SectionAnimation
       :lines="[
         '當我們建立網站或應用程式時，',
@@ -62,7 +56,6 @@
     </header>
     <NewTOP10 ref="top10Section" />
 
-    <!-- 遊戲 -->
     <SectionAnimation
       :lines="[
         '現在，讓我們進入資安小鎮，',
@@ -75,44 +68,40 @@
       ref="gameSection"
       class="h-screen bg-bgg flex items-center justify-center"
     >
-      <!-- ✅ 修復：根據認證狀態顯示不同按鈕 -->
       <div class="navigation-section">
-        <!-- 載入中狀態 -->
         <div v-if="isLoading" class="loading-state">
           <div class="spinner"></div>
           <p>正在檢查登入狀態...</p>
         </div>
-        
-        <!-- 已登入狀態 -->
+
         <div v-else-if="user" class="authenticated-state">
           <div class="user-welcome">
             <h3>👋 歡迎回來!</h3>
             <p>{{ user.email }}</p>
           </div>
-          
+
           <div class="button-group">
             <router-link to="/game" class="nav-link">
               <button class="primary-btn">🎮 前往 GamePage</button>
             </router-link>
-            
+
             <button @click="handleLogout" class="secondary-btn">
               🚪 登出
             </button>
           </div>
         </div>
-        
-        <!-- 未登入狀態 -->
+
         <div v-else class="unauthenticated-state">
           <div class="welcome-message">
             <h3>🔐 請先登入</h3>
             <p>登入後即可開始遊戲</p>
           </div>
-          
+
           <div class="button-group">
             <router-link to="/Login" class="nav-link">
               <button class="primary-btn">🔑 登入</button>
             </router-link>
-            
+
             <router-link to="/register" class="nav-link">
               <button class="secondary-btn">📝 註冊</button>
             </router-link>
@@ -121,25 +110,24 @@
       </div>
     </section>
 
-    <!-- 右下角路標選單 -->
-     <Menu />
+    <Menu />
   </div>
 </template>
 
 <script setup>
-import TitleBar from "@/components/TitleBar.vue"
-import CIABar from "@/components/CIABar.vue"
-import HashAll from "@/components/HashAll.vue"
-import NewTOP10 from "@/components/NewTOP10.vue"
-import Menu from "@/components/Menu.vue"
-import SymmetricEncryptionAndAES from "@/components/SymmetricEncryptionAndAES.vue"
-import AsymmetricEncryptionAndRSA from "@/components/AsymmetricEncryptionAndRSA.vue"
-import DH from "@/components/DH.vue"
-import BlackOrWhite from "@/components/BlackOrWhite.vue"
-import SevenStage from "@/components/SevenStage.vue"
-import SectionAnimation from "@/components/SectionAnimation.vue"
-import Future from "@/components/Future.vue"
-import AAA from "@/components/3A.vue"
+import TitleBar from "@/components/Home/TitleBar.vue"
+import CIABar from "@/components/Home/CIABar.vue"
+import HashAll from "@/components/Home/HashAll.vue"
+import NewTOP10 from "@/components/Home/NewTOP10.vue"
+import Menu from "@/components/Home/Menu.vue"
+import SymmetricEncryptionAndAES from "@/components/Home/SymmetricEncryptionAndAES.vue"
+import AsymmetricEncryptionAndRSA from "@/components/Home/AsymmetricEncryptionAndRSA.vue"
+import DH from "@/components/Home/DH.vue"
+import BlackOrWhite from "@/components/Home/BlackOrWhite.vue"
+import SevenStage from "@/components/Home/SevenStage.vue"
+import SectionAnimation from "@/components/Home/SectionAnimation.vue"
+import Future from "@/components/Home/Future.vue"
+import AAA from "@/components/Home/3A.vue"
 
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -169,10 +157,10 @@ const auth = getAuth()
 // 初始化認證監聽
 const initAuth = () => {
   console.log('🔧 初始化 Firebase Auth 監聽器')
-  
+
   const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
     console.log('🔄 認證狀態變化:', firebaseUser ? `已登入: ${firebaseUser.email}` : '未登入')
-    
+
     if (firebaseUser) {
       // 用戶已登入
       user.value = {
@@ -187,7 +175,7 @@ const initAuth = () => {
       user.value = null
       console.log('👤 用戶已登出')
     }
-    
+
     isLoading.value = false
     error.value = null
   }, (authError) => {
@@ -196,7 +184,7 @@ const initAuth = () => {
     isLoading.value = false
     error.value = authError.message
   })
-  
+
   return unsubscribe
 }
 
@@ -215,10 +203,10 @@ const handleLogout = async () => {
 // 組件載入時初始化
 onMounted(() => {
   console.log('🏠 HelloWorld 組件已載入')
-  
+
   // 初始化認證監聽
   const unsubscribe = initAuth()
-  
+
   // 清理函數
   return () => {
     if (unsubscribe) {
@@ -229,7 +217,33 @@ onMounted(() => {
 })
 </script>
 
+<style>
+button:focus {
+  outline: none;
+}
+
+button:hover {
+  outline: none;
+  border: none;
+}
+
+button {
+  outline: none;
+  border: none;
+}
+/* 🚨 關鍵修改：將固定背景套用到整個 body 元素上 */
+/* 這樣無論在哪個 Vue 組件中，背景都會固定在視窗後方 */
+body {
+    background-image: url('/src/assets/image/AAA.png');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    background-attachment: fixed; /* 讓背景圖固定不動 */
+}
+</style>
+
 <style scoped>
+/* 原有的 scoped 樣式保持不變 */
 .read-the-docs {
   color: #888;
 }
@@ -358,4 +372,5 @@ onMounted(() => {
     padding: 1rem;
   }
 }
+
 </style>
