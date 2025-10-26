@@ -34,6 +34,14 @@ export const useBuildingStore = defineStore('buildings', {
     tileDevelopedMessage: null,
     castleInteraction: null,
     
+    // 連線模式相關狀態
+    isConnecting: false,
+    connectionSource: null, // 連線的起始建築物位置
+    connections: [], // 已建立的連線列表（刷新後會重置，這是正常的）
+    showConnections: localStorage.getItem('showConnections') !== null 
+      ? localStorage.getItem('showConnections') === 'true' 
+      : true, // 是否顯示連線
+    
     // 商店建築列表：由後端載入
     shopBuildings: []
   }),
@@ -217,11 +225,102 @@ export const useBuildingStore = defineStore('buildings', {
           console.error('清除建築後的地圖資料格式不正確:', newMap);
         }
         
+        // 清除與該建築相關的所有連線
+        this.connections = this.connections.filter(conn => 
+          !(conn.from.x === x && conn.from.y === y) && 
+          !(conn.to.x === x && conn.to.y === y)
+        );
+        
         console.log(`已清除位置 (${x}, ${y}) 的建築（後端同步）`);
+        console.log(`已清除與該建築相關的連線，剩餘連線數量: ${this.connections.length}`);
         this.deleteTarget = null;
       } catch (e) {
         console.error('清除建築失敗:', e);
       }
+    },
+
+    // 連線相關方法
+    startConnection(sourcePosition) {
+      this.isConnecting = true;
+      this.connectionSource = sourcePosition;
+      console.log('開始連線模式，起始位置:', sourcePosition);
+    },
+
+    async completeConnection(targetPosition) {
+      if (!this.isConnecting || !this.connectionSource) {
+        console.warn('連線模式未啟動或缺少起始位置');
+        return;
+      }
+
+      // 檢查是否為同一個建築物
+      if (this.connectionSource.x === targetPosition.x && this.connectionSource.y === targetPosition.y) {
+        console.log('不能連線到同一個建築物');
+        this.cancelConnection();
+        return;
+      }
+
+      // 檢查連線是否已存在
+      const connectionExists = this.connections.some(conn => 
+        (conn.from.x === this.connectionSource.x && conn.from.y === this.connectionSource.y && 
+         conn.to.x === targetPosition.x && conn.to.y === targetPosition.y) ||
+        (conn.from.x === targetPosition.x && conn.from.y === targetPosition.y && 
+         conn.to.x === this.connectionSource.x && conn.to.y === this.connectionSource.y)
+      );
+
+      if (connectionExists) {
+        console.log('連線已存在');
+        this.cancelConnection();
+        return;
+      }
+
+      try {
+        // 添加新連線到後端
+        const newConnection = {
+          from: { ...this.connectionSource },
+          to: { ...targetPosition }
+        };
+
+        const savedConnection = await apiService.addConnection(newConnection);
+        console.log('連線已保存到後端:', savedConnection);
+
+        // 添加到本地狀態
+        this.connections.push(savedConnection);
+        console.log('本地連線列表已更新');
+        
+      } catch (error) {
+        console.error('保存連線失敗:', error);
+        alert('保存連線失敗，請重試');
+      }
+      
+      this.cancelConnection();
+    },
+
+    // 從後端載入連線
+    async loadConnections() {
+      try {
+        const connections = await apiService.getConnections();
+        this.connections = connections;
+        console.log('已載入連線:', connections.length, '條');
+      } catch (error) {
+        console.error('載入連線失敗:', error);
+        this.connections = [];
+      }
+    },
+
+    cancelConnection() {
+      this.isConnecting = false;
+      this.connectionSource = null;
+    },
+
+    removeConnection(connectionId) {
+      this.connections = this.connections.filter(conn => conn.id !== connectionId);
+    },
+
+    // 切換連線顯示/隱藏
+    toggleConnections() {
+      this.showConnections = !this.showConnections;
+      localStorage.setItem('showConnections', this.showConnections.toString());
+      console.log('連線顯示狀態:', this.showConnections ? '顯示' : '隱藏');
     }
   }
 });

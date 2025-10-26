@@ -23,13 +23,14 @@
     </div>
   </div>
 
-  <!-- 拆除建築 UI -->
-  <div v-if="buildingStore.deleteTarget" class="delete-ui">
-    <div class="delete-panel">
-      <div class="title">拆除建築</div>
+  <!-- 建築操作選擇 UI -->
+  <div v-if="buildingStore.deleteTarget" class="building-operation-ui">
+    <div class="operation-panel">
+      <div class="title">選擇你想要對建築做的操作</div>
       <div class="desc">位置 ({{ buildingStore.deleteTarget.x }}, {{ buildingStore.deleteTarget.y }})</div>
       <div class="actions">
         <button class="danger" @click="confirmDelete">拆除</button>
+        <button class="connect" @click="connectBuilding">連線</button>
         <button class="ghost" @click="cancelDelete">取消</button>
       </div>
     </div>
@@ -60,6 +61,17 @@
         <button class="cancel-btn" @click="cancelCastleInteraction">取消</button>
       </div>
     </div>
+  </div>
+
+  <!-- 連線顯示切換按鈕 -->
+  <div class="connection-toggle-ui">
+    <button 
+      class="toggle-btn" 
+      @click="toggleConnections"
+      :class="{ active: buildingStore.showConnections }"
+    >
+      {{ buildingStore.showConnections ? '隱藏連線' : '顯示連線' }}
+    </button>
   </div>
 </template>
 
@@ -109,7 +121,13 @@ function confirmDelete() {
   buildingStore.clearBuildingAt(tgt.x, tgt.y);
 }
 
-function cancelDelete() {
+function connectBuilding() {
+  const tgt = buildingStore.deleteTarget;
+  if (!tgt) return;
+  
+  // 開始連線模式
+  buildingStore.startConnection(tgt);
+  // 關閉操作選單
   buildingStore.cancelDeletePrompt();
 }
 
@@ -120,6 +138,10 @@ function enterTrainingRoom() {
 
 function cancelCastleInteraction() {
   buildingStore.hideCastleInteraction();
+}
+
+function toggleConnections() {
+  buildingStore.toggleConnections();
 }
 </script>
 
@@ -142,7 +164,7 @@ function cancelCastleInteraction() {
   height: 100% !important;
 }
 
-.delete-ui {
+.building-operation-ui {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -150,40 +172,56 @@ function cancelCastleInteraction() {
   z-index: 200;
 }
 
-.delete-panel {
+.operation-panel {
   background: #a9b39ef3;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   padding: 16px;
   min-width: 300px;
 }
-.delete-panel .title {
+.operation-panel .title {
   font-weight: 700;
   margin-bottom: 8px;
 }
-.delete-panel .desc {
+.operation-panel .desc {
   color: #4b5563;
   margin-bottom: 12px;
 }
-.delete-panel .actions { display: flex; gap: 10px; }
-.delete-panel .danger {
+.operation-panel .actions { 
+  display: flex; 
+  gap: 10px; 
+  flex-wrap: wrap;
+}
+.operation-panel .danger {
   background: #dc2626;
   color: #fff;
   border: none;
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
+  flex: 1;
 }
-.delete-panel .danger:hover { background: #b91c1c; }
-.delete-panel .ghost {
+.operation-panel .danger:hover { background: #b91c1c; }
+.operation-panel .connect {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  flex: 1;
+}
+.operation-panel .connect:hover { background: #2563eb; }
+.operation-panel .ghost {
   background: #d3f1d7;
   color: #111827;
   border: none;
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
+  flex: 1;
 }
-.delete-panel .ghost:hover { background: #e5e7eb; }
+.operation-panel .ghost:hover { background: #e5e7eb; }
 
 .placement-ui {
   position: absolute;
@@ -372,6 +410,42 @@ function cancelCastleInteraction() {
 .castle-actions .cancel-btn:hover {
   background: #daa249;
   transform: translateY(-2px);
+}
+
+.connection-toggle-ui {
+  position: absolute;
+  top: 140px;
+  right: 40px;
+  z-index: 100;
+}
+
+.toggle-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #3b82f6;
+  color: #3b82f6;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-btn:hover {
+  background: #3b82f6;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.toggle-btn.active {
+  background: #3b82f6;
+  color: white;
+}
+
+.toggle-btn.active:hover {
+  background: #2563eb;
 }
 
 </style>

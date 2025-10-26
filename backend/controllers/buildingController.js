@@ -66,6 +66,39 @@ class BuildingController {
     
     res.status(200).json({ success: true, data: buildingInfo });
   });
+
+  // --- 連線相關方法 ---
+  // 取得玩家的連線列表
+  getConnections = asyncHandler(async (req, res) => {
+    const userId = req.user.uid;
+    const connections = await buildingService.getConnections(userId);
+    res.status(200).json({ success: true, data: connections });
+  });
+
+  // 添加連線
+  addConnection = asyncHandler(async (req, res) => {
+    const userId = req.user.uid;
+    const { connection } = req.body;
+    
+    if (!connection || !connection.from || !connection.to) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '缺少連線資料' 
+      });
+    }
+
+    const result = await buildingService.addConnection(userId, connection);
+    res.status(200).json({ success: true, data: result });
+  });
+
+  // 刪除連線
+  removeConnection = asyncHandler(async (req, res) => {
+    const userId = req.user.uid;
+    const { connectionId } = req.params;
+    
+    await buildingService.removeConnection(userId, connectionId);
+    res.status(200).json({ success: true, message: '連線已刪除' });
+  });
   
 }
 
