@@ -63,6 +63,22 @@
     </div>
   </div>
 
+  <!-- 連線模式 UI -->
+  <div v-if="buildingStore.isConnecting" class="connection-ui">
+    <div class="connection-info">
+      <p>連線模式</p>
+      <p v-if="buildingStore.connectionSource">
+        起始建築: ({{ buildingStore.connectionSource.x }}, {{ buildingStore.connectionSource.y }})
+      </p>
+      <p style="color: #3b82f6;">請點擊地圖上的另一個建築完成連線</p>
+    </div>
+    <div class="connection-controls">
+      <button @click="cancelConnection" class="cancel-btn">
+        取消
+      </button>
+    </div>
+  </div>
+
   <!-- 連線顯示切換按鈕 -->
   <div class="connection-toggle-ui">
     <button 
@@ -142,6 +158,10 @@ function cancelCastleInteraction() {
 
 function toggleConnections() {
   buildingStore.toggleConnections();
+}
+
+function cancelConnection() {
+  buildingStore.cancelConnection();
 }
 </script>
 
@@ -446,6 +466,49 @@ function toggleConnections() {
 
 .toggle-btn.active:hover {
   background: #2563eb;
+}
+
+.connection-ui {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(59, 130, 246, 0.95);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 150; 
+  min-width: 250px;
+  pointer-events: auto;
+}
+
+.connection-info {
+  margin-bottom: 10px;
+}
+
+.connection-info p {
+  margin: 5px 0;
+  color: white;
+  font-size: 14px;
+}
+
+.connection-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.connection-controls .cancel-btn {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.connection-controls .cancel-btn:hover {
+  background: #da190b;
 }
 
 </style>
