@@ -226,8 +226,8 @@ export default {
 
       menuItems: [
         { label: "關於駭客", type: "scroll", ref: "blackOrWhite" },
-        { label: "OSI7", type: "scroll", ref: "SevenStage" },
-        { label: "密碼學", type: "scroll", ref: "ciaSection" },
+        { label: "OSI7", type: "scroll", ref: "ss" },
+        { label: "密碼學", type: "scroll", ref: "crypto" },
         { label: "OWASP", type: "scroll", ref: "top10Section" },
         { label: "資安小鎮", type: "scroll", ref: "gameSection" },
       ],

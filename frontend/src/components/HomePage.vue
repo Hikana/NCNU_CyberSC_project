@@ -1,10 +1,10 @@
 <template>
   <div class="font-sans w-full overflow-x-hidden">
     <TitleBar />
-
     <header class="w-screen bg-bgg py-64"></header>
     <header class="w-screen bg-bgg py-12"></header>
 
+    <!-- 開頭 -->
     <SectionAnimation
       :lines="[
         '歡迎來到我們的資安教育網站，',
@@ -18,31 +18,38 @@
           </div>
         </header>
     <Future />
-
+    <header class="relative w-screen bg-bgg py-32">
+      <div class="absolute top-14 left-8 text-wordcolor px-8">
+        <h2 class="text-4xl md:text-5xl font-bold">網路七層</h2>
+      </div>
+    </header>
+    <SevenStage ref="ss" />
+    
+    <!-- 密碼學 -->
     <SectionAnimation
       :lines="[
         '想守護資訊安全，',
         '得先了解網路的運作方式與保密的核心原則。',
       ]"
     />
-    <header class="relative w-screen bg-bgg py-32"></header>
-     <SevenStage ref="SevenStage" />
-
-    <header class="w-screen bg-bgg py-16"></header>
-
-    <CIABar ref="ciaSection" />
-
+    <WhyCrypto ref="crypto"/>
+    <header class="w-screen bg-bgg py-32"></header>
+    <Concept />
+    <Key />
+    <CIABar />
     <AAA />
     <header class="w-screen bg-bgg py-16"></header>
-    <SymmetricEncryptionAndAES ref="hashSection" />
+    <SymmetricEncryptionAndAES />
     <header class="w-screen bg-bgg py-16"></header>
-    <AsymmetricEncryptionAndRSA ref="rsaSection" />
+    <AsymmetricEncryptionAndRSA />
     <header class="w-screen bg-bgg py-16"></header>
+    <WhyAsymmetric />
     <HashAll />
     <header class="w-screen bg-bgg py-16"></header>
     <DH />
     <header class="w-screen bg-bgg py-16"></header>
 
+    <!-- OWASP -->
     <SectionAnimation
       :lines="[
         '當我們建立網站或應用程式時，',
@@ -128,10 +135,15 @@ import SevenStage from "@/components/Home/SevenStage.vue"
 import SectionAnimation from "@/components/Home/SectionAnimation.vue"
 import Future from "@/components/Home/Future.vue"
 import AAA from "@/components/Home/3A.vue"
+import Concept from "@/components/Home/Concept.vue"
+import WhyCrypto from "@/components/Home/WhyCrypto.vue"
+import Key from "@/components/Home/Key.vue"
+import WhyAsymmetric from "@/components/Home/WhyAsymmetric.vue"
 
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth'
+
 
 defineOptions({ name: 'SecurityEducationPage' })
 // Props

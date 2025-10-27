@@ -19,7 +19,7 @@
           <h2 class="text-3xl md:text-5xl font-bold mb-6">
             安全三要素 <span class="italic">CIA</span>
           </h2>
-          <div class="text-lg md:text-xl leading-relaxed space-y-4 mb-8">
+          <div class="leading-relaxed space-y-4 mb-8">
             <h4 class="text-2xl font-semibold mb-2">CIA資訊安全三要素是常見的模型，</h4>
             <h4 class="text-2xl font-semibold mb-2">構成安全系統開發的基礎。</h4>
             <h4 class="text-2xl font-semibold mb-2">它們是用來尋找弱點和建立解決方案的方法。</h4>
@@ -34,8 +34,8 @@
               :class="[
                 'w-20 h-20 rounded-full text-3xl font-bold transition-all duration-300 flex items-center justify-center',
                 selectedId === item.id 
-                  ? 'bg-wordcolor text-white scale-110' 
-                  : 'bg-gray-600 text-white hover:bg-gray-500'
+                  ? 'bg-middleGray text-wordcolor scale-110' 
+                  : 'bg-wordcolor text-white hover:bg-gray-500'
               ]"
             >
               {{ item.id }}
@@ -54,19 +54,19 @@
             
             <!-- 遍歷 contents -->
             <div v-for="(content, cIndex) in selectedContent.contents" :key="cIndex" class="mb-6">
-              <h4 class="font-semibold text-lg mb-2">{{ content.subtitle }}</h4>
-              <p class="text-base md:text-lg leading-relaxed mb-3" v-html="content.text"></p>
+              <h4 class="font-semibold text-xl mb-2">{{ content.subtitle }}</h4>
+              <p class="text-base md:text-xl leading-relaxed mb-3" v-html="content.text"></p>
               
               <!-- 如果有 subcontents -->
               <div v-if="content.subcontents" class="ml-4 space-y-3">
                 <div v-for="(subcontent, sIndex) in content.subcontents" :key="sIndex">
-                  <h5 class="font-medium text-base mb-1">{{ subcontent.subtitle }}</h5>
-                  <p class="text-sm md:text-base leading-relaxed" v-html="subcontent.text"></p>
+                  <h5 class="font-medium text-xl mb-1"><li>{{ subcontent.subtitle }}</li></h5>
+                  <p class="text-sm md:text-xl leading-relaxed" v-html="subcontent.text"></p>
                   
                   <!-- 如果有 subsubcontents -->
                   <div v-if="subcontent.subsubcontents" class="ml-4 mt-2 space-y-2">
                     <div v-for="(subsubcontent, ssIndex) in subcontent.subsubcontents" :key="ssIndex">
-                      <p class="text-sm leading-relaxed" v-html="subsubcontent.text"></p>
+                      <p class="text-lg leading-relaxed" v-html="subsubcontent.text"></p>
                     </div>
                   </div>
                 </div>
