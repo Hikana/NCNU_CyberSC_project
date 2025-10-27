@@ -6,6 +6,8 @@ import { useWallStore } from '@/stores/wall'
 import castleImg from '@/assets/castle0.png'
 import can1Img from '@/assets/can1.png'
 import { audioService } from '@/services/audioService'
+import routerImg from '@/assets/router.png'
+import switchImg from '@/assets/switch.png'
 
 const CASTLE_TILES = new Set([
   '0,0','0,1','0,2',
@@ -97,15 +99,41 @@ export class IsoGrid {
     }
     
     this.buildingTextures = {}
+
+    // 從當前地圖建立 id -> type 的對照（用於在商店資料未就緒時推斷類型）
+    const idToType = {}
     
-    // 使用 Vite 的動態導入來載入圖片
+    // 確保商店資料可用（取得 type）
+    const buildingStoreForInit = useBuildingStore()
+    try {
+      if (!buildingStoreForInit.shopBuildings || buildingStoreForInit.shopBuildings.length === 0) {
+        await buildingStoreForInit.loadShop()
+      }
+    } catch (_) { /* 忽略，後續仍有備援 */ }
+
+    // host 類型可用圖片的白名單，避免對不存在檔案做動態導入
+    const HOST_IMAGE_IDS = new Set([1,2,3,5,6,7,11,12,13,14,15,16,17,18,19])
+
+    // 使用 Vite 的動態導入來載入圖片（依 type 選圖）
     const importBuildingImage = async (id) => {
       try {
-        // 使用 Vite 的動態導入，獲取正確的資源 URL
-        const module = await import(`@/assets/B${id}.png`)
-        const imageUrl = module.default
-        
-        // 使用 PIXI.Assets.load 載入並等待完成
+        // 透過商店資料判斷類型
+        const buildingStore = useBuildingStore()
+        const item = (buildingStore.shopBuildings || []).find(b => b.id === id)
+        const type = item?.type || idToType[id] || 'host'
+        let imageUrl
+        if (type === 'router') {
+          imageUrl = routerImg
+        } else if (type === 'switch') {
+          imageUrl = switchImg
+        } else {
+          if (!HOST_IMAGE_IDS.has(id)) {
+            throw new Error(`Unknown host image id: ${id}`)
+          }
+          const module = await import(`@/assets/B${id}.png`)
+          imageUrl = module.default
+        }
+
         const texture = await PIXI.Assets.load(imageUrl);
         this.buildingTextures[id] = texture;
         
@@ -113,8 +141,10 @@ export class IsoGrid {
         console.warn(`⚠️ 建築圖片 ${id} 導入失敗:`, error)
         // 如果導入失敗，創建一個彩色矩形作為替代
         const graphics = new PIXI.Graphics()
+        const fallbackColors = [0x66ccff, 0xffcc66, 0xcc66ff, 0x99cc66, 0xcc6666, 0x6699cc]
+        const safeColor = fallbackColors[id % fallbackColors.length]
         graphics.rect(0, 0, this.tileSize, this.tileSize)
-          .fill({ color: 0x00ff00 + (id * 0x111111) })
+          .fill({ color: safeColor })
         this.buildingTextures[id] = this.createTextureFromGraphics(graphics)
       }
     }
@@ -129,6 +159,9 @@ export class IsoGrid {
           const cell = this.mapData[r]?.[c]
           if (cell && cell.status === 'placed' && cell.buildingId) {
             idsFromMap.push(cell.buildingId)
+            if (cell.type) {
+              idToType[cell.buildingId] = cell.type
+            }
           }
         }
       }
@@ -170,15 +203,43 @@ export class IsoGrid {
     const missingIds = Array.from(neededIdsSet)
     if (missingIds.length === 0) return
 
+    // 依目前地圖再次建立 id -> type 對照
+    const idToType2 = {}
+    if (this.mapData) {
+      for (let r = 0; r < this.rows; r++) {
+        for (let c = 0; c < this.cols; c++) {
+          const cell = this.mapData[r]?.[c]
+          if (cell && cell.status === 'placed' && cell.buildingId && cell.type) {
+            idToType2[cell.buildingId] = cell.type
+          }
+        }
+      }
+    }
+
     const importBuildingImage = async (id) => {
       try {
-        const module = await import(`@/assets/B${id}.png`)
-        const imageUrl = module.default
+        const buildingStore = useBuildingStore()
+        const item = (buildingStore.shopBuildings || []).find(b => b.id === id)
+        const type = item?.type || idToType2[id] || 'host'
+        let imageUrl
+        if (type === 'router') {
+          imageUrl = routerImg
+        } else if (type === 'switch') {
+          imageUrl = switchImg
+        } else {
+          if (!HOST_IMAGE_IDS.has(id)) {
+            throw new Error(`Unknown host image id: ${id}`)
+          }
+          const module = await import(`@/assets/B${id}.png`)
+          imageUrl = module.default
+        }
         const texture = await PIXI.Assets.load(imageUrl)
         this.buildingTextures[id] = texture
       } catch (error) {
         const graphics = new PIXI.Graphics()
-        graphics.rect(0, 0, this.tileSize, this.tileSize).fill({ color: 0x00ff00 + (id * 0x111111) })
+        const fallbackColors = [0x66ccff, 0xffcc66, 0xcc66ff, 0x99cc66, 0xcc6666, 0x6699cc]
+        const safeColor = fallbackColors[id % fallbackColors.length]
+        graphics.rect(0, 0, this.tileSize, this.tileSize).fill({ color: safeColor })
         this.buildingTextures[id] = this.createTextureFromGraphics(graphics)
       }
     }
@@ -518,12 +579,27 @@ export class IsoGrid {
             
             const originalWidth = buildingTexture.width
             const originalHeight = buildingTexture.height
-            const scale = Math.min(this.tileSize / originalWidth, this.tileSize / originalHeight)
+            const baseScale = Math.min(this.tileSize / originalWidth, this.tileSize / originalHeight)
+
+            // 針對 router/switch 放大並微調位置
+            const buildingStore = useBuildingStore()
+            const matchedItem = (buildingStore.shopBuildings || []).find(b => b.id === buildingId)
+            const bType = matchedItem?.type || 'host'
+            const isRouter = bType === 'router'
+            const isSwitch = bType === 'switch' 
+
+            const sizeScale = isRouter ? 2.8 : (isSwitch ? 1.6 : 0.75)
+            buildingSprite.width = originalWidth * baseScale * sizeScale
+            buildingSprite.height = originalHeight * baseScale * sizeScale
             
-            buildingSprite.width = originalWidth * scale
-            buildingSprite.height = originalHeight * scale
-            buildingSprite.anchor.set(0.5, 0.8)
-            buildingSprite.y = halfH * 0.1
+            if (isRouter) {
+              buildingSprite.anchor.set(0.56, 0.48)
+            } else if (isSwitch) {
+              buildingSprite.anchor.set(0.475, 0.65)
+            }
+            else {
+              buildingSprite.anchor.set(0.5, 0.7)
+            }
             
             buildingContainer.addChild(buildingSprite)
             this.objectContainer.addChild(buildingContainer)
