@@ -1,6 +1,6 @@
 <template>
   <section
-      class="fixed top-0 left-0 w-screen h-screen bg-bgg text-wordcolor flex flex-col justify-center items-center z-[9999] pointer-events-none"
+      class="fixed top-0 left-0 w-screen h-screen bg-bgg text-wordcolor flex flex-col justify-center items-center z-[9998] pointer-events-none"
       id="titleSection"
       style="overflow: hidden;"
   >

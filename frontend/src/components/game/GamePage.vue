@@ -51,14 +51,14 @@
 
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue';
-import LoadingStory from '@/components/LoadingStory.vue';
-import PixiGameCanvas from '@/components/PixiGameCanvas.vue';
-import StatusBar from '@/components/StatusBar.vue';
-import NpcMenu from '@/components/NpcMenu.vue';
-import QuizPanel from '@/components/QuizPanel.vue';
-import ControlsHint from '@/components/ControlsHint.vue';
-import AudioControls from '@/components/AudioControls.vue';
-import BingoAnimation from '@/components/BingoAnimation.vue';
+import LoadingStory from '@/components/game/LoadingStory.vue';
+import PixiGameCanvas from '@/components/game/PixiGameCanvas.vue';
+import StatusBar from '@/components/game/StatusBar.vue';
+import NpcMenu from '@/components/game/NpcMenu.vue';
+import QuizPanel from '@/components/game/QuizPanel.vue';
+import ControlsHint from '@/components/game/ControlsHint.vue';
+import AudioControls from '@/components/game/AudioControls.vue';
+import BingoAnimation from '@/components/game/BingoAnimation.vue';
 
 import { usePlayerStore } from '@/stores/player';
 import { useUiStore } from '@/stores/ui';
@@ -66,7 +66,7 @@ import { useInventoryStore } from '@/stores/inventory';
 import { useAchievementStore } from '@/stores/achievement';
 import { useWallStore } from '@/stores/wall';
 import { useGameStore } from '@/stores/game'; 
-import RandomEventModal from './RandomEventModal.vue'
+import RandomEventModal from '@/components/game/RandomEventModal.vue'
 import npcImage from '@/assets/NPC.gif';
 import backgroundImage from '@/assets/background.png';
 

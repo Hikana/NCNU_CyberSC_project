@@ -2,7 +2,7 @@
   <div ref="containerRef" class="bg-bgg relative w-full h-screen overflow-hidden flex justify-center items-center font-sans">
 
     <!-- 左上：層說明 -->
-    <div class="absolute top-4 left-4 px-3 py-2 rounded-md shadow-md transition-all duration-300 z-30 transform scale-125 origin-top-left"
+    <div class="absolute top-4 left-[320px] px-3 py-2 rounded-md shadow-md transition-all duration-300 z-30 transform scale-125 origin-top-left"
          :style="{
            backgroundColor: currentColor.dot,
            color: 'white'
@@ -22,7 +22,7 @@
     </div>
 
     <!-- 左側層次列表 -->
-    <div class="absolute left-16 top-[60%] -translate-y-1/2 flex items-start z-20 scale-125">
+    <div class="absolute left-16 top-[17%] flex items-start z-20 scale-125">
       <div
           class="absolute left-[20px] top-0 w-1.5 h-full rounded-full transition-all duration-300 ease-out"
           :style="{
@@ -51,13 +51,17 @@
                 boxShadow: activeLayerIndex === index ? `0 0 6px 1px ${layer.color.dot}` : 'none'
               }">
           </div>
-          <div class="ml-3 px-2 py-0.5 rounded-lg transition-all duration-300"
-               :style="{
-                backgroundColor: activeLayerIndex === index ? layer.color.dot : 'transparent',
-                color: activeLayerIndex === index ? 'white' : normalTextColor,
-                fontWeight: 'bold',
-                fontSize: activeLayerIndex === index ? '16px' : '14px',
-              }">
+          <div
+            class="ml-3 px-2 py-0.5 rounded-lg transition-all duration-300 cursor-pointer select-none"
+            @click="activeLayerIndex = index"
+            :style="{
+              backgroundColor: activeLayerIndex === index ? layer.color.dot : 'transparent',
+              color: activeLayerIndex === index ? 'white' : normalTextColor,
+              fontWeight: 'bold',
+              fontSize: activeLayerIndex === index ? '16px' : '14px',
+              boxShadow: activeLayerIndex === index ? `0 0 8px ${layer.color.dot}` : 'none'
+            }"
+          >
             {{ layer.title }}
           </div>
         </div>
@@ -65,7 +69,7 @@
     </div>
 
     <!-- 中間內容方格區 -->
-    <div class="content-container absolute left-[25%] top-[55%] -translate-y-1/2 w-[1200px] flex flex-col transition-opacity duration-300 opacity-100">
+    <div class="content-container absolute left-[22%] top-[55%] -translate-y-1/2 w-[1200px] flex flex-col transition-opacity duration-300 opacity-100">
       <transition-group
         name="fade-in"
         tag="div"

@@ -57,16 +57,14 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import { usePlayerStore } from '@/stores/player';
 import { useWallStore } from '@/stores/wall';
 import { useUiStore } from '@/stores/ui';
-import { useBuildingStore } from '@/stores/buildings';
 
 const playerStore = usePlayerStore();
 const wallStore = useWallStore();
 const uiStore = useUiStore();
-const buildingStore = useBuildingStore();
 
 // 動畫狀態
 const techAnimating = ref(false);

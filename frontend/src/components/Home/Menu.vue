@@ -1,6 +1,6 @@
 <template>
-  <!-- 只有當駭客頁面顯示 80% 時才顯示 MENU -->
-  <div v-if="showMenu" class="fixed bottom-6 left-6 z-50">
+  <!-- 選單一開始就顯示，不需要等待駭客頁面 -->
+  <div class="fixed bottom-6 left-6 z-[9999]">
     <div class="relative w-40 h-40">
       <!-- GIF -->
       <img
@@ -13,11 +13,11 @@
       <transition name="fade-left">
         <div
             v-if="showHackerDialog"
-            class="absolute bottom-full left-full ml-6 bg-white shadow-2xl rounded-2xl p-4 w-[240px] text-gray-800"
+            class="absolute bottom-full left-full ml-6 bg-white shadow-2xl rounded-2xl p-4 w-[240px] text-gray-800 relative"
         >
           <button
               @click="showHackerDialog = false"
-              class="absolute top-2 right-3 text-gray-500 hover:text-gray-800 font-bold text-lg"
+              class="absolute top-1 right-3 text-gray-500 hover:text-gray-800 font-bold text-xl bg-white p-2"
           >
             ✕
           </button>
@@ -60,7 +60,7 @@
             v-if="activeDialog"
             class="absolute bottom-0 left-full ml-4 bg-white shadow-lg rounded-xl p-4 max-w-xs w-auto min-w-[150px]"
         >
-          <h3 class="font-bold text-lg mb-2 whitespace-pre-wrap">
+          <h3 class="font-bold text-black text-lg mb-2 whitespace-pre-wrap">
             {{ activeDialog.title }}
           </h3>
           <button
@@ -80,10 +80,10 @@
         v-if="showRightDialog"
         class="fixed bottom-6 right-6 bg-white shadow-lg rounded-xl p-4 w-[320px] min-h-[40vh] overflow-auto z-50 flex flex-col"
     >
-      <h3 class="font-bold text-lg mb-2">{{ activeDialog.title }}</h3>
+      <h3 class="font-bold text-black text-[17px] mb-2">{{ activeDialog.title }}</h3>
 
       <div
-          class="border rounded bg-gray-100 p-3 flex-1 whitespace-pre-wrap"
+          class="border rounded text-black bg-gray-100 p-3 flex-1 whitespace-pre-wrap"
           v-html="activeDialog.displayContent"
       ></div>
 
@@ -139,7 +139,7 @@
 
           <button
               @click="toggleRightDialog"
-              class="absolute top-3 right-3 text-gray-500 hover:text-gray-800 font-bold text-xl"
+              class="absolute top-1 right-3 text-gray-500 hover:text-gray-800 font-bold text-xl bg-white p-2"
           >
             ✕
           </button>
@@ -156,8 +156,6 @@ export default {
       isOpen: false,
       activeDialog: null,
       showRightDialog: false,
-      showMenu: false,
-      menuActivated: false,
       showHackerDialog: false,
       hackerDialogShown: false,
 
@@ -227,9 +225,9 @@ export default {
       ],
 
       menuItems: [
-        { label: "關於駭客", type: "scroll", ref: "BlackOrWhite" },
-        { label: "OSI7", type: "scroll", ref: "SevenStage" },
-        { label: "密碼學", type: "scroll", ref: "ciaSection" },
+        { label: "關於駭客", type: "scroll", ref: "blackOrWhite" },
+        { label: "OSI7", type: "scroll", ref: "sevenStage" },
+        { label: "密碼學", type: "scroll", ref: "ciaBar" },
         { label: "OWASP", type: "scroll", ref: "top10Section" },
         { label: "資安小鎮", type: "scroll", ref: "gameSection" },
       ],
@@ -238,6 +236,13 @@ export default {
   mounted() {
     window.addEventListener("scroll", this.checkVisibility);
     this.checkVisibility();
+    // 首次進入頁面時顯示提示對話框
+    setTimeout(() => {
+      if (!this.hackerDialogShown) {
+        this.showHackerDialog = true;
+        this.hackerDialogShown = true;
+      }
+    }, 1000); // 延遲 1 秒後顯示提示
   },
   beforeUnmount() {
     window.removeEventListener("scroll", this.checkVisibility);
@@ -266,41 +271,7 @@ export default {
       }
     },
     checkVisibility() {
-      this.checkHackerSection();
       this.checkDialogs();
-    },
-    checkHackerSection() {
-      if (this.menuActivated) {
-        this.showMenu = true;
-        // ✅ 已經激活後，檢查是否離開駭客畫面
-        const hackerSection = document.querySelector(".hacker-section");
-        if (hackerSection) {
-          const rect = hackerSection.getBoundingClientRect();
-          const visibleHeight =
-              Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
-          const visibleRatio = visibleHeight / rect.height;
-
-          // 當可見度低於 80% 時，關閉對話框
-          if (visibleRatio < 0.8) {
-            this.showHackerDialog = false;
-          }
-        }
-        return;
-      }
-      const hackerSection = document.querySelector(".hacker-section");
-      if (!hackerSection) return;
-      const rect = hackerSection.getBoundingClientRect();
-      const visibleHeight =
-          Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
-      const visibleRatio = visibleHeight / rect.height;
-      if (visibleRatio >= 0.8) {
-        this.showMenu = true;
-        this.menuActivated = true;
-        if (!this.hackerDialogShown) {
-          this.showHackerDialog = true;
-          this.hackerDialogShown = true;
-        }
-      }
     },
     checkDialogs() {
       this.activeDialog = null;

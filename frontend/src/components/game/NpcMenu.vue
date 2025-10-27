@@ -180,9 +180,9 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue' 
-import BuildingShop from '@/components/BuildingShop.vue'
-import AchievementMenu from '@/components/AchievementMenu.vue'
-import HistoryPanel from '@/components/HistoryPanel.vue'
+import BuildingShop from '@/components/game/BuildingShop.vue'
+import AchievementMenu from '@/components/game/AchievementMenu.vue'
+import HistoryPanel from '@/components/game/HistoryPanel.vue'
 import { useUiStore } from '@/stores/ui';
 import { useInventoryStore } from '@/stores/inventory.js';
 import { useAuthStore } from '@/stores/authStore';
@@ -196,7 +196,7 @@ const authStore = useAuthStore();
 const eventLogStore = useEventLogStore();
 
 // 動態載入說明頁面
-const HelpPanel = defineAsyncComponent(() => import('@/components/HelpPanel.vue'))
+const HelpPanel = defineAsyncComponent(() => import('@/components/game/HelpPanel.vue'))
 
 // 選中的物品和事件
 const selectedItem = ref(null)

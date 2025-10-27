@@ -1,12 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../components/HomePage.vue'
-import GamePage from '../components/GamePage.vue'
 import LoginPage from '@/components/LoginPage.vue';   // 我們的登入頁面
 import RegisterPage from '@/components/RegisterPage.vue'; // ✅ 我們的新註冊頁面
 import { useAuthStore } from '@/stores/authStore';
 import QuestionTree from '@/components/QuestionTree.vue'
 import QuestionMore from '@/components/QuestionMore.vue'
-
+import GamePage from '@/components/game/GamePage.vue'
 const routes = [
   { 
     path: '/', 

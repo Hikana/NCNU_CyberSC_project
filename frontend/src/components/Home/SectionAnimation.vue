@@ -3,7 +3,6 @@
     ref="sectionRef"
     class="flex w-full h-screen items-center justify-center bg-bgg overflow-hidden relative"
   >
-    <!-- 左邊字幕 -->
     <div class="w-1/2 flex flex-col justify-center items-start px-48">
       <p
         v-for="(line, index) in visibleLines"
@@ -15,7 +14,6 @@
       </p>
     </div>
 
-    <!-- 右邊 GIF -->
     <div
       class="w-1/2 flex justify-center items-center transition-transform duration-300"
       :style="{
@@ -51,24 +49,28 @@ const gifOffset = ref(0);
 const gifOpacity = ref(1);
 
 let observer;
-let isScrollLocked = false;
+// let isScrollLocked = false; // 移除滾動鎖定變數
 let menu2Active = false;
 
-const lockScroll = () => {
-  if (!isScrollLocked) {
-    document.body.style.overflow = "hidden";
-    isScrollLocked = true;
-  }
-};
-const unlockScroll = () => {
-  document.body.style.overflow = "";
-  isScrollLocked = false;
-};
+// 移除 lockScroll 函式
+// const lockScroll = () => {
+//   if (!isScrollLocked) {
+//     document.body.style.overflow = "hidden";
+//     isScrollLocked = true;
+//   }
+// };
+
+// 移除 unlockScroll 函式
+// const unlockScroll = () => {
+//   document.body.style.overflow = "";
+//   isScrollLocked = false;
+// };
 
 const startAnimation = () => {
   if (hasPlayed.value) return;
   hasPlayed.value = true;
-  lockScroll();
+  // 移除 lockScroll()
+  // lockScroll();
 
   let index = 0;
   const interval = setInterval(() => {
@@ -79,7 +81,8 @@ const startAnimation = () => {
       setTimeout(() => (currentTypingIndex.value = -1), 1000);
     } else {
       clearInterval(interval);
-      unlockScroll();
+      // 移除 unlockScroll()
+      // unlockScroll();
 
       setTimeout(() => {
         currentGif.value = props.gif2;
@@ -91,11 +94,13 @@ const startAnimation = () => {
 
 const handleWheel = (e) => {
   if (!menu2Active) return;
+  // 這裡的邏輯是用滑鼠滾動來移動 GIF 圖片
   if (e.deltaY > 0) gifOffset.value -= 125;
 };
 
 const handleIntersection = (entries) => {
   entries.forEach((entry) => {
+    // 這裡的邏輯是當區塊進入可視範圍 90% 時觸發動畫
     if (entry.isIntersecting && entry.intersectionRatio >= 0.9) {
       startAnimation();
     }
@@ -109,9 +114,11 @@ onMounted(() => {
   if (sectionRef.value) observer.observe(sectionRef.value);
   window.addEventListener("wheel", handleWheel);
 });
+
 onUnmounted(() => {
   if (observer && sectionRef.value) observer.unobserve(sectionRef.value);
-  unlockScroll();
+  // 移除 unlockScroll()
+  // unlockScroll();
   window.removeEventListener("wheel", handleWheel);
 });
 </script>

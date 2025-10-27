@@ -68,7 +68,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useHistoryStore } from '../stores/historyStore';
+import { useHistoryStore } from '@/stores/historyStore';
 
 const historyStore = useHistoryStore();
 const selectedExplanation = ref(null);
