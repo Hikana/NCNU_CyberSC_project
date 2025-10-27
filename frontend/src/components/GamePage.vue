@@ -23,6 +23,17 @@
     <!-- ✅ 新增：隨機事件彈窗 (只在遊戲裡出現) -->
     <RandomEventModal />
 
+    <!-- 連線提示視窗 -->
+    <ConnectionModal 
+      v-if="buildingStore && buildingStore.connectionModal"
+      :isVisible="buildingStore.connectionModal.isVisible"
+      :type="buildingStore.connectionModal.type"
+      :title="buildingStore.connectionModal.title"
+      :message="buildingStore.connectionModal.message"
+      :showRules="buildingStore.connectionModal.showRules"
+      @close="buildingStore.hideConnectionModal"
+    />
+
     <!-- 城堡升級提示 -->
     <div v-if="wallStore.castleUpgradeMessage" class="castle-upgrade-notification">
       <div class="upgrade-message">
@@ -47,12 +58,15 @@ import StatusBar from '@/components/StatusBar.vue';
 import NpcMenu from '@/components/NpcMenu.vue';
 import QuizPanel from '@/components/QuizPanel.vue';
 import ControlsHint from '@/components/ControlsHint.vue';
+import ConnectionModal from '@/components/ConnectionModal.vue';
 
 import { usePlayerStore } from '@/stores/player';
 import { useUiStore } from '@/stores/ui';
 import { useInventoryStore } from '@/stores/inventory'; 
 import { useAchievementStore } from '@/stores/achievement';
-import { useWallStore } from '@/stores/wall'; 
+import { useWallStore } from '@/stores/wall';
+import { useBuildingStore } from '@/stores/buildings';
+import { checkAuthStatus } from '@/utils/authCheck'; 
 import RandomEventModal from './RandomEventModal.vue'
 import npcImage from '@/assets/NPC.gif';
 import backgroundImage from '@/assets/background.png';
@@ -62,6 +76,7 @@ const uiStore = useUiStore();
 const inventoryStore = useInventoryStore(); 
 const achievementStore = useAchievementStore();
 const wallStore = useWallStore();
+const buildingStore = useBuildingStore();
 
 // 載入狀態
 const isLoading = ref(true);
@@ -73,6 +88,13 @@ const hintTrigger = ref(0); // 用於觸發八秒提示
 function onGameReady() {
   console.log('🎮 遊戲引擎準備完成');
   gameEngineReady.value = true;
+  
+  // 檢查認證狀態
+  const isAuthenticated = checkAuthStatus();
+  if (!isAuthenticated) {
+    console.warn('⚠️ 用戶未登入，某些功能可能無法使用');
+  }
+  
   checkAllReady(); // 檢查是否所有資源都載入完成
 }
 

@@ -345,6 +345,16 @@ export class Game {
       return;
     }
 
+    // 連線模式處理  連線模式點擊處理 (第348-356行)
+    if (this.buildingStore.isConnecting) {
+      const success = this.buildingStore.selectBuildingForConnection(col, row);
+      if (!success) {
+        // 如果選擇失敗，可以顯示提示訊息
+        console.log('無法在此位置建立連線');
+      }
+      return;
+    }
+
     // 只有在放置建築模式時才允許滑鼠點擊
     if (this.buildingStore.isPlacing) {
       if (cell.status === 'developed') {
@@ -385,6 +395,20 @@ export class Game {
     watch(() => this.wallStore.castleLevel, (newLevel, oldLevel) => {
       if (oldLevel !== undefined && newLevel !== oldLevel && this.grid) {        
         this.grid.drawGrid(); // 重繪地圖以顯示新的城堡等級
+      }
+    });
+
+    // 監聽連線狀態變化，自動重繪地圖  連線狀態監聽 (第401-413行)
+    watch(() => this.buildingStore.connections, () => {
+      if (this.grid) {
+        this.grid.drawGrid(); // 重繪地圖以顯示連線
+      }
+    }, { deep: true });
+
+    // 監聽連線起始點變化，自動重繪地圖
+    watch(() => this.buildingStore.connectionStart, () => {
+      if (this.grid) {
+        this.grid.drawGrid(); // 重繪地圖以顯示連線選擇狀態
       }
     });
   }

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { usePlayerStore } from './player';
 import { apiService } from '@/services/apiService'; // 引入我們統一的 apiService
+import { BUILDING_TYPES, createConnectionValidator, getConnectionColor } from '@/game/connectionRules'; // 引入連線規則模組
 import routerImg from '@/assets/router.png';
 import switchImg from '@/assets/switch.png';
 
@@ -35,7 +36,24 @@ export const useBuildingStore = defineStore('buildings', {
     castleInteraction: null,
     
     // 商店建築列表：由後端載入
-    shopBuildings: []
+    shopBuildings: [],
+    
+    // 連線功能相關狀態
+    isConnecting: false, // 是否處於連線模式
+    connectionStart: null, // 連線起始建築物 {x, y}
+    connections: [], // 已建立的連線 [{from: {x, y}, to: {x, y}}]
+    
+    // 連線提示視窗狀態
+    connectionModal: {
+      isVisible: false,
+      type: 'info', // 'success', 'error', 'info'
+      title: '連線提示',
+      message: '',
+      showRules: false
+    },
+    
+    // 建築物類型定義（使用模組化的定義）
+    buildingTypes: BUILDING_TYPES
   }),
   actions: {
     async loadShop() {
@@ -101,6 +119,14 @@ export const useBuildingStore = defineStore('buildings', {
         }
       } catch (error) {
         console.error('從後端載入地圖失敗:', error);
+        
+        // 檢查是否為認證錯誤
+        if (error.message.includes('認證失敗') || error.message.includes('No token') || error.message.includes('用戶未登入')) {
+          console.log('🔐 認證錯誤，請重新登入');
+          alert('認證失敗，請重新登入');
+          return;
+        }
+        
         // 建立預設地圖作為備用
         this.map = Array.from({ length: 20 }, (_, y) =>
           Array.from({ length: 20 }, (_, x) => ({ 
@@ -217,11 +243,157 @@ export const useBuildingStore = defineStore('buildings', {
           console.error('清除建築後的地圖資料格式不正確:', newMap);
         }
         
+        //建築物清除時的連線清理
+        // 使用連線規則模組清除與該位置相關的所有連線
+        const validator = createConnectionValidator(this.map, this.connections);
+        this.connections = validator.clearConnectionsAt(x, y);
+        
+        // 如果正在選擇的連線起始點被清除，重置連線狀態
+        if (this.connectionStart && this.connectionStart.x === x && this.connectionStart.y === y) {
+          this.connectionStart = null;
+        }
+        
         console.log(`已清除位置 (${x}, ${y}) 的建築（後端同步）`);
         this.deleteTarget = null;
       } catch (e) {
         console.error('清除建築失敗:', e);
       }
+    },
+     //連線功能核心 Actions (第250-336行)
+    // 連線功能相關 actions
+    startConnectionMode() {
+      this.isConnecting = true;
+      this.isPlacing = false; // 關閉放置模式
+      this.connectionStart = null;
+      console.log('進入連線模式');
+    },
+
+    stopConnectionMode() {
+      this.isConnecting = false;
+      this.connectionStart = null;
+      console.log('退出連線模式');
+    },
+
+    selectBuildingForConnection(x, y) {
+      if (!this.isConnecting) return false;
+
+      const cell = this.map?.[y]?.[x];
+      if (!cell || cell.status !== 'placed' || !cell.buildingId) {
+        console.log('該位置沒有建築物');
+        return false;
+      }
+
+      if (!this.connectionStart) {
+        // 選擇第一個建築物
+        this.connectionStart = { x, y };
+        const buildingType = this.getBuildingType(cell.buildingId);
+        console.log(`選擇起始建築物: (${x}, ${y}) - ${buildingType?.name || '未知'}`);
+        return true;
+      } else {
+        // 選擇第二個建築物，建立連線
+        if (this.connectionStart.x === x && this.connectionStart.y === y) {
+          console.log('不能連接到同一個建築物');
+          this.connectionStart = null;
+          return false;
+        }
+
+        // 使用連線規則模組檢查連線
+        const validator = createConnectionValidator(this.map, this.connections);
+        
+        // 檢查是否已經存在相同的連線
+        if (validator.isConnectionExists(this.connectionStart.x, this.connectionStart.y, x, y)) {
+          console.log('連線已存在');
+          this.connectionStart = null;
+          return false;
+        }
+
+        // 驗證連線規則
+        const validation = validator.canConnectBuildings(this.connectionStart.x, this.connectionStart.y, x, y);
+        if (!validation.valid) {
+          console.log('連線規則驗證失敗:', validation.reason);
+          this.showConnectionError(validation.reason);
+          this.connectionStart = null;
+          return false;
+        }
+
+        // 建立新連線
+        this.connections.push({
+          from: { ...this.connectionStart },
+          to: { x, y }
+        });
+
+        const fromType = this.getBuildingType(this.map[this.connectionStart.y][this.connectionStart.x].buildingId);
+        const toType = this.getBuildingType(cell.buildingId);
+        console.log(`✅ 建立連線: ${fromType?.name} -> ${toType?.name}`);
+        
+        // 顯示連線成功提示
+        this.showConnectionSuccess(fromType, toType);
+        
+        this.connectionStart = null;
+        return true;
+      }
+    },
+
+    removeConnection(fromX, fromY, toX, toY) {
+      const validator = createConnectionValidator(this.map, this.connections);
+      this.connections = validator.removeConnection(fromX, fromY, toX, toY);
+    },
+
+    clearAllConnections() {
+      this.connections = [];
+      this.connectionStart = null;
+    },
+
+    // 保留 getBuildingType 方法供其他部分使用
+    getBuildingType(buildingId) {
+      return this.buildingTypes[buildingId] || null;
+    },
+
+    getBuildingConnections(x, y) {
+      return this.connections.filter(conn => 
+        (conn.from.x === x && conn.from.y === y) ||
+        (conn.to.x === x && conn.to.y === y)
+      );
+    },
+    // 使用連線規則模組取得網路狀態統計
+    getNetworkStatus() {
+      const validator = createConnectionValidator(this.map, this.connections);
+      return validator.getNetworkStatus();
+    },
+
+    // 連線視窗相關方法
+    showConnectionModal(type, title, message, showRules = false) {
+      this.connectionModal = {
+        isVisible: true,
+        type,
+        title,
+        message,
+        showRules
+      };
+    },
+
+    hideConnectionModal() {
+      this.connectionModal.isVisible = false;
+    },
+
+    // 顯示連線成功提示
+    showConnectionSuccess(fromType, toType) {
+      this.showConnectionModal(
+        'success',
+        '連線成功！',
+        `✅ 成功建立連線：${fromType?.name} → ${toType?.name}`,
+        false
+      );
+    },
+
+    // 顯示連線錯誤提示
+    showConnectionError(reason) {
+      this.showConnectionModal(
+        'error',
+        '連線失敗',
+        reason,
+        true // 顯示連線規則
+      );
     }
   }
 });

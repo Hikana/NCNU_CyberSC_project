@@ -3,6 +3,7 @@ import grassImg from '@/assets/grass.png'
 import landImg from '@/assets/land.png'
 import { useBuildingStore } from '@/stores/buildings'
 import { useWallStore } from '@/stores/wall'
+import { getConnectionColor } from '@/game/connectionRules'
 import castleImg from '@/assets/castle0.png'
 import can1Img from '@/assets/can1.png'
 
@@ -46,15 +47,20 @@ export class IsoGrid {
     this.gridContainer = new PIXI.Container()
     // 允許依據 zIndex 排序，確保地圖元素可正確分層
     this.gridContainer.sortableChildren = true
-    // 分層：地面(草地) 與 物件(建築/互動)
-    this.groundContainer = new PIXI.Container()
+    // 分層：地面(草地) 與 物件(建築/互動) 與 連線    第50-62行：連線容器設置
+    this.groundContainer = new PIXI.Container()    
     this.objectContainer = new PIXI.Container()
+    this.connectionContainer = new PIXI.Container()
     this.groundContainer.sortableChildren = true
     this.objectContainer.sortableChildren = true
+    this.connectionContainer.sortableChildren = true
     this.groundContainer.zIndex = 0
     this.objectContainer.zIndex = 1
+    this.connectionContainer.zIndex = 10 // 提高連線層級，確保在建築物之上
     // 物件層不攔截滑鼠事件，確保可點擊到地面格
     this.objectContainer.eventMode = 'none'
+    // 連線層也不攔截滑鼠事件
+    this.connectionContainer.eventMode = 'none'
     
     // 確保容器可以接收交互事件
     this.gridContainer.interactive = true
@@ -67,6 +73,7 @@ export class IsoGrid {
     this.app.stage.addChild(this.gridContainer)
     this.gridContainer.addChild(this.groundContainer)
     this.gridContainer.addChild(this.objectContainer)
+    this.gridContainer.addChild(this.connectionContainer)   //第75行：連線容器添加到地圖容器
     
     this.loadBuildingTextures()
     this.loadGrassTextures() 
@@ -328,6 +335,7 @@ export class IsoGrid {
     // 清除現有網格
     this.groundContainer.removeChildren()
     this.objectContainer.removeChildren()
+    this.connectionContainer.removeChildren()
 
     const halfW = this.tileSize / 2
     const halfH = this.tileSize / 4
@@ -529,6 +537,60 @@ export class IsoGrid {
           }
         }
       }
+    }
+
+    // 第四階段：繪製連線   連線繪製功能 (第550-605行)
+    this.drawConnections(halfW, halfH);
+  }
+
+  /**
+   * 繪製建築物之間的連線
+   * @param {number} halfW - 瓦片寬度的一半
+   * @param {number} halfH - 瓦片高度的一半
+   */
+  drawConnections(halfW, halfH) {
+    const buildingStore = useBuildingStore();
+    
+    // 繪製已建立的連線
+    buildingStore.connections.forEach(connection => {
+      const fromX = (connection.from.x - connection.from.y) * halfW;
+      const fromY = (connection.from.x + connection.from.y) * halfH;
+      const toX = (connection.to.x - connection.to.y) * halfW;
+      const toY = (connection.to.x + connection.to.y) * halfH;
+
+      // 使用連線規則模組決定連線顏色
+      const fromCell = buildingStore.map?.[connection.from.y]?.[connection.from.x];
+      const toCell = buildingStore.map?.[connection.to.y]?.[connection.to.x];
+      
+      let lineColor = 0x00ff00; // 預設綠色
+      if (fromCell && toCell) {
+        const fromType = buildingStore.getBuildingType(fromCell.buildingId);
+        const toType = buildingStore.getBuildingType(toCell.buildingId);
+        
+        if (fromType && toType) {
+          lineColor = getConnectionColor(fromType, toType);
+        }
+      }
+
+      const line = new PIXI.Graphics();
+      line.lineStyle(4, lineColor, 1); // 增加線條寬度，完全不透明
+      line.moveTo(fromX, fromY);
+      line.lineTo(toX, toY);
+      
+      this.connectionContainer.addChild(line);
+    });
+
+    // 繪製正在選擇的連線（如果有的話）
+    if (buildingStore.connectionStart) {
+      const startX = (buildingStore.connectionStart.x - buildingStore.connectionStart.y) * halfW;
+      const startY = (buildingStore.connectionStart.x + buildingStore.connectionStart.y) * halfH;
+      
+      // 繪製起始建築物的高亮效果
+      const highlight = new PIXI.Graphics();
+      highlight.lineStyle(6, 0xff0000, 1); // 紅色邊框，增加寬度
+      highlight.drawCircle(startX, startY, 25); // 增加圓圈大小
+      
+      this.connectionContainer.addChild(highlight);
     }
   }
 

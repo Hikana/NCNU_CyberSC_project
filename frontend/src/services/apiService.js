@@ -110,6 +110,15 @@ async function requestInventory(url, options = {}) {
     }
 
     const response = await fetch(url, config);
+    
+    // 檢查回應是否為 JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('❌ 非 JSON 回應:', text.substring(0, 200));
+      throw new Error(`伺服器回應格式錯誤 (${response.status}): ${text.substring(0, 100)}...`);
+    }
+    
     const json = await response.json();
     
     if (!response.ok || !json.success) {
