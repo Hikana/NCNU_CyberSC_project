@@ -1,4 +1,3 @@
-const buildingData = require('../models/buildingData');
 const playerData = require('../models/playerData');
 const shopData = require('../models/shopData');
 
@@ -16,55 +15,51 @@ class BuildingService {
   // 取得地圖狀態
   async getMapState(userId) {
     try {
-      // 初始化地圖（如果不存在）
-      await buildingData.initializeMap();
-      const mapData = await buildingData.getMap();
+      // 確保玩家存在（若不存在會自動初始化並建立 land 瓦片）
+      await playerData.getPlayer(userId);
       const playerLand = await playerData.getPlayerLand(userId);
-      
-      // 確保 mapData 是二維陣列格式
-      if (!Array.isArray(mapData)) {
-        throw new Error('地圖資料不是陣列格式');
-      }
-      
-      if (mapData.length === 0) {
-        throw new Error('地圖資料是空陣列');
-      }
-      
-      if (!Array.isArray(mapData[0])) {
-        throw new Error('地圖資料不是二維陣列格式');
-      }
-      
-      // 合併地圖資料和玩家土地資料
-      const mergedMap = mapData.map((row, y) => 
-        row.map((cell, x) => {
+
+      // 以玩家 land 為唯一來源生成 20x20 地圖
+      const mergedMap = Array.from({ length: 20 }, (_, y) =>
+        Array.from({ length: 20 }, (_, x) => {
           const tileKey = `${x}_${y}`;
           const playerTileData = playerLand[tileKey];
-          
-          // 檢查是否為城堡區域
           const isCastle = this.isCastleTile(y, x);
-          
-          if (playerTileData) {
-            // 玩家有個人資料，使用玩家的狀態
+
+          // 任何情況下，城堡 3x3 一律固定為 developed/castle
+          if (isCastle) {
             return {
-              ...playerTileData,
-              baseType: cell.baseType, // 保留基礎類型            
+              status: 'developed',
+              type: 'castle',
+              baseType: 'castle',
+              buildingId: null,
               x,
               y
             };
           }
-          
-          // 玩家沒有個人資料，使用預設狀態
+
+          if (playerTileData) {
+            return {
+              status: playerTileData.status,
+              type: playerTileData.type || 'empty',
+              baseType: playerTileData.baseType || playerTileData.type || 'empty',
+              buildingId: playerTileData.buildingId ?? null,
+              x,
+              y
+            };
+          }
+
           return {
-            status: isCastle ? 'developed' : 'locked',
-            type: isCastle ? 'castle' : cell.baseType,
-            baseType: cell.baseType,           
+            status: 'locked',
+            type: 'empty',
+            baseType: 'empty',
             buildingId: null,
             x,
             y
           };
         })
       );
-      
+
       return mergedMap;
     } catch (error) {
       console.error('取得地圖狀態失敗:', error);
@@ -134,6 +129,9 @@ class BuildingService {
       throw new Error('該位置沒有建築');
     }
     
+    // 刪除與該建築相關的所有連線
+    await playerData.removeConnectionsByBuilding(userId, x, y);
+    
     // 更新地圖狀態為 developed
     await playerData.updateTile(userId, x, y, {
       status: 'developed',
@@ -143,6 +141,22 @@ class BuildingService {
     
     // 返回更新後的地圖
     return await this.getMapState(userId);
+  }
+
+  // --- 連線相關方法 ---
+  // 取得玩家的連線列表
+  async getConnections(userId) {
+    return await playerData.getPlayerConnections(userId);
+  }
+
+  // 添加連線
+  async addConnection(userId, connection) {
+    return await playerData.addConnection(userId, connection);
+  }
+
+  // 刪除連線
+  async removeConnection(userId, connectionId) {
+    await playerData.removeConnection(userId, connectionId);
   }
 
   // 取得建築商店列表

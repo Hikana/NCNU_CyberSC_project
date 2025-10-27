@@ -35,13 +35,13 @@ export const useBuildingStore = defineStore('buildings', {
     tileDevelopedMessage: null,
     castleInteraction: null,
     
-    // 商店建築列表：由後端載入
-    shopBuildings: [],
-    
-    // 連線功能相關狀態
-    isConnecting: false, // 是否處於連線模式
-    connectionStart: null, // 連線起始建築物 {x, y}
-    connections: [], // 已建立的連線 [{from: {x, y}, to: {x, y}}]
+    // 連線模式相關狀態
+    isConnecting: false,
+    connectionSource: null, // 連線的起始建築物位置
+    connections: [], // 已建立的連線列表
+    showConnections: localStorage.getItem('showConnections') !== null 
+      ? localStorage.getItem('showConnections') === 'true' 
+      : true, // 是否顯示連線
     
     // 連線提示視窗狀態
     connectionModal: {
@@ -51,6 +51,9 @@ export const useBuildingStore = defineStore('buildings', {
       message: '',
       showRules: false
     },
+    
+    // 商店建築列表：由後端載入
+    shopBuildings: [],
     
     // 建築物類型定義（使用模組化的定義）
     buildingTypes: BUILDING_TYPES
@@ -243,108 +246,129 @@ export const useBuildingStore = defineStore('buildings', {
           console.error('清除建築後的地圖資料格式不正確:', newMap);
         }
         
-        //建築物清除時的連線清理
-        // 使用連線規則模組清除與該位置相關的所有連線
-        const validator = createConnectionValidator(this.map, this.connections);
-        this.connections = validator.clearConnectionsAt(x, y);
-        
-        // 如果正在選擇的連線起始點被清除，重置連線狀態
-        if (this.connectionStart && this.connectionStart.x === x && this.connectionStart.y === y) {
-          this.connectionStart = null;
-        }
+        // 清除與該建築相關的所有連線
+        this.connections = this.connections.filter(conn => 
+          !(conn.from.x === x && conn.from.y === y) && 
+          !(conn.to.x === x && conn.to.y === y)
+        );
         
         console.log(`已清除位置 (${x}, ${y}) 的建築（後端同步）`);
+        console.log(`已清除與該建築相關的連線，剩餘連線數量: ${this.connections.length}`);
         this.deleteTarget = null;
       } catch (e) {
         console.error('清除建築失敗:', e);
       }
     },
-     //連線功能核心 Actions (第250-336行)
-    // 連線功能相關 actions
-    startConnectionMode() {
+
+    // 連線相關方法
+    startConnection(sourcePosition) {
       this.isConnecting = true;
-      this.isPlacing = false; // 關閉放置模式
-      this.connectionStart = null;
-      console.log('進入連線模式');
+      this.connectionSource = sourcePosition;
+      console.log('開始連線模式，起始位置:', sourcePosition);
     },
 
-    stopConnectionMode() {
-      this.isConnecting = false;
-      this.connectionStart = null;
-      console.log('退出連線模式');
-    },
-
-    selectBuildingForConnection(x, y) {
-      if (!this.isConnecting) return false;
-
-      const cell = this.map?.[y]?.[x];
-      if (!cell || cell.status !== 'placed' || !cell.buildingId) {
-        console.log('該位置沒有建築物');
-        return false;
+    async completeConnection(targetPosition) {
+      if (!this.isConnecting || !this.connectionSource) {
+        console.warn('連線模式未啟動或缺少起始位置');
+        return;
       }
 
-      if (!this.connectionStart) {
-        // 選擇第一個建築物
-        this.connectionStart = { x, y };
-        const buildingType = this.getBuildingType(cell.buildingId);
-        console.log(`選擇起始建築物: (${x}, ${y}) - ${buildingType?.name || '未知'}`);
-        return true;
-      } else {
-        // 選擇第二個建築物，建立連線
-        if (this.connectionStart.x === x && this.connectionStart.y === y) {
-          console.log('不能連接到同一個建築物');
-          this.connectionStart = null;
-          return false;
-        }
+      // 檢查是否為同一個建築物
+      if (this.connectionSource.x === targetPosition.x && this.connectionSource.y === targetPosition.y) {
+        console.log('不能連線到同一個建築物');
+        this.cancelConnection();
+        return;
+      }
 
-        // 使用連線規則模組檢查連線
-        const validator = createConnectionValidator(this.map, this.connections);
-        
-        // 檢查是否已經存在相同的連線
-        if (validator.isConnectionExists(this.connectionStart.x, this.connectionStart.y, x, y)) {
-          console.log('連線已存在');
-          this.connectionStart = null;
-          return false;
-        }
+      // 檢查連線是否已存在
+      const connectionExists = this.connections.some(conn => 
+        (conn.from.x === this.connectionSource.x && conn.from.y === this.connectionSource.y && 
+         conn.to.x === targetPosition.x && conn.to.y === targetPosition.y) ||
+        (conn.from.x === targetPosition.x && conn.from.y === targetPosition.y && 
+         conn.to.x === this.connectionSource.x && conn.to.y === this.connectionSource.y)
+      );
 
-        // 驗證連線規則
-        const validation = validator.canConnectBuildings(this.connectionStart.x, this.connectionStart.y, x, y);
-        if (!validation.valid) {
-          console.log('連線規則驗證失敗:', validation.reason);
-          this.showConnectionError(validation.reason);
-          this.connectionStart = null;
-          return false;
-        }
+      if (connectionExists) {
+        console.log('連線已存在');
+        this.cancelConnection();
+        return;
+      }
 
-        // 建立新連線
-        this.connections.push({
-          from: { ...this.connectionStart },
-          to: { x, y }
-        });
+      // 使用連線規則模組檢查連線
+      const validator = createConnectionValidator(this.map, this.connections);
+      
+      // 檢查是否已經存在相同的連線
+      if (validator.isConnectionExists(this.connectionSource.x, this.connectionSource.y, targetPosition.x, targetPosition.y)) {
+        console.log('連線已存在');
+        this.cancelConnection();
+        return;
+      }
 
-        const fromType = this.getBuildingType(this.map[this.connectionStart.y][this.connectionStart.x].buildingId);
-        const toType = this.getBuildingType(cell.buildingId);
-        console.log(`✅ 建立連線: ${fromType?.name} -> ${toType?.name}`);
+      // 驗證連線規則
+      const validation = validator.canConnectBuildings(this.connectionSource.x, this.connectionSource.y, targetPosition.x, targetPosition.y);
+      if (!validation.valid) {
+        console.log('連線規則驗證失敗:', validation.reason);
+        this.showConnectionError(validation.reason);
+        this.cancelConnection();
+        return;
+      }
+
+      try {
+        // 添加新連線到後端
+        const newConnection = {
+          from: { ...this.connectionSource },
+          to: { ...targetPosition }
+        };
+
+        const savedConnection = await apiService.addConnection(newConnection);
+        console.log('連線已保存到後端:', savedConnection);
+
+        // 添加到本地狀態
+        this.connections.push(savedConnection);
+        console.log('本地連線列表已更新');
         
         // 顯示連線成功提示
+        const fromType = this.getBuildingType(this.map[this.connectionSource.y][this.connectionSource.x].buildingId);
+        const toType = this.getBuildingType(this.map[targetPosition.y][targetPosition.x].buildingId);
         this.showConnectionSuccess(fromType, toType);
         
-        this.connectionStart = null;
-        return true;
+      } catch (error) {
+        console.error('保存連線失敗:', error);
+        this.showConnectionError('保存連線失敗，請重試');
+      }
+      
+      this.cancelConnection();
+    },
+
+    // 從後端載入連線
+    async loadConnections() {
+      try {
+        const connections = await apiService.getConnections();
+        this.connections = connections;
+        console.log('已載入連線:', connections.length, '條');
+      } catch (error) {
+        console.error('載入連線失敗:', error);
+        this.connections = [];
       }
     },
 
-    removeConnection(fromX, fromY, toX, toY) {
-      const validator = createConnectionValidator(this.map, this.connections);
-      this.connections = validator.removeConnection(fromX, fromY, toX, toY);
+    cancelConnection() {
+      this.isConnecting = false;
+      this.connectionSource = null;
     },
 
-    clearAllConnections() {
-      this.connections = [];
-      this.connectionStart = null;
+    removeConnection(connectionId) {
+      this.connections = this.connections.filter(conn => conn.id !== connectionId);
     },
 
-    // 保留 getBuildingType 方法供其他部分使用
+    // 切換連線顯示/隱藏
+    toggleConnections() {
+      this.showConnections = !this.showConnections;
+      localStorage.setItem('showConnections', this.showConnections.toString());
+      console.log('連線顯示狀態:', this.showConnections ? '顯示' : '隱藏');
+    },
+
+    // 連線規則相關方法
     getBuildingType(buildingId) {
       return this.buildingTypes[buildingId] || null;
     },
@@ -355,7 +379,7 @@ export const useBuildingStore = defineStore('buildings', {
         (conn.to.x === x && conn.to.y === y)
       );
     },
-    // 使用連線規則模組取得網路狀態統計
+
     getNetworkStatus() {
       const validator = createConnectionValidator(this.map, this.connections);
       return validator.getNetworkStatus();
@@ -376,7 +400,6 @@ export const useBuildingStore = defineStore('buildings', {
       this.connectionModal.isVisible = false;
     },
 
-    // 顯示連線成功提示
     showConnectionSuccess(fromType, toType) {
       this.showConnectionModal(
         'success',
@@ -386,7 +409,6 @@ export const useBuildingStore = defineStore('buildings', {
       );
     },
 
-    // 顯示連線錯誤提示
     showConnectionError(reason) {
       this.showConnectionModal(
         'error',

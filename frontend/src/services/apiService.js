@@ -110,21 +110,23 @@ async function requestInventory(url, options = {}) {
     }
 
     const response = await fetch(url, config);
-    
-    // 檢查回應是否為 JSON
     const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
+    let result;
+    if (contentType && contentType.includes('application/json')) {
+      result = await response.json();
+    } else {
       const text = await response.text();
-      console.error('❌ 非 JSON 回應:', text.substring(0, 200));
-      throw new Error(`伺服器回應格式錯誤 (${response.status}): ${text.substring(0, 100)}...`);
+      // 盡量給出可用錯誤訊息
+      throw new Error(text || '非 JSON 回應');
     }
-    
-    const json = await response.json();
-    
-    if (!response.ok || !json.success) {
-      throw new Error(json.message || '背包 API 請求失敗');
+
+    if (!response.ok) {
+      const message = result?.message || result?.error || `API 請求失敗 (狀態碼: ${response.status})`;
+      throw new Error(message);
     }
-    return json.data;
+
+    // 後端多數回傳 { success, data }
+    return result?.data ?? result;
   } catch (error) {
     console.error(`❌ 背包 API 錯誤 at ${url}:`, error);
     throw error;
@@ -169,7 +171,7 @@ export const apiService = {
   removeBuilding: async (x, y, userId) => {
     const uid = userId || getCurrentUid();
     if (!uid) throw new Error('尚未登入，無法移除建築');
-    const url = `${BUILDING_BASE_URL}/${x}/${y}?userId=${encodeURIComponent(uid)}`;
+    const url = `${BUILDING_BASE_URL}/remove/${x}/${y}?userId=${encodeURIComponent(uid)}`;
     return requestInventory(url, { method: 'DELETE' });
   },
 
@@ -352,6 +354,27 @@ export const apiService = {
     body: userData
   }),
   getPlayerState: () => request('/player/me'),
+
+  // --- 連線相關 API ---
+  // 取得連線列表
+  getConnections: async (userId) => {
+    return requestInventory(`${BUILDING_BASE_URL}/connections`, { method: 'GET' });
+  },
+
+  // 添加連線
+  addConnection: async (connection, userId) => {
+    return requestInventory(`${BUILDING_BASE_URL}/connections`, {
+      method: 'POST',
+      body: { connection }
+    });
+  },
+
+  // 刪除連線
+  removeConnection: async (connectionId, userId) => {
+    return requestInventory(`${BUILDING_BASE_URL}/connections/${connectionId}`, {
+      method: 'DELETE'
+    });
+  },
 };
 
 // 默認導出

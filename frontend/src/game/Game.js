@@ -53,8 +53,11 @@ export class Game {
 
     // 關鍵步驟：在建立地圖前，先從後端載入玩家的最新地圖資料
     await this.buildingStore.loadMap();
+    
+    // 載入連線資料
+    await this.buildingStore.loadConnections();
 
-    this._createMap();
+    this._createMap();
     await this._createPlayer();
     this._setupControls();
     this._setupWatchers(); // 啟用響應式監聽
@@ -305,7 +308,8 @@ export class Game {
     this.grid = new IsoGrid(
       this.app, 20, 20, this.TILE_SIZE,
       this._handleTileClick.bind(this),
-      this.buildingStore.map
+      this.buildingStore.map,
+      this.buildingStore
     );
     this.grid.gridContainer.zIndex = 0;
     this.world.addChild(this.grid.gridContainer);
@@ -345,12 +349,14 @@ export class Game {
       return;
     }
 
-    // 連線模式處理  連線模式點擊處理 (第348-356行)
+    // 連線模式處理
     if (this.buildingStore.isConnecting) {
-      const success = this.buildingStore.selectBuildingForConnection(col, row);
-      if (!success) {
-        // 如果選擇失敗，可以顯示提示訊息
-        console.log('無法在此位置建立連線');
+      if (cell.status === 'placed' && cell.buildingId) {
+        // 點擊到有建築物的格子，完成連線
+        this.buildingStore.completeConnection({ x: col, y: row });
+      } else {
+        // 點擊到沒有建築物的格子，取消連線
+        this.buildingStore.cancelConnection();
       }
       return;
     }
@@ -363,6 +369,13 @@ export class Game {
         this.buildingStore.showPlacementMessage('只能選擇已開發的土地！');
         this.buildingStore.selectTile(null);
       }
+      return;
+    }
+
+    // 檢查是否點擊到建築物（非放置模式且非連線模式）
+    if (cell.status === 'placed' && cell.buildingId) {
+      // 顯示建築物操作選單
+      this.buildingStore.deleteTarget = { x: col, y: row };
       return;
     }
 
@@ -398,17 +411,25 @@ export class Game {
       }
     });
 
-    // 監聽連線狀態變化，自動重繪地圖  連線狀態監聽 (第401-413行)
+    // 監聽連線變化，自動重繪連線
     watch(() => this.buildingStore.connections, () => {
       if (this.grid) {
-        this.grid.drawGrid(); // 重繪地圖以顯示連線
+        this.grid.drawConnections();
       }
     }, { deep: true });
 
-    // 監聽連線起始點變化，自動重繪地圖
-    watch(() => this.buildingStore.connectionStart, () => {
+    // 監聽連線模式變化
+    watch(() => this.buildingStore.isConnecting, (isConnecting) => {
       if (this.grid) {
-        this.grid.drawGrid(); // 重繪地圖以顯示連線選擇狀態
+        // 可以在這裡添加連線模式的視覺提示
+        console.log('連線模式:', isConnecting ? '開啟' : '關閉');
+      }
+    });
+
+    // 監聽連線顯示狀態變化
+    watch(() => this.buildingStore.showConnections, () => {
+      if (this.grid) {
+        this.grid.drawConnections();
       }
     });
   }
@@ -421,7 +442,18 @@ export class Game {
     this._handleKeyup = (e) => { 
       this.keys[e.code] = false;
       if (e.code === 'Enter' || e.code === 'KeyE') {
-        this._inspectCurrentTile();
+        // 只有在沒有輸入框或按鈕獲得焦點時才觸發檢視功能
+        const activeElement = document.activeElement;
+        const isInputFocused = activeElement && (
+          activeElement.tagName === 'INPUT' || 
+          activeElement.tagName === 'TEXTAREA' || 
+          activeElement.tagName === 'BUTTON' ||
+          activeElement.contentEditable === 'true'
+        );
+        
+        if (!isInputFocused) {
+          this._inspectCurrentTile();
+        }
       }
     };
     

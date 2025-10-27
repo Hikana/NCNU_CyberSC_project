@@ -13,6 +13,10 @@
           </button>
         </router-link>
       </div>
+      
+      <!-- 音頻控制組件 -->
+      <AudioControls />
+      
       <StatusBar />
       <img :src="npcImage" alt="NPC" class="npc" @click="onNpcClick" />
       <ControlsHint :trigger="hintTrigger" /> 
@@ -22,6 +26,12 @@
 
     <!-- ✅ 新增：隨機事件彈窗 (只在遊戲裡出現) -->
     <RandomEventModal />
+    
+    <!-- Bingo 動畫組件 -->
+    <BingoAnimation 
+      :isVisible="gameStore.showBingoAnimation" 
+      @close="gameStore.closeBingoAnimation()" 
+    />
 
     <!-- 連線提示視窗 -->
     <ConnectionModal 
@@ -59,6 +69,8 @@ import NpcMenu from '@/components/NpcMenu.vue';
 import QuizPanel from '@/components/QuizPanel.vue';
 import ControlsHint from '@/components/ControlsHint.vue';
 import ConnectionModal from '@/components/ConnectionModal.vue';
+import AudioControls from '@/components/AudioControls.vue';
+import BingoAnimation from '@/components/BingoAnimation.vue';
 
 import { usePlayerStore } from '@/stores/player';
 import { useUiStore } from '@/stores/ui';
@@ -66,17 +78,18 @@ import { useInventoryStore } from '@/stores/inventory';
 import { useAchievementStore } from '@/stores/achievement';
 import { useWallStore } from '@/stores/wall';
 import { useBuildingStore } from '@/stores/buildings';
-import { checkAuthStatus } from '@/utils/authCheck'; 
+import { useGameStore } from '@/stores/game';
 import RandomEventModal from './RandomEventModal.vue'
 import npcImage from '@/assets/NPC.gif';
 import backgroundImage from '@/assets/background.png';
 
 const playerStore = usePlayerStore();
 const uiStore = useUiStore();
-const inventoryStore = useInventoryStore(); 
+const inventoryStore = useInventoryStore();
 const achievementStore = useAchievementStore();
 const wallStore = useWallStore();
 const buildingStore = useBuildingStore();
+const gameStore = useGameStore();
 
 // 載入狀態
 const isLoading = ref(true);

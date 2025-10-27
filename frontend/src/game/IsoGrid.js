@@ -6,6 +6,7 @@ import { useWallStore } from '@/stores/wall'
 import { getConnectionColor } from '@/game/connectionRules'
 import castleImg from '@/assets/castle0.png'
 import can1Img from '@/assets/can1.png'
+import { audioService } from '@/services/audioService'
 
 const CASTLE_TILES = new Set([
   '0,0','0,1','0,2',
@@ -34,7 +35,7 @@ const CASTLE_BOUNDS = (() => {
 })()
 
 export class IsoGrid {
-  constructor(app, rows, cols, tileSize = 150, onTileClick, mapData = null) {
+  constructor(app, rows, cols, tileSize = 150, onTileClick, mapData = null, buildingStore = null) {
     console.log('IsoGrid 構造器:', { rows, cols, tileSize, onTileClick: !!onTileClick })
     
     this.app = app
@@ -43,6 +44,7 @@ export class IsoGrid {
     this.tileSize = tileSize
     this.onTileClick = onTileClick
     this.mapData = mapData || this.createDefaultMap()
+    this.buildingStore = buildingStore || useBuildingStore()
     this.selectedTile = null
     this.gridContainer = new PIXI.Container()
     // 允許依據 zIndex 排序，確保地圖元素可正確分層
@@ -69,6 +71,9 @@ export class IsoGrid {
     // 城堡碰撞檢測相關屬性
     this.castleHit = false // 是否已經碰到城堡
     this.castleContainer = null // 城堡容器引用
+    
+    // 連線相關屬性
+    this.connectionLines = [] // 儲存連線圖形引用
     
     this.app.stage.addChild(this.gridContainer)
     this.gridContainer.addChild(this.groundContainer)
@@ -539,58 +544,80 @@ export class IsoGrid {
       }
     }
 
-    // 第四階段：繪製連線   連線繪製功能 (第550-605行)
-    this.drawConnections(halfW, halfH);
+    // 第四階段：繪製連線
+    this.drawConnections();
   }
 
   /**
    * 繪製建築物之間的連線
-   * @param {number} halfW - 瓦片寬度的一半
-   * @param {number} halfH - 瓦片高度的一半
    */
-  drawConnections(halfW, halfH) {
-    const buildingStore = useBuildingStore();
+  drawConnections() {
+    // 清除現有連線
+    this.clearConnections();
     
-    // 繪製已建立的連線
-    buildingStore.connections.forEach(connection => {
+    if (!this.buildingStore || !this.buildingStore.connections) {
+      console.log('drawConnections: 沒有 buildingStore 或 connections');
+      return;
+    }
+    
+    // 檢查是否應該顯示連線
+    if (!this.buildingStore.showConnections) {
+      console.log('drawConnections: 連線已隱藏');
+      return;
+    }
+    
+    console.log('drawConnections: 開始繪製連線，連線數量:', this.buildingStore.connections.length);
+    
+    const halfW = this.tileSize / 2;
+    const halfH = this.tileSize / 4;
+    
+    this.buildingStore.connections.forEach((connection, index) => {
+      // 計算起始和結束位置的等角座標
       const fromX = (connection.from.x - connection.from.y) * halfW;
       const fromY = (connection.from.x + connection.from.y) * halfH;
       const toX = (connection.to.x - connection.to.y) * halfW;
       const toY = (connection.to.x + connection.to.y) * halfH;
-
-      // 使用連線規則模組決定連線顏色
-      const fromCell = buildingStore.map?.[connection.from.y]?.[connection.from.x];
-      const toCell = buildingStore.map?.[connection.to.y]?.[connection.to.x];
       
-      let lineColor = 0x00ff00; // 預設綠色
-      if (fromCell && toCell) {
-        const fromType = buildingStore.getBuildingType(fromCell.buildingId);
-        const toType = buildingStore.getBuildingType(toCell.buildingId);
-        
-        if (fromType && toType) {
-          lineColor = getConnectionColor(fromType, toType);
-        }
+      console.log(`連線 ${index}:`, {
+        from: connection.from,
+        to: connection.to,
+        fromScreen: { x: fromX, y: fromY },
+        toScreen: { x: toX, y: toY }
+      });
+      
+      // 創建連線圖形
+      const connectionLine = new PIXI.Graphics();
+      connectionLine
+        .moveTo(fromX, fromY)
+        .lineTo(toX, toY)
+        .stroke({ width: 5, color: 0xff0000, alpha: 1.0 }); // 增加寬度和完全不透明
+      
+      connectionLine.zIndex = 10; // 提高層級確保在建築物之上
+      connectionLine.visible = true; // 確保可見
+      
+      this.objectContainer.addChild(connectionLine);
+      
+      // 儲存連線引用以便後續清除
+      if (!this.connectionLines) {
+        this.connectionLines = [];
       }
-
-      const line = new PIXI.Graphics();
-      line.lineStyle(4, lineColor, 1); // 增加線條寬度，完全不透明
-      line.moveTo(fromX, fromY);
-      line.lineTo(toX, toY);
-      
-      this.connectionContainer.addChild(line);
+      this.connectionLines.push(connectionLine);
     });
+    
+    console.log('drawConnections: 完成繪製，共繪製', this.connectionLines.length, '條連線');
+  }
 
-    // 繪製正在選擇的連線（如果有的話）
-    if (buildingStore.connectionStart) {
-      const startX = (buildingStore.connectionStart.x - buildingStore.connectionStart.y) * halfW;
-      const startY = (buildingStore.connectionStart.x + buildingStore.connectionStart.y) * halfH;
-      
-      // 繪製起始建築物的高亮效果
-      const highlight = new PIXI.Graphics();
-      highlight.lineStyle(6, 0xff0000, 1); // 紅色邊框，增加寬度
-      highlight.drawCircle(startX, startY, 25); // 增加圓圈大小
-      
-      this.connectionContainer.addChild(highlight);
+  /**
+   * 清除所有連線
+   */
+  clearConnections() {
+    if (this.connectionLines) {
+      this.connectionLines.forEach(line => {
+        if (line.parent) {
+          line.parent.removeChild(line);
+        }
+      });
+      this.connectionLines = [];
     }
   }
 
@@ -626,6 +653,9 @@ export class IsoGrid {
     
     this.castleHit = true
     console.log('🏰 玩家碰到城堡！將 castle0.png 替換為 can1.png')
+    
+    // 播放門開啟音效（前0.5秒）
+    audioService.playDoorOpenSound()
     
     // 清除現有的城堡層級
     this.castleContainer.removeChildren()
@@ -708,6 +738,9 @@ export class IsoGrid {
     
     this.castleHit = false
     console.log('🏰 玩家離開城堡，重置城堡圖片為原始狀態')
+    
+    // 播放門關閉音效（後0.5秒）
+    audioService.playDoorCloseSound()
     
     // 清除現有的城堡層級
     this.castleContainer.removeChildren()

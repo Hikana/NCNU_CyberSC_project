@@ -1,47 +1,93 @@
 <template>
-  <section class="w-full min-h-screen bg-bgg relative text-wordcolor overflow-hidden">
+  <section
+    class="hacker-section w-screen min-h-screen text-wordcolor flex flex-col relative z-10 bg-cover bg-center"
+    style="background-image: url('src/assets/image/AAA.png');"
+  >
+    <!-- 標題 左上角 -->
+    <div ref="BlackOrWhite" class="absolute top-8 left-8 px-8">
+      <h2 class="text-4xl md:text-5xl font-bold">駭客與資安的關聯</h2>
+    </div>
 
-    <!-- CIA 說明內容 -->
-    <div
-        ref="ciaSection"
-        class="absolute inset-0 opacity-0 pointer-events-none flex flex-col md:flex-row gap-10 p-8 md:p-16 transition-opacity duration-1000 z-10"
-    >
-      <!-- 背景大型文字 CIA -->
-      <div class="absolute inset-0 flex justify-center items-center pointer-events-none">
-        <span class="text-[20rem] md:text-[35rem] font-extrabold text-wordcolor opacity-5 select-none">C I A</span>
-      </div>
+    <!-- 上半部按鈕 -->
+    <div class="flex justify-center gap-16 mt-32 mb-20">
+      <button
+        @click="showContent('white')"
+        class="px-16 py-10 rounded-3xl bg-lightGray text-gray-700 hover:bg-gray-300 font-bold text-3xl transition shadow-lg"
+      >
+        白帽駭客
+      </button>
 
-      <!-- 前景：左側文字 + 右側三要素 -->
-      <div class="relative z-10 flex flex-col md:flex-row gap-10 w-full">
-        <!-- 左側說明 -->
-        <div class="md:w-1/2 flex flex-col justify-center">
-          <h2 class="text-3xl md:text-5xl font-bold mb-6 md:mb-10 text-wordcolor">
-            安全三要素 <span class="italic">CIA</span>
-          </h2>
-          <div class="text-lg md:text-xl leading-relaxed space-y-4">
-            <h4 class="text-2xl font-semibold mb-2">CIA資訊安全三要素是常見的模型，</h4>
-            <h4 class="text-2xl font-semibold mb-2">構成安全系統開發的基礎。</h4>
-            <h4 class="text-2xl font-semibold mb-2">它們是用來尋找弱點和找出建立解決方案的方法。</h4>
-          </div>
+      <button
+        @click="showContent('black')"
+        class="px-16 py-10 rounded-3xl bg-gray-700 text-gray-200 hover:bg-gray-700 font-bold text-3xl transition shadow-lg"
+      >
+        黑帽駭客
+      </button>
+    </div>
+
+    <!-- 下半部內容 -->
+    <div class="flex-1 flex justify-center items-start px-8">
+      <transition name="fade" mode="out-in">
+        <div
+          v-if="active === 'white'"
+          key="white"
+          class="max-w-3xl w-full bg-white/10 backdrop-blur-md rounded-2xl shadow-lg p-10"
+        >
+          <h3 class="text-3xl font-bold mb-6">白帽駭客</h3>
+          <p class="text-xl leading-relaxed mb-4">
+            白帽駭客是正向的資安專家，通常協助企業或組織找出系統漏洞，進而提升防護能力。
+          </p>
+          <ul class="list-disc pl-6 space-y-3 text-lg">
+            <li>進行滲透測試</li>
+            <li>回報安全漏洞</li>
+            <li>協助改善資訊安全</li>
+          </ul>
         </div>
 
-        <!-- 右側項目列表 -->
-        <div class="md:w-1/2 flex flex-col justify-center gap-6">
-          <div
-              v-for="(item, index) in ciaElements"
-              :key="index"
-              :class="{ 'border-b border-wordcolor pb-6': index !== ciaElements.length - 1 }"
-          >
-            <h3 class="font-semibold text-2xl md:text-xl mb-2 text-wordcolor">
-              {{ item.title }} {{ item.subtitle }}
-            </h3>
-            <h3 class="text-wordcolor text-2xl md:text-base">{{ item.description }}</h3>
-          </div>
+        <div
+          v-else-if="active === 'black'"
+          key="black"
+          class="max-w-3xl w-full bg-white/10 backdrop-blur-md rounded-2xl shadow-lg p-10"
+        >
+          <h3 class="text-3xl font-bold mb-6">黑帽駭客</h3>
+          <p class="text-xl leading-relaxed mb-4">
+            黑帽駭客則是利用漏洞進行惡意攻擊，目的是竊取、破壞或牟取利益。
+          </p>
+          <ul class="list-disc pl-6 space-y-3 text-lg">
+            <li>入侵系統</li>
+            <li>竊取個資或機密</li>
+            <li>散布惡意程式</li>
+          </ul>
         </div>
-      </div>
+      </transition>
     </div>
   </section>
 </template>
-<script>
 
+<script>
+import { ref } from "vue";
+
+export default {
+  name: "HackerPage",
+  setup() {
+    const active = ref(null);
+
+    const showContent = (type) => {
+      active.value = active.value === type ? null : type; // 點同一顆可收回
+    };
+
+    return { active, showContent };
+  },
+};
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
