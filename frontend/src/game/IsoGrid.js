@@ -124,8 +124,10 @@ export class IsoGrid {
         console.warn(`⚠️ 建築圖片 ${id} 導入失敗:`, error)
         // 如果導入失敗，創建一個彩色矩形作為替代
         const graphics = new PIXI.Graphics()
+        // 使用安全的顏色計算，確保值在有效範圍內 (0-0xFFFFFF)
+        const colorValue = (0x00ff00 + (id * 0x111111)) % 0xFFFFFF
         graphics.rect(0, 0, this.tileSize, this.tileSize)
-          .fill({ color: 0x00ff00 + (id * 0x111111) })
+          .fill({ color: colorValue })
         this.buildingTextures[id] = this.createTextureFromGraphics(graphics)
       }
     }

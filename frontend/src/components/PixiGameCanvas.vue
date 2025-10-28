@@ -31,6 +31,7 @@
       <div class="actions">
         <button class="danger" @click="confirmDelete">拆除</button>
         <button class="connect" @click="connectBuilding">連線</button>
+        <button class="disconnect" @click="deleteConnection">刪除連線</button>
         <button class="ghost" @click="cancelDelete">取消</button>
       </div>
     </div>
@@ -75,6 +76,39 @@
     <div class="connection-controls">
       <button @click="cancelConnection" class="cancel-btn">
         取消
+      </button>
+    </div>
+  </div>
+
+  <!-- 刪除連線模式 UI -->
+  <div v-if="buildingStore.isDeletingConnection" class="delete-connection-ui">
+    <div class="delete-connection-info">
+      <p style="font-weight: bold;">刪除連線模式</p>
+      <p v-if="buildingStore.deleteConnectionTarget">
+        目標建築: ({{ buildingStore.deleteConnectionTarget.x }}, {{ buildingStore.deleteConnectionTarget.y }})
+      </p>
+      <p v-if="buildingStore.connectionsToDelete.length > 0" style="color: #dc2626;">
+        共 {{ buildingStore.connectionsToDelete.length }} 條連線
+      </p>
+      <p v-else style="color: #16a34a;">
+        此建築沒有任何連線
+      </p>
+    </div>
+    <div class="connection-list" v-if="buildingStore.connectionsToDelete.length > 0">
+      <div 
+        v-for="conn in buildingStore.connectionsToDelete" 
+        :key="conn.id"
+        class="connection-item"
+      >
+        <span>{{ getConnectionDisplayText(conn, buildingStore.deleteConnectionTarget) }}</span>
+        <button @click="deleteSingleConnection(conn.id)" class="delete-connection-btn">
+          刪除
+        </button>
+      </div>
+    </div>
+    <div class="delete-connection-controls">
+      <button @click="cancelDeleteConnection" class="cancel-btn">
+        完成
       </button>
     </div>
   </div>
@@ -147,6 +181,41 @@ function connectBuilding() {
   buildingStore.cancelDeletePrompt();
 }
 
+function deleteConnection() {
+  const tgt = buildingStore.deleteTarget;
+  if (!tgt) return;
+  
+  // 開始刪除連線模式
+  buildingStore.startDeleteConnectionMode(tgt);
+  // 關閉操作選單
+  buildingStore.cancelDeletePrompt();
+}
+
+function cancelDeleteConnection() {
+  buildingStore.cancelDeleteConnectionMode();
+}
+
+async function deleteSingleConnection(connectionId) {
+  await buildingStore.deleteSingleConnection(connectionId);
+}
+
+function getConnectionDisplayText(conn, targetPosition) {
+  if (!targetPosition) return '連線';
+  
+  // 判斷目標建築是連線的起點還是終點
+  if (conn.from.x === targetPosition.x && conn.from.y === targetPosition.y) {
+    // 目標建築是起點，顯示終點
+    return `連線至: (${conn.to.x}, ${conn.to.y})`;
+  } else {
+    // 目標建築是終點，顯示起點
+    return `連線自: (${conn.from.x}, ${conn.from.y})`;
+  }
+}
+
+function cancelDelete() {
+  buildingStore.cancelDeletePrompt();
+}
+
 function enterTrainingRoom() {
   buildingStore.hideCastleInteraction();
   router.push('/questions');
@@ -197,7 +266,7 @@ function cancelConnection() {
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   padding: 16px;
-  min-width: 300px;
+  min-width: 400px;
 }
 .operation-panel .title {
   font-weight: 700;
@@ -208,9 +277,9 @@ function cancelConnection() {
   margin-bottom: 12px;
 }
 .operation-panel .actions { 
-  display: flex; 
+  display: grid; 
+  grid-template-columns: 1fr 1fr;
   gap: 10px; 
-  flex-wrap: wrap;
 }
 .operation-panel .danger {
   background: #dc2626;
@@ -232,6 +301,16 @@ function cancelConnection() {
   flex: 1;
 }
 .operation-panel .connect:hover { background: #2563eb; }
+.operation-panel .disconnect {
+  background: #ff6b35;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  flex: 1;
+}
+.operation-panel .disconnect:hover { background: #e55a2b; }
 .operation-panel .ghost {
   background: #d3f1d7;
   color: #111827;
@@ -509,6 +588,89 @@ function cancelConnection() {
 
 .connection-controls .cancel-btn:hover {
   background: #da190b;
+}
+
+.delete-connection-ui {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(220, 38, 38, 0.95);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 150; 
+  min-width: 300px;
+  max-width: 400px;
+  pointer-events: auto;
+}
+
+.delete-connection-info {
+  margin-bottom: 10px;
+}
+
+.delete-connection-info p {
+  margin: 5px 0;
+  color: white;
+  font-size: 14px;
+}
+
+.connection-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.connection-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.connection-item span {
+  color: white;
+  font-size: 13px;
+  flex: 1;
+}
+
+.delete-connection-btn {
+  background: #fff;
+  color: #dc2626;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.delete-connection-btn:hover {
+  background: #fca5a5;
+  transform: translateY(-1px);
+}
+
+.delete-connection-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.delete-connection-controls .cancel-btn {
+  background: #fff;
+  color: #dc2626;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.delete-connection-controls .cancel-btn:hover {
+  background: #fca5a5;
 }
 
 </style>

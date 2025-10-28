@@ -43,6 +43,11 @@ export const useBuildingStore = defineStore('buildings', {
       ? localStorage.getItem('showConnections') === 'true' 
       : true, // 是否顯示連線
     
+    // 刪除連線模式相關狀態
+    isDeletingConnection: false,
+    deleteConnectionTarget: null, // 要刪除連線的建築物位置
+    connectionsToDelete: [], // 該建築的所有連線列表
+    
     // 連線提示視窗狀態
     connectionModal: {
       isVisible: false,
@@ -361,6 +366,19 @@ export const useBuildingStore = defineStore('buildings', {
       this.connections = this.connections.filter(conn => conn.id !== connectionId);
     },
 
+    async removeConnectionById(connectionId) {
+      try {
+        // 從後端刪除連線
+        await apiService.removeConnection(connectionId);
+        // 從本地狀態刪除連線
+        this.connections = this.connections.filter(conn => conn.id !== connectionId);
+        console.log('連線已刪除:', connectionId);
+      } catch (error) {
+        console.error('刪除連線失敗:', error);
+        alert('刪除連線失敗，請重試');
+      }
+    },
+
     // 切換連線顯示/隱藏
     toggleConnections() {
       this.showConnections = !this.showConnections;
@@ -416,6 +434,46 @@ export const useBuildingStore = defineStore('buildings', {
         reason,
         true // 顯示連線規則
       );
+    },
+
+    // 刪除連線模式相關方法
+    startDeleteConnectionMode(targetPosition) {
+      this.isDeletingConnection = true;
+      this.deleteConnectionTarget = targetPosition;
+      this.connectionsToDelete = this.getBuildingConnections(targetPosition.x, targetPosition.y);
+      console.log('開始刪除連線模式，目標建築位置:', targetPosition);
+      console.log('該建築的連線數量:', this.connectionsToDelete.length);
+    },
+
+    cancelDeleteConnectionMode() {
+      this.isDeletingConnection = false;
+      this.deleteConnectionTarget = null;
+      this.connectionsToDelete = [];
+    },
+
+    async deleteSingleConnection(connectionId) {
+      try {
+        // 從後端刪除連線
+        await apiService.removeConnection(connectionId);
+        // 從本地狀態刪除連線
+        this.connections = this.connections.filter(conn => conn.id !== connectionId);
+        // 更新連線列表
+        if (this.deleteConnectionTarget) {
+          this.connectionsToDelete = this.getBuildingConnections(
+            this.deleteConnectionTarget.x, 
+            this.deleteConnectionTarget.y
+          );
+        }
+        console.log('連線已刪除:', connectionId);
+        
+        // 如果沒有連線了，退出刪除模式
+        if (this.connectionsToDelete.length === 0) {
+          this.cancelDeleteConnectionMode();
+        }
+      } catch (error) {
+        console.error('刪除連線失敗:', error);
+        alert('刪除連線失敗，請重試');
+      }
     }
   }
 });
