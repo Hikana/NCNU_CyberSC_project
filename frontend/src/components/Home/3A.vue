@@ -34,8 +34,8 @@
               :class="[
                 'w-20 h-20 rounded-full text-3xl font-bold transition-all duration-300 flex items-center justify-center',
                 selectedId === item.id 
-                  ? 'bg-wordcolor text-white scale-110' 
-                  : 'bg-gray-600 text-white hover:bg-gray-500'
+                  ? 'bg-middleGray text-wordcolor scale-110' 
+                  : 'bg-wordcolor text-white hover:bg-gray-500'
               ]"
             >
               {{ item.id }}
@@ -50,24 +50,24 @@
             <h3 class="font-semibold text-2xl mb-4">
               {{ selectedContent.title }}
             </h3>
-            <h4 class="text-lg mb-4">{{ selectedContent.subtitle }}</h4>
+            <h4 class="text-xl mb-4">{{ selectedContent.subtitle }}</h4>
             
             <!-- 遍歷 contents -->
             <div v-for="(content, cIndex) in selectedContent.contents" :key="cIndex" class="mb-6">
-              <h4 class="font-semibold text-lg mb-2">{{ content.subtitle }}</h4>
-              <p class="text-base md:text-lg leading-relaxed mb-3" v-html="content.text"></p>
+              <h4 class="font-semibold text-xl mb-2">{{ content.subtitle }}</h4>
+              <p class="text-base md:text-xl leading-relaxed mb-3" v-html="content.text"></p>
               
               <!-- 如果有 subcontents -->
               <div v-if="content.subcontents" class="ml-4 space-y-3">
                 <div v-for="(subcontent, sIndex) in content.subcontents" :key="sIndex">
-                  <h5 class="font-medium text-base mb-1">{{ subcontent.subtitle }}</h5>
-                  <p class="text-sm md:text-base leading-relaxed" v-html="subcontent.text"></p>
+                  <h5 class="font-medium text-xl mb-1"><li>{{ subcontent.subtitle }}</li></h5>
+                  <p class="text-sm md:text-lg leading-relaxed" v-html="subcontent.text"></p>
                   
                   <!-- 如果有 subsubcontents -->
                   <div v-if="subcontent.subsubcontents" class="ml-4 mt-2 space-y-2">
                     <div v-for="(subsubcontent, ssIndex) in subcontent.subsubcontents" :key="ssIndex">
-                      <h6 class="font-medium text-sm mb-1">{{ subsubcontent.subtitle }}</h6>
-                      <p class="text-sm leading-relaxed" v-html="subsubcontent.text"></p>
+                      <h6 class="font-medium text-lg mb-1"><li>{{ subsubcontent.subtitle }}</li></h6>
+                      <p class="text-lg leading-relaxed" v-html="subsubcontent.text"></p>
                     </div>
                   </div>
                 </div>
@@ -157,11 +157,11 @@ export default {
             text: "為了收集使用者與系統之間互動的資料，留下軌跡紀錄",
             subcontents: [
               {
-                subtitle: "行為",
+                subtitle: "行為：",
                 text: "量測（Measuring）、監控（Monitoring）、報告（Reporting）與紀錄檔案 (Logging)"
               },
               {
-                subtitle: "應用",
+                subtitle: "應用：",
                 text: "幫助未來進行稽核（Auditing）、計費（Billing）、分析（Analysis）、管理"
               }
             ]
