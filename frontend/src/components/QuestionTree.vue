@@ -1,199 +1,371 @@
 <template>
-  <div class="flex min-h-screen">
-    <!-- Sidebar -->
-    <aside class="w-72 bg-[#111a22] p-4 flex flex-col justify-between shrink-0">
-      <div>
-        <!-- Sidebar Header -->
-        <div class="flex items-center gap-3 mb-6">
-          <div 
-            class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" 
-            style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBiocw9ONzKmk8EMpwp7Ibrd4vl3EB9gw_6fZYW1ZU5lLI_H-cDW9yoz4oT4eiqqyWCvzo-jA8tbxyNJoXH5bU-yIuTvnF7MLMPRQfmwxxK8t9Pwg6biFs4LlT-6mPvD_LjC9ZXrfTxuDks2wjfDmm4eRNJi9Ky9RCa-OmZGTumqpL7fKF3m7y5wLdHwGYB5ZUJIUrvYy_5iEOGMnwKTbBbq3xrcTSp5dfJqGEit-OS9mvJ1wZ8VdgbnWyudKIOKEnjMUiajVWo1Xs");'>
+  <div class="flex min-h-screen bg-gray-900 text-white">
+    <!-- 左側 Sideblock -->
+    <aside class="w-72 bg-gray-800 p-4 space-y-2 flex-shrink-0">
+      <div class="text-lg font-bold mb-6">資安刷題平台</div>
+
+      <!-- 首頁 -->
+      <router-link
+        to="/home"
+        class="flex items-center gap-2 p-2 rounded hover:bg-gray-700"
+      >
+        <span class="material-symbols-outlined">home</span>
+        <span>首頁</span>
+      </router-link>
+
+      <!-- 分類 -->
+      <ul class="space-y-3 mt-4">
+        <li
+          v-for="cat in categories"
+          :key="cat.code"
+          @click="setCategory(cat.code)"
+          class="cursor-pointer p-2 rounded hover:bg-gray-700"
+          :class="activeCategory === cat.code && !showWrongList ? 'bg-gray-700 text-primary' : ''"
+        >
+          <div class="flex items-center gap-2 px-1 py-1">
+            <span class="material-symbols-outlined">{{ cat.icon }}</span>
+            <span class="text-sm font-medium whitespace-nowrap">
+              {{ cat.code }}: {{ cat.name }}
+            </span>
           </div>
-          <div class="flex flex-col">
-            <h1 class="text-white text-base font-medium">刷題平台</h1>
-            <p class="text-[#92adc9] text-sm">{{ user.email }}</p>
+
+          <div class="flex items-center gap-2 px-1 mt-1">
+            <div class="w-full bg-gray-600 rounded-full h-1.5 overflow-hidden">
+              <div
+                class="bg-primary h-1.5 rounded-full transition-all duration-500 ease-out"
+                :style="{ width: getProgressPercentage(cat.code) + '%' }"
+              ></div>
+            </div>
+            <span class="text-xs font-medium text-gray-400">
+              {{ progressMap[cat.code]?.completed || 0 }}/{{ progressMap[cat.code]?.total || 0 }}
+            </span>
           </div>
-        </div>
-        
-        <!-- Sidebar Navigation -->
-        <nav class="flex flex-col gap-1">
-          <router-link
-            to="/home"
-            class="flex items-center gap-3 px-3 py-2 text-white hover:text-primary"
-          >
-            <span class="material-symbols-outlined">home</span>
-            <span class="text-sm font-medium">首頁</span>
-          </router-link>
-          
-          <!-- Category Items -->
-          <router-link
-            v-for="category in categories"
-            :key="category.id"
-            :to="`/questions/${category.id}`"
-            class="flex flex-col gap-1 p-2 rounded-lg"
-            :class="$route.params.id === category.id ? 'bg-primary/20' : ''"
-          >
-            <div
-              class="flex items-center gap-3 px-3 py-2 rounded-lg"
-              :class="$route.params.id === category.id ? 'text-primary' : 'text-white'"
-            >
-              <span class="material-symbols-outlined">{{ category.icon }}</span>
-              <span class="text-sm font-medium">{{ category.name }}</span>
-            </div>
-            <div class="flex items-center gap-2 px-3">
-              <div class="w-full bg-gray-600 rounded-full h-1.5">
-                <div 
-                  class="bg-primary h-1.5 rounded-full" 
-                  :style="{ width: getProgressPercentage(category.completed, category.total) + '%' }"
-                ></div>
-              </div>
-              <span 
-                class="text-xs font-medium"
-                :class="$route.params.id === category.id ? 'text-primary' : 'text-gray-400'"
-              >
-                {{ category.completed }}/{{ category.total }}
-              </span>
-            </div>
-          </router-link>
-        </nav>
+        </li>
+      </ul>
+
+      <!-- 錯題複習 -->
+      <div class="mt-6 border-t border-gray-700 pt-4">
+        <button
+          class="flex items-center gap-2 p-2 w-full rounded hover:bg-gray-700"
+          @click="toggleWrongList"
+        >
+          <span class="material-symbols-outlined">history_edu</span>
+          <span>錯題複習</span>
+        </button>
       </div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 p-8">
-      <!-- Breadcrumbs -->
-      <div class="flex flex-wrap gap-2 mb-6">
-        <router-link to="/home" class="text-[#92adc9]">首頁</router-link>
-        <span class="text-[#92adc9]">/</span>
-        <router-link to="/questions" class="text-[#92adc9]">OWASP Top 10</router-link>
-        <span class="text-[#92adc9]">/</span>
-        <span class="text-white">A01: Broken Access Control</span>
-      </div>
+    <!-- 右側內容 -->
+    <main class="flex-1 min-h-screen px-8 py-6 bg-gray-900 overflow-y-auto">
+      <!-- 錯題複習區 -->
+      <div
+        v-if="showWrongList"
+        class="flex flex-col justify-start min-h-[calc(100vh-3rem)]"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h1 class="text-2xl font-bold">錯題複習</h1>
+          <button
+            v-if="wrongQuestions.length && !wrongQuestions[0].isPlaceholder"
+            class="px-3 py-1 text-sm bg-red-600 hover:bg-red-500 rounded"
+            @click="clearAllWrong"
+          >
+            清空全部
+          </button>
+        </div>
 
-      <!-- Header -->
-      <div class="flex flex-col gap-3 mb-8">
-        <p class="text-white text-4xl font-black">A01: Broken Access Control</p>
-        <p class="text-[#92adc9]">探索與存取控制漏洞相關的挑戰，測試您的技能。</p>
-      </div>
-
-      <!-- Challenges -->
-      <div class="space-y-4">
-        <div 
-          v-for="challenge in challenges" 
-          :key="challenge.id"
-          class="group flex items-center gap-4 bg-[#111a22] hover:bg-primary/20 p-4 rounded-lg transition-all cursor-pointer"
-        >
-          <div class="flex items-center gap-4 flex-1">
-            <div class="flex items-center justify-center rounded-lg bg-[#1f2937] size-12">
-              <span 
-                class="material-symbols-outlined"
-                :class="challenge.iconClass"
-              >
-                {{ challenge.icon }}
-              </span>
-            </div>
-            <div class="flex flex-col">
-              <p class="text-white text-base font-medium">{{ challenge.title }}</p>
-              <p class="text-[#92adc9] text-sm">{{ challenge.description }}</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-4">
-            <span :class="challenge.difficultyClass">
-              {{ challenge.difficulty }}
-            </span>
-            <div class="flex size-7 items-center justify-center">
-              <div 
-                class="size-3 rounded-full" 
-                :class="challenge.completed ? 'bg-[#10B981]' : 'bg-[#6B7280]'"
-              ></div>
-            </div>
-            <router-link
-              :to="`/questions/${activeCategory}/challenge/${challenge.id}`"
-              class="bg-primary opacity-0 group-hover:opacity-100 text-white text-sm font-medium px-4 py-2 rounded-lg transition-opacity"
+        <div v-if="wrongQuestions.length" class="flex-1">
+          <transition-group name="fade-slide" tag="ul" class="space-y-4">
+            <li
+              v-for="q in wrongQuestions"
+              :key="q.id"
+              class="p-4 rounded-lg transition-all duration-300"
+              :class="q.isPlaceholder ? 'bg-gray-700 text-gray-400 text-center' : 'bg-gray-800'"
             >
-              {{ challenge.completed ? '查看詳情' : '開始挑戰' }}
-            </router-link>
-          </div>
+              <!-- placeholder 顯示 -->
+              <template v-if="q.isPlaceholder">
+                <p>{{ q.question }}</p>
+              </template>
+
+              <!-- 錯題顯示 -->
+              <template v-else>
+                <p class="font-semibold">{{ q.question }}</p>
+                <p class="text-sm text-gray-400 mb-2">
+                  正確答案：{{ q.options[q.answer] }}
+                </p>
+                <button
+                  class="px-3 py-1 text-sm bg-green-600 hover:bg-green-500 rounded"
+                  @click="removeFromWrongList(q.id)"
+                >
+                  已複習完成
+                </button>
+              </template>
+            </li>
+          </transition-group>
         </div>
       </div>
 
-      <!-- Footer -->
-      <footer class="mt-16 text-center text-[#92adc9] text-sm">
-        © 2024 刷題平台 | 
-        <a class="hover:text-primary" href="#">聯繫我們</a> | 
-        <a class="hover:text-primary" href="#">隱私政策</a>
-      </footer>
+      <!-- 題目列表區 -->
+      <div v-else>
+        <div class="flex flex-wrap gap-2 mb-6 items-center">
+          <router-link to="/home" class="flex items-center gap-1 text-[#92adc9] hover:text-primary">
+            <span class="material-symbols-outlined">home</span>
+            <span>首頁</span>
+          </router-link>
+          <span v-if="activeCategory" class="text-[#92adc9]">/</span>
+          <span v-if="activeCategory" class="text-[#92adc9]">OWASP Top 10</span>
+          <span v-if="activeCategory" class="text-[#92adc9]">/</span>
+          <span v-if="activeCategory" class="text-white">
+            {{ activeCategory }}: {{ currentCategoryName }}
+          </span>
+        </div>
+
+        <div v-if="paginatedQuestions.length">
+          <h1 class="text-2xl font-bold mb-2">
+            {{ activeCategory }}: {{ currentCategoryName }}
+          </h1>
+          <p class="text-gray-400 mb-6">
+            探索與 {{ currentCategoryName }} 相關的挑戰，測試您的技能。
+          </p>
+
+          <ul class="space-y-4">
+            <li
+              v-for="q in paginatedQuestions"
+              :key="q.id"
+              class="p-4 bg-gray-800 rounded-lg"
+            >
+              <div class="flex items-start gap-3 cursor-pointer" @click="toggleExpand(q)">
+                <span
+                  class="material-symbols-outlined mt-1"
+                  :class="{
+                    'text-gray-500': q.status === 'unanswered',
+                    'text-green-500': q.status === 'correct',
+                    'text-red-500': q.status === 'wrong'
+                  }"
+                >
+                  {{ q.status === 'unanswered'
+                    ? 'radio_button_unchecked'
+                    : q.status === 'correct'
+                    ? 'check_circle'
+                    : 'cancel'
+                  }}
+                </span>
+
+                <div class="flex-1">
+                  <p class="font-semibold">{{ q.question }}</p>
+                  <p class="text-sm text-gray-400">{{ q.description }}</p>
+                </div>
+              </div>
+
+              <div v-if="q.expanded" class="mt-3 pl-8 space-y-2">
+                <button
+                  v-for="(opt, idx) in q.options"
+                  :key="idx"
+                  class="w-full text-left px-3 py-2 rounded bg-gray-700 hover:bg-gray-600"
+                  @click="answerQuestion(q, idx)"
+                >
+                  {{ idx + 1 }}. {{ opt }}
+                </button>
+              </div>
+
+              <div v-if="q.status === 'wrong'" class="mt-3 pl-8">
+                <button
+                  class="px-3 py-1 text-sm bg-red-600 hover:bg-red-500 rounded"
+                  @click="retryQuestion(q)"
+                >
+                  重新挑戰
+                </button>
+              </div>
+            </li>
+          </ul>
+
+          <div class="flex justify-between items-center mt-6">
+            <button
+              class="px-4 py-2 bg-gray-700 rounded disabled:opacity-50"
+              @click="prevPage"
+              :disabled="currentPage === 1"
+            >
+              上一頁
+            </button>
+            <span class="text-gray-400">
+              第 {{ currentPage }} / {{ totalPages }} 頁
+            </span>
+            <button
+              class="px-4 py-2 bg-gray-700 rounded disabled:opacity-50"
+              @click="nextPage"
+              :disabled="currentPage === totalPages"
+            >
+              下一頁
+            </button>
+          </div>
+        </div>
+
+        <div v-else class="text-gray-400">沒有找到題目。</div>
+      </div>
     </main>
   </div>
 </template>
 
 <script>
-import { useRoute } from "vue-router";
+import { db } from '@/firebase/firebase.js'
+import { collection, getDocs } from 'firebase/firestore'
 
 export default {
-  name: 'QuestionTree',
-  setup() {
-    const route = useRoute();
-    return { route };
-  },
+  name: "QuestionTree",
   data() {
     return {
-      user: { email: 'user@example.com' },
+      questions: [],
+      wrongQuestions: [],
+      showWrongList: false,
+      activeCategory: "base",
+      currentPage: 1,
+      perPage: 10,
       categories: [
-        { id: 'A01', icon: 'lock_open', name: 'A01: Broken Access Control', completed: 1, total: 3 },
-        { id: 'A02', icon: 'key', name: 'A02: Cryptographic Failures', completed: 0, total: 5 },
-        { id: 'A03', icon: 'syringe', name: 'A03: Injection', completed: 4, total: 5 },
-        { id: 'A04', icon: 'design_services', name: 'A04: Insecure Design', completed: 1, total: 4 },
-        { id: 'A05', icon: 'settings', name: 'A05: Security Misconfiguration', completed: 2, total: 4 },
-        { id: 'A06', icon: 'build_circle', name: 'A06: Vulnerable Components', completed: 3, total: 3 },
-        { id: 'A07', icon: 'person', name: 'A07: Identification Failures', completed: 0, total: 2 },
-        { id: 'A08', icon: 'verified_user', name: 'A08: Integrity Failures', completed: 0, total: 3 },
-        { id: 'A09', icon: 'monitoring', name: 'A09: Logging & Monitoring', completed: 2, total: 3 },
-        { id: 'A10', icon: 'dns', name: 'A10: SSRF', completed: 0, total: 1 }
-      ],
-      challenges: [
-        {
-          id: 1,
-          title: '管理員權限繞過',
-          description: '嘗試繞過使用者權限檢查，以普通用戶身份存取管理員專屬的後台頁面。',
-          difficulty: '困難',
-          difficultyClass: 'bg-red-500/20 text-red-400 text-xs font-semibold px-2.5 py-0.5 rounded-full',
-          icon: 'lock',
-          iconClass: 'text-red-500',
-          completed: false
-        },
-        {
-          id: 2,
-          title: '不安全的直接物件引用 (IDOR)',
-          description: '通過修改 URL 中的參數，嘗試存取您無權查看的其他用戶的個人資料。',
-          difficulty: '中等',
-          difficultyClass: 'bg-yellow-500/20 text-yellow-400 text-xs font-semibold px-2.5 py-0.5 rounded-full',
-          icon: 'check_circle',
-          iconClass: 'text-green-500',
-          completed: true
-        },
-        {
-          id: 3,
-          title: '路徑遍歷',
-          description: '利用輸入參數中的 ../ 序列來存取伺服器上的任意文件。',
-          difficulty: '簡單',
-          difficultyClass: 'bg-green-500/20 text-green-400 text-xs font-semibold px-2.5 py-0.5 rounded-full',
-          icon: 'no_accounts',
-          iconClass: 'text-gray-500',
-          completed: false
-        }
+        { code: "base", name: "基礎題庫", icon: "menu_book" },
+        { code: "A01", name: "Broken Access Control", icon: "lock" },
+        { code: "A02", name: "Cryptographic Failures", icon: "vpn_key" },
+        { code: "A03", name: "Injection", icon: "bug_report" },
+        { code: "A04", name: "Insecure Design", icon: "design_services" },
+        { code: "A05", name: "Security Misconfiguration", icon: "settings" },
+        { code: "A06", name: "Vulnerable Components", icon: "timer" },
+        { code: "A07", name: "Identification Failures", icon: "person" },
+        { code: "A08", name: "Integrity Failures", icon: "security" },
+        { code: "A09", name: "Logging & Monitoring", icon: "analytics" },
+        { code: "A10", name: "SSRF", icon: "dns" }
       ]
-    };
+    }
   },
   computed: {
-    activeCategory() {
-      return this.$route.params.id || "A01";
+    filteredQuestions() {
+      return this.questions.filter(q => q.category === this.activeCategory)
+    },
+    totalPages() {
+      return Math.ceil(this.filteredQuestions.length / this.perPage) || 1
+    },
+    paginatedQuestions() {
+      const start = (this.currentPage - 1) * this.perPage
+      return this.filteredQuestions.slice(start, start + this.perPage)
+    },
+    currentCategoryName() {
+      const cat = this.categories.find(c => c.code === this.activeCategory)
+      return cat ? cat.name : ""
+    },
+    progressMap() {
+      const map = {}
+      this.categories.forEach(cat => {
+        const qs = this.questions.filter(q => q.category === cat.code)
+        const correctCount = qs.filter(q => q.status === "correct").length
+        map[cat.code] = {
+          completed: correctCount,
+          total: qs.length
+        }
+      })
+      return map
     }
   },
   methods: {
-    getProgressPercentage(completed, total) {
-      return Math.round((completed / total) * 100);
+    setCategory(catCode) {
+      this.activeCategory = catCode
+      this.currentPage = 1
+      this.showWrongList = false
+    },
+    toggleWrongList() {
+      this.showWrongList = !this.showWrongList
+      if (this.showWrongList) this.loadWrongQuestions()
+    },
+    prevPage() {
+      if (this.currentPage > 1) this.currentPage--
+    },
+    nextPage() {
+      if (this.currentPage < this.totalPages) this.currentPage++
+    },
+    getProgressPercentage(catCode) {
+      const prog = this.progressMap[catCode]
+      if (!prog || prog.total === 0) return 0
+      return Math.round((prog.completed / prog.total) * 100)
+    },
+    toggleExpand(q) {
+      q.expanded = !q.expanded
+    },
+    answerQuestion(q, idx) {
+      if (q.status !== "unanswered") return
+      if (idx === q.answer) {
+        q.status = "correct"
+      } else {
+        q.status = "wrong"
+        this.saveWrongQuestion(q)
+      }
+      q.expanded = false
+    },
+    retryQuestion(q) {
+      q.status = "unanswered"
+      q.expanded = false
+    },
+    saveWrongQuestion(q) {
+      let wrongList = JSON.parse(localStorage.getItem("wrongQuestions") || "[]")
+      const exists = wrongList.some(item => item.id === q.id)
+      if (!exists) {
+        wrongList.push({
+          id: q.id,
+          question: q.question,
+          options: q.options,
+          answer: q.answer,
+          category: q.category
+        })
+        localStorage.setItem("wrongQuestions", JSON.stringify(wrongList))
+      }
+    },
+    loadWrongQuestions() {
+      const list = JSON.parse(localStorage.getItem("wrongQuestions") || "[]")
+      if (list.length === 0) {
+        this.wrongQuestions = [
+          {
+            id: "placeholder",
+            question: "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄ 目前沒有錯題 🎉 ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄",
+            options: [],
+            answer: 0,
+            category: "none",
+            isPlaceholder: true
+          }
+        ]
+      } else {
+        this.wrongQuestions = list
+      }
+    },
+    removeFromWrongList(id) {
+      let wrongList = JSON.parse(localStorage.getItem("wrongQuestions") || "[]")
+      wrongList = wrongList.filter(item => item.id !== id)
+      localStorage.setItem("wrongQuestions", JSON.stringify(wrongList))
+      this.loadWrongQuestions()
+    },
+    clearAllWrong() {
+      localStorage.removeItem("wrongQuestions")
+      this.loadWrongQuestions()
     }
+  },
+  async mounted() {
+    const querySnapshot = await getDocs(collection(db, "questions"))
+    this.questions = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      status: "unanswered",
+      expanded: false
+    }))
+    this.loadWrongQuestions()
   }
-};
+}
 </script>
+
+<style scoped>
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.4s ease;
+}
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>
