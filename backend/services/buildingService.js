@@ -98,10 +98,11 @@ class BuildingService {
       // 5. 扣除科技點
       await playerData.updatePlayer(userId, { techPoints: player.techPoints - buildingInfo.techCost });
   
-      // 6. 更新地圖
+      // 6. 更新地圖（同時寫入建築類型，前端可直接依據 type 顯示圖片）
       await playerData.updateTile(userId, x, y, {
         status: 'placed',
         buildingId,
+        type: buildingInfo.type || 'host',
         placedAt: Date.now()
       });
   

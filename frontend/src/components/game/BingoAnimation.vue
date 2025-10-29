@@ -3,9 +3,6 @@
     <div class="bingo-container">
       <img src="@/assets/bingo.gif" alt="Bingo!" class="bingo-gif" />
     </div>
-    <div class="close-hint" @click="closeAnimation">
-      <div class="close-text">點擊關閉</div>
-    </div>
   </div>
 </template>
 
@@ -44,33 +41,6 @@ const closeAnimation = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.close-hint {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 15px 20px;
-  border-radius: 10px;
-  cursor: pointer;
-  z-index: 1001; /* 確保關閉提示在 gif 之上 */
-  transition: background 0.3s ease;
-  pointer-events: auto; /* 確保關閉提示可以接收點擊事件 */
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  min-width: 120px;
-  text-align: center;
-}
-
-.close-hint:hover {
-  background: rgba(0, 0, 0, 0.9);
-}
-
-.close-text {
-  font-size: 16px;
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .bingo-gif {

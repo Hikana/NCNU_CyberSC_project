@@ -1,11 +1,9 @@
 <template>
   <section
-    class="hacker-section w-screen min-h-screen text-wordcolor flex flex-col relative z-10 bg-cover bg-center"
-    style="background-image: url('src/assets/image/AAA.png');"
-  >
+    class="hacker-section w-screen min-h-screen text-wordcolor flex flex-col relative z-10 bg-cover bg-center"  >
     <!-- 標題 左上角 -->
     <div ref="BlackOrWhite" class="absolute top-8 left-8 px-8">
-      <h2 class="text-4xl md:text-5xl font-bold">駭客與資安的關聯</h2>
+      <h2 class="text-4xl md:text-5xl font-bold">白帽與黑帽的定義</h2>
     </div>
 
     <!-- 上半部按鈕 -->

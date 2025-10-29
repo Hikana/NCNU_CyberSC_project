@@ -10,6 +10,7 @@
         :style="{ top: stone.top, left: stone.left, width: stone.width, height: stone.height }"
         @mouseenter="activateGray(stone.id)"
         @mouseleave="deactivateGray(stone.id)"
+        @click="showOverlay(stone.id)"
     >
       <!-- title 上方置中 -->
       <h3 class="text-[27px] font-bold text-center mt-2" v-html="stone.title"></h3>
@@ -29,6 +30,49 @@
       <h3 class="font-bold text-center mt-2" :style="{ fontSize: stone.currentTrigger ? (stone.contents[stone.currentTrigger]?.titleSize || '27px') : '27px' }" v-html="stone.currentTrigger ? stone.contents[stone.currentTrigger]?.title : ''"></h3>
       <!-- text 在下方靠左，可以用 <br> 換行 -->
       <p class="font-bold w-full px-4 mt-4 text-left" :style="{ fontSize: stone.currentTrigger ? (stone.contents[stone.currentTrigger]?.textSize || '21px') : '21px' }" v-html="stone.currentTrigger ? stone.contents[stone.currentTrigger]?.text : ''"></p>
+    </div>
+
+    <!-- 🔹 點擊 A01～A10 顯示的彈出內容區 -->
+    <div
+      v-if="selectedStone"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+    >
+      <div
+        v-if="selectedStone"
+        class="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50"
+      >
+        <div
+          class="relative bg-lightGray rounded-xl p-8 flex flex-col w-[80vw] h-[80vh] overflow-hidden"
+          >
+
+          <div class="text-center mb-2"> <h2 class="text-3xl font-bold text-wordcolor mb-0"> {{ selectedStone }} 的詳細說明
+            </h2>
+          </div>
+
+          <button
+            class="absolute top-2 right-2 p-2 text-xl bg-lightGray font-bold text-gray-800 hover:text-black transition"
+            @click="closeOverlay"
+          >
+            ✕
+          </button>
+
+          <div
+            class="flex-grow flex flex-col gap-4 overflow-y-auto pt-2"
+          >
+            <!-- 🔹 根據 overlayContents 生成內容卡片 -->
+            <div
+              v-for="(item, index) in overlayContents"
+              :key="index"
+              class="bg-wordcolor rounded-2xl p-5 shadow-lg text-white text-lg"
+            >
+              <!-- 顯示每個分類的標題 -->
+              <h3 class="font-bold text-xl mb-2">{{ item.title }}</h3>
+              <!-- 顯示內容文字（支援 HTML） -->
+              <p v-html="item.content"></p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   </section>
@@ -61,6 +105,7 @@ export default {
           }},
         { id:"G02", top:"10vh", left:"63vw", width:"350px", height:"200px", active:false, currentTrigger:null, contents:{
             A01: { title:"預防措施", titleSize:"22px", textSize:"17px",text:"<ul><li>存取控制應僅在可信的環境中執行。</li><li>預設拒絕存取，除非明確授權。</li><li>實施統一的存取控制機制，避免不同系統間的不一致。</li></ul>" },
+            A02: { title:"主要問題", titleSize:"22px", textSize:"17px",text:"<ul><li>明碼傳輸的風險。</li><li>金鑰管理不當。</li><li>未保護加密資料的完整性。</li><li>使用弱加密演算法。</li></ul>" },
           }},
         { id:"G03", top:"48vh", left:"15vw", width:"365px", height:"220px", active:false, currentTrigger:null, contents:{
             A01: { title:"預防措施", titleSize:"22px", textSize:"17px", text:"<ul><li>API 需驗證 POST、PUT、DELETE 請求的存取權限。</li><li>確保JWT、Cookie 權限不可被操縱。</li><li>記錄存取控制失敗的事件，並通知管理員。</li></ul>" },
@@ -120,8 +165,10 @@ export default {
         { id:"G16", top:"412vh", left:"13vw", width:"620px", height:"215px", active:false, currentTrigger:null, contents:{
             A10: { title:"常見範例", titleSize:"27px", textSize:"20px", text:"<ul><li>內部端口掃描：透過 URL 變數控制請求目標地址來確認內部服務是否開放。</li><li>訪問雲端 metadata：獲取 AWS IAM 憑證，進一步利用 API 權限進行攻擊。</li></ul>" },
           }},
+          ],
+selectedStone: null,
+overlayContents: [],
 
-]
 };
 },
 methods: {
@@ -140,7 +187,196 @@ methods: {
         stone.currentTrigger = null;
       }
     });
-  }
+  },
+  showOverlay(stoneId) {
+  // 🔹 設定目前被點擊的石頭（用來控制顯示彈出視窗）
+  this.selectedStone = stoneId;
+
+  // 🔹 建立各 stoneId 的對應內容資料
+  const stoneDataMap = {
+  A01: [
+    {
+      title: "上榜原因",
+      content: `<ul><li>很多應用程式缺乏適當的存取控制機制，或者開發者在實作存取控制時出錯。</li><li>根據調查，94% 受測的應用程式至少有一個存取控制漏洞，平均發生率為 3.81％。</li><li>由於 Web 應用日益複雜，存取控制規則變得更難管理，錯誤機率也隨之上升。</li></ul>`
+    },
+    {
+      title: "常見弱點",
+      content: `<ul><li>權限提升：用戶獲得同級別或高級別用戶的權限。</li><li>IDOR（Insecure Direct Object References 不安全的直接對象引用）：攻擊者通過修改請求參數來訪問未經授權的資源。</li><li>Cookie或JWT未正確驗證，導致未經授權的存取。</li><li>CORS（Cross-Origin Resource Sharing 跨來源資源共享）：不當配置可能導致敏感資料被外部網站訪問。</li></ul>`
+    },
+    {
+      title: "預防措施",
+      content: `<ul><li>存取控制應僅在可信的環境中執行。</li><li>預設拒絕存取，除非明確授權。</li><li>實施統一的存取控制機制，避免不同系統間的不一致。</li>
+     <li>API 需驗證 POST、PUT、DELETE 請求的存取權限。</li><li>確保JWT、Cookie 權限不可被操縱。</li><li>記錄存取控制失敗的事件，並通知管理員。</li></ul>`
+    },
+  ],
+
+  A02: [
+    {
+      title: "上榜原因",
+      content: `<ul><li>攻擊門檻低，許多加密失敗問題容易被攻擊者利用。</li><li>影響範圍大，可能導致用戶資料外洩、身份盜竊、金融詐騙等嚴重後果。</li><li>廣泛存在的實現錯誤，開發人員容易使用弱加密演算法或金鑰管理不當。</li></ul>`
+    },
+    {
+      title:"主要問題", 
+      content:"<ul><li>明碼傳輸的風險：使用未加密的協定（如HTTP、SMTP、FTP）傳輸敏感資料，資料在傳輸過程中容易被攔截。</li><li>金鑰管理不當：金鑰的生成、存儲、分發或輪換不當，導致金鑰洩露或易被猜測。</li><li>未保護加密資料的完整性：加密資料未進行完整性驗證，攻擊者可以篡改加密資料，導致系統行為異常或資料損壞。</li><li>使用弱加密演算法：使用過時或不安全的加密演算法像是MD5、SHA-1、DES、RC4等，這些演算法很容易被現在的技術給破解。</li></ul>" 
+    },
+    {
+      title: "預防措施",
+      content: `<ul><li>使用經過驗證的強加密演算法，如 AES-256、RSA。</li><li>定期輪換金鑰，避免硬編碼金鑰。</li><li>使用安全的 TLS 版本並啟用 HSTS，強制使用 HTTPS。</li></ul>`
+    }
+  ],
+
+  A03: [
+    {
+      title: "上榜原因",
+      content: `<ul><li>廣泛影響範圍，幾乎所有與外部輸入交互的系統都可能成為目標。</li><li>高破壞力，可能導致敏感資料洩露，甚至讓攻擊者完全控制系統。</li><li>易於執行，許多注入攻擊只需簡單的工具或技巧即可實現。</li></ul>`
+    },
+    {
+      title: "Injection 的類型",
+      content: `<ul><li>SQL Injection</li><li>Command Injection</li><li>LDAP Injection</li><li>NoSQL Injection</li></ul>`
+    },
+    {
+      title: "預防措施",
+      content: `<ul><li>API 需驗證 POST、PUT、DELETE 請求的存取權限。</li><li>確保JWT、Cookie 權限不可被操縱。</li><li>記錄存取控制失敗的事件，並通知管理員。</li></ul>`
+    },
+    {
+      title: "常見範例",
+      content: `<ul><li>SQL Injection：使用 ' OR '1'='1 繞過登入驗證。</li><li>Command Injection：附加 ; ls -la 或 && dir 執行惡意命令。</li><li>NoSQL Injection：使用 {"$ne": null} 操作符注入。</li></ul>`
+    }
+  ],
+
+  A04: [
+    {
+      title: "常見弱點",
+      content: `<ul><li>權限提升：用戶獲得同級別或高級別用戶的權限。</li><li>IDOR：攻擊者通過修改請求參數來訪問未經授權的資源。</li><li>Cookie 或 JWT 未正確驗證，導致未經授權的存取。</li></ul>`
+    },
+    {
+      title: "預防措施",
+      content: `<ul><li>採用安全開發生命週期，確保安全專家參與設計。</li><li>在開發過程中使用安全設計模式與威脅建模。</li><li>限制使用者或服務的資源消耗，防止濫用。</li></ul>`
+    },
+    {
+      title: "需求和資源管理",
+      content: `<ul><li>收集並協商應用程式的業務需求，包含資料機密性、完整性要求。</li><li>評估應用程式的暴露程度，確定是否需要租戶隔離。</li><li>確保預算涵蓋設計、開發、測試與運行期間的安全活動。</li></ul>`
+    }
+  ],
+
+  A05: [
+    {
+      title: "上榜原因",
+      content: `<ul><li>容易被攻擊者利用，不需要高門檻技術。</li><li>影響範圍大，損害嚴重，可能導致資料庫被刪除或資料外洩。</li><li>可被用來發動進一步攻擊，如 XXE、SQL Injection 等。</li></ul>`
+    },
+    {
+      title: "主要問題",
+      content: `<ul><li>應用程式、伺服器、資料庫或框架的不當安全設定。</li><li>未移除預設帳號密碼或具安全缺陷的範例程式。</li><li>錯誤訊息曝露敏感的系統資訊。</li></ul>`
+    },
+    {
+      title: "預防措施",
+      content: `<ul><li>建立可重複的安全化流程，自動化確認環境中的安全設定。</li><li>停用不必要的功能與服務，移除預設帳號與密碼。</li><li>定期依據資安公告進行安全審查，使用 WAF 阻擋常見攻擊。</li></ul>`
+    },
+  ],
+
+  A06: [
+    {
+      title: "上榜原因",
+      content: `<ul><li>使用過時、未修補的軟體元件。</li><li>若未更新或移除，攻擊者可利用它們發動攻擊。</li><li>從而入侵系統或竊取機密資訊。</li></ul>`
+    },
+    {
+      title: "主要問題",
+      content: `<ul><li>依賴過時的軟體與函式庫，如舊版 jQuery、Log4j。</li><li>使用含有漏洞的前端框架，可能導致 XSS 攻擊。</li><li>過時的 API 或 Web 服務可能導致認證繞過。</li></ul>`
+    },
+    
+    {
+      title: "預防措施",
+      content: `<ul><li>定期更新所有軟體與依賴項，確保使用最新的安全補丁。</li><li>監控應用程式中使用的第三方套件。</li><li>刪除未使用的舊元件，減少攻擊面。</li><li>使用最小權限原則 + WAF 保護，降低風險。</li></ul>`
+    },
+    {
+      title: "攻擊手法",
+      content: `<ul><li>遠端代碼執行：利用 RCE 漏洞，執行惡意代碼。</li><li>已知漏洞利用：檢查應用程式是否使用有已知 CVE 的舊版軟體。</li><li>依賴函式庫漏洞：利用過時的套件執行攻擊。</li></ul>`
+    },
+  ],
+
+  A07: [
+    {
+      title: "常見弱點",
+      content: `<ul><li>使用預設或弱密碼，如「1234」、「password」。</li><li>未實施多因素認證。</li><li>會話管理不當，導致會話固定攻擊。</li></ul>`
+    },
+    {
+      title: "預防措施",
+      content: `<ul><li>強制使用強密碼策略並定期更換密碼。</li><li>實施多因素認證來增強安全性。</li><li>確保會話管理安全，登入後產生新的 Session ID。</li></ul>`
+    },
+    {
+      title: "常見範例",
+      content: `<ul><li>密碼預言機攻擊：使用已知密碼列表進行攻擊。</li><li>會話管理不當：未登出導致攻擊者可重新取得存取權限。</li><li>密碼安全性問題：強制密碼輪換反而導致使用者選擇弱密碼。</li></ul>`
+    }
+  ],
+
+  A08: [
+    {
+      title: "主要問題",
+      content: `<ul><li>未保護軟體供應鏈，高度依賴開源套件。</li><li>CI/CD 流程中的完整性漏洞。</li><li>未安全驗證軟體更新。</li></ul>`
+    },
+    {
+      title: "預防措施",
+      content: `<ul><li>定期檢查並更新所有第三方庫和開源套件。</li><li>對 CI/CD 系統實施最小權限原則。</li><li>對軟體更新進行數位簽章驗證。</li><li>對敏感數據進行加密和完整性檢查。</li></ul>`
+    },
+    {
+      title: "攻擊範例",
+      content: `<ul><li>供應鏈攻擊：植入惡意程式碼於第三方套件。</li><li>CI/CD 流程攻擊：竊取憑證或修改腳本。</li><li>偽造軟體更新：向用戶提供含惡意程式的更新。</li><li>數據篡改：修改 API 請求或資料庫記錄。</li></ul>`
+    },
+  ],
+
+  A09: [
+    {
+      title: "主要問題",
+      content: `<ul><li>未記錄重要的安全事件。</li><li>記錄內容過於簡略。</li><li>日誌未受保護，攻擊者可刪除或修改 log。</li></ul>`
+    },
+    {
+      title: "預防措施",
+      content: `<ul><li>使用集中式日誌管理，確保歷史日誌可追溯。</li><li>採用標準日誌格式，確保統一分析。</li><li>限制日誌存取權限，避免攻擊者刪除證據。</li><li>有效地即時監控及告警機制。</li></ul>`
+    },
+    {
+      title: "攻擊手法",
+      content: `<ul><li>反取證攻擊：刪除、修改或混淆日誌。</li><li>偽造正常流量：大量產生正常流量混淆惡意行為。</li><li>分散式攻擊：透過多個 IP 同時攻擊。</li></ul>`
+    },
+    {
+      title: "常見範例",
+      content: `<ul><li>內部威脅：內部員工濫用權限存取機密資料。</li><li>日誌規避技術：利用特定字元破壞日誌結構。</li><li>分散式暴力破解：使用大量代理伺服器避免觸發限制。</li></ul>`
+    }
+  ],
+
+  A10: [
+    {
+      title: "上榜原因",
+      content: `<ul><li>可繞過防火牆與 ACL，訪問內部系統。</li><li>影響範圍廣，許多應用程式允許用戶輸入 URL。</li><li>雲端環境風險提升，可存取 metadata 獲取敏感資訊。</li></ul>`
+    },
+    {
+      title: "SSRF 的類型",
+      content: `<ul><li>基本 SSRF：攻擊者能控制請求的 URL。</li><li>盲 SSRF：伺服器不會回應請求結果。</li><li>增強型 SSRF：透過 DNS rebinding 攻擊。</li></ul>`
+    },
+    {
+      title: "預防措施",
+      content: `<ul><li>白名單機制：僅允許特定的 URL 目標。</li><li>禁止內部 IP 訪問：過濾 127.0.0.1、localhost 及內部 IP。</li><li>關閉 HTTP 重導向，避免返回完整的伺服器響應。</li><li>使用 WAF 來檢測與攔截異常請求。</li></ul>`
+    },
+    {
+      title: "常見範例",
+      content: `<ul><li>內部端口掃描：透過 URL 變數控制請求目標地址來確認內部服務是否開放。</li><li>訪問雲端 metadata：獲取 AWS IAM 憑證，進一步利用 API 權限進行攻擊。</li></ul>`
+    }
+  ]
+};
+
+
+  // 🔹 根據被點擊的 stoneId 顯示對應內容
+  // 若該 ID 沒有定義，顯示預設訊息
+  this.overlayContents = stoneDataMap[stoneId] || [
+    { title: "尚無資料", content: `${stoneId} 暫無詳細內容` },
+  ];
+},
+
+closeOverlay() {
+  // 🔹 關閉彈出視窗並清空內容
+  this.selectedStone = null;
+  this.overlayContents = [];
+},
+
 }
 };
 </script>

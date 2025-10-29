@@ -50,8 +50,13 @@ async function handleRegister() {
     router.push('/Login'); // 註冊成功後直接跳轉到遊戲頁面
   } catch (error) {
     console.error("註冊失敗:", error);
-    // 根據 Firebase 的錯誤碼顯示更友善的訊息
     switch (error.code) {
+        case 'auth/invalid-email':
+            errorMsg.value = '電子郵件格式不正確。';
+            break;
+        case 'auth/missing-email':
+            errorMsg.value = '請輸入電子郵件。';
+            break;
         case 'auth/email-already-in-use':
             errorMsg.value = '這個電子郵件已經被註冊了。';
             break;

@@ -134,7 +134,6 @@ class GameData {
     // --- 監視器 1 ---
     // 檢查這個函式是否有被呼叫，以及它收到了什麼資料
     console.log("--- 準備寫入答題紀錄 ---");
-    console.log("收到的資料:", historyEntry);
 
     try {
       const docRef = await this.historyCollection.add({

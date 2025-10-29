@@ -19,7 +19,7 @@ class GameController {
       const userId = req.user.uid; 
       const question = await gameService.getRandomQuestion(userId);
 
-      console.log('✅ 取到題目:', question);
+      console.log('✅ 取到題目');
       if (!question) {
         throw new Error('沒有題目可用');
       }
@@ -46,7 +46,7 @@ class GameController {
       console.log(`📝 處理用戶 ${userId} 的答案: 題目ID=${questionId}, 答案=${answer}`);
 
       const result = await gameService.validateAnswer(userId, questionId, answer);
-      console.log("✅ gameService.validateAnswer 執行成功，結果:", result);
+      console.log("✅ gameService.validateAnswer 執行成功");
 
       res.status(200).json({
         success: true,
