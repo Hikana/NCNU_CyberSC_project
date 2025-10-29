@@ -53,8 +53,11 @@ export class Game {
 
     // 關鍵步驟：在建立地圖前，先從後端載入玩家的最新地圖資料
     await this.buildingStore.loadMap();
+    
+    // 載入連線資料
+    await this.buildingStore.loadConnections();
 
-    this._createMap();
+    this._createMap();
     await this._createPlayer();
     this._setupControls();
     this._setupWatchers(); // 啟用響應式監聽
@@ -305,7 +308,8 @@ export class Game {
     this.grid = new IsoGrid(
       this.app, 20, 20, this.TILE_SIZE,
       this._handleTileClick.bind(this),
-      this.buildingStore.map
+      this.buildingStore.map,
+      this.buildingStore
     );
     this.grid.gridContainer.zIndex = 0;
     this.world.addChild(this.grid.gridContainer);
@@ -345,6 +349,18 @@ export class Game {
       return;
     }
 
+    // 連線模式處理
+    if (this.buildingStore.isConnecting) {
+      if (cell.status === 'placed' && cell.buildingId) {
+        // 點擊到有建築物的格子，完成連線
+        this.buildingStore.completeConnection({ x: col, y: row });
+      } else {
+        // 點擊到沒有建築物的格子，取消連線
+        this.buildingStore.cancelConnection();
+      }
+      return;
+    }
+
     // 只有在放置建築模式時才允許滑鼠點擊
     if (this.buildingStore.isPlacing) {
       if (cell.status === 'developed') {
@@ -353,6 +369,13 @@ export class Game {
         this.buildingStore.showPlacementMessage('只能選擇已開發的土地！');
         this.buildingStore.selectTile(null);
       }
+      return;
+    }
+
+    // 檢查是否點擊到建築物（非放置模式且非連線模式）
+    if (cell.status === 'placed' && cell.buildingId) {
+      // 顯示建築物操作選單
+      this.buildingStore.deleteTarget = { x: col, y: row };
       return;
     }
 
@@ -385,6 +408,28 @@ export class Game {
     watch(() => this.wallStore.castleLevel, (newLevel, oldLevel) => {
       if (oldLevel !== undefined && newLevel !== oldLevel && this.grid) {        
         this.grid.drawGrid(); // 重繪地圖以顯示新的城堡等級
+      }
+    });
+
+    // 監聽連線變化，自動重繪連線
+    watch(() => this.buildingStore.connections, () => {
+      if (this.grid) {
+        this.grid.drawConnections();
+      }
+    }, { deep: true });
+
+    // 監聽連線模式變化
+    watch(() => this.buildingStore.isConnecting, (isConnecting) => {
+      if (this.grid) {
+        // 可以在這裡添加連線模式的視覺提示
+        console.log('連線模式:', isConnecting ? '開啟' : '關閉');
+      }
+    });
+
+    // 監聽連線顯示狀態變化
+    watch(() => this.buildingStore.showConnections, () => {
+      if (this.grid) {
+        this.grid.drawConnections();
       }
     });
   }

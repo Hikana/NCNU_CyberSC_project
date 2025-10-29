@@ -10,7 +10,9 @@ const eventRoutes = require('./routes/eventRoutes');
 const app = express();
 // 中介軟體
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['http://localhost:5173', 'http://localhost:5175'] 
+    : true, // 開發環境允許來源
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
