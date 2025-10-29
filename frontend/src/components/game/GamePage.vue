@@ -80,6 +80,8 @@ import { useWallStore } from '@/stores/wall';
 import { useBuildingStore } from '@/stores/buildings';
 import { useGameStore } from '@/stores/game'; 
 import RandomEventModal from '@/components/game/RandomEventModal.vue'
+import ConnectionModal from '@/components/ConnectionModal.vue';
+import { checkAuthStatus } from '@/utils/authCheck';
 
 import npcImage from '@/assets/NPC.gif';
 import backgroundImage from '@/assets/background.png';
