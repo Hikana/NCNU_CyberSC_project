@@ -11,10 +11,10 @@
     </div>
 
     <!-- 上半部 說明 -->
-    <div class="flex-1 flex items-center">
+    <div class="flex-1 flex items-start">
       <div class="w-full px-8 md:px-16 grid md:grid-cols-2 gap-10">
         <!-- 左欄 -->
-        <div class="text-left self-center">
+        <div class="text-left self-start">
           <h2 class="text-3xl md:text-5xl font-bold mb-6">
             Diffie–Hellman
           </h2>

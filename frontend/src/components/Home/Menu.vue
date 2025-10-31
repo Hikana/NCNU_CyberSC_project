@@ -69,7 +69,7 @@
     <div class="flex space-x-3 mt-1">
       <!-- ✅ 改：資安小鎮按鈕會根據登入狀態自動導向 -->
       <button
-        class="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg px-5 py-2 shadow-md transition"
+        class="bg-white hover:bg-gray-200 text-black font-semibold rounded-lg px-5 py-2 shadow-md transition"
         @click="goCyberTown"
       >
         資安小鎮
@@ -77,7 +77,7 @@
 
       <!-- ✅ 改：練功房按鈕一樣檢查登入狀態 -->
       <button
-        class="bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg px-5 py-2 shadow-md transition"
+        class="bg-white hover:bg-gray-200 text-black font-semibold rounded-lg px-5 py-2 shadow-md transition"
         @click="goTrainingRoom"
       >
         練功房

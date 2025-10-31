@@ -1,65 +1,83 @@
 <template>
-  <div ref="containerRef" class="bg-bgg relative w-full h-screen overflow-hidden flex justify-center items-center font-sans">
-
-    <!-- 左上：層說明 -->
-    <div class="absolute top-4 left-[320px] px-3 py-2 rounded-md shadow-md transition-all duration-300 z-30 transform scale-125 origin-top-left"
-         :style="{
-           backgroundColor: currentColor.dot,
-           color: 'white'
-         }">
+  <div
+    ref="containerRef"
+    class="bg-bgg relative w-full h-screen overflow-hidden flex justify-center items-center font-sans"
+  >
+    <div
+      class="absolute top-4 left-[320px] px-3 py-2 rounded-md shadow-md transition-all duration-300 z-30 transform scale-125 origin-top-left"
+      :style="{
+        backgroundColor: currentColor.dot,
+        color: 'white',
+      }"
+    >
       <h2 class="text-xl font-bold">{{ currentGroupTitle }}</h2>
-      <p class="text-sm mt-1 opacity-90" v-html="currentGroupDescription"></p>
+      <p class="text-md mt-1 opacity-90" v-html="currentGroupDescription"></p>
     </div>
 
-    <!-- 右上：流程說明 -->
-    <div class="absolute top-4 right-4 px-6 py-2 rounded-md shadow-md transition-all duration-300 z-30 transform scale-125 origin-top-right"
-         :style="{
-           backgroundColor: currentColor.dot,
-           color: 'white'
-         }">
-      <h2 class="text-lg font-bold">傳輸流程</h2>
-      <p class="text-sm mt-1 opacity-90" v-html="currentTheStep"></p>
+    <div
+      class="absolute top-4 right-4 px-7 py-2 rounded-md shadow-md transition-all duration-300 z-30 transform scale-125 origin-top-right"
+      :style="{
+        backgroundColor: currentColor.dot,
+        color: 'white',
+      }"
+    >
+      <h2 class="text-xl font-bold">傳輸流程</h2>
+      <p class="text-lg mt-1 opacity-90" v-html="currentTheStep"></p>
     </div>
 
-    <!-- 左側層次列表 -->
     <div class="absolute left-16 top-[17%] flex items-start z-20 scale-125">
       <div
-          class="absolute left-[20px] top-0 w-1.5 h-full rounded-full transition-all duration-300 ease-out"
-          :style="{
-            backgroundColor: '#D5CFE1',
-            height: `${(layerSteps.length - 1) * 61}px`,
-            transform: 'translateY(10px)'
-          }"
+        class="absolute left-[20px] top-0 w-1.5 h-full rounded-full transition-all duration-300 ease-out"
+        :style="{
+          backgroundColor: '#D5CFE1',
+          height: `${(layerSteps.length - 1) * 61}px`,
+          transform: 'translateY(10px)',
+        }"
       ></div>
 
       <div
-          ref="jpgNode"
-          class="bg-can bg-cover bg-center absolute w-16 h-16 transition-transform duration-300 ease-out"
-          :style="{
-            left: '-16px',
-            transform: `translate(0, ${activeLayerIndex * 56}px)`
-          }"
+        ref="jpgNode"
+        class="bg-can bg-cover bg-center absolute w-16 h-16 transition-transform duration-300 ease-out"
+        :style="{
+          left: '-16px',
+          transform: `translate(0, ${activeLayerIndex * 56}px)`,
+        }"
       ></div>
 
-      <div class="ml-16 flex flex-col items-start transition-all duration-500 ease-out">
-        <div v-for="(layer, index) in layerSteps" :key="index"
-             class="flex items-center transition-all duration-500 ease-out h-14">
-          <div class="w-5 h-5 rounded-full transition-all duration-300"
-               :style="{
-                backgroundColor: layer.color.dot,
-                transform: activeLayerIndex === index ? 'scale(1.2)' : 'scale(1)',
-                boxShadow: activeLayerIndex === index ? `0 0 6px 1px ${layer.color.dot}` : 'none'
-              }">
-          </div>
+      <div
+        class="ml-16 flex flex-col items-start transition-all duration-500 ease-out"
+      >
+        <div
+          v-for="(layer, index) in layerSteps"
+          :key="index"
+          class="flex items-center transition-all duration-500 ease-out h-14"
+        >
+          <div
+            class="w-5 h-5 rounded-full transition-all duration-300"
+            :style="{
+              backgroundColor: layer.color.dot,
+              transform:
+                activeLayerIndex === index ? 'scale(1.2)' : 'scale(1)',
+              boxShadow:
+                activeLayerIndex === index
+                  ? `0 0 6px 1px ${layer.color.dot}`
+                  : 'none',
+            }"
+          ></div>
           <div
             class="ml-3 px-2 py-0.5 rounded-lg transition-all duration-300 cursor-pointer select-none"
-            @click="activeLayerIndex = index"
+            @click="activeLayerIndex = index; currentPage = 1"
             :style="{
-              backgroundColor: activeLayerIndex === index ? layer.color.dot : 'transparent',
-              color: activeLayerIndex === index ? 'white' : normalTextColor,
+              backgroundColor:
+                activeLayerIndex === index ? layer.color.dot : 'transparent',
+              color:
+                activeLayerIndex === index ? 'white' : normalTextColor,
               fontWeight: 'bold',
               fontSize: activeLayerIndex === index ? '16px' : '14px',
-              boxShadow: activeLayerIndex === index ? `0 0 8px ${layer.color.dot}` : 'none'
+              boxShadow:
+                activeLayerIndex === index
+                  ? `0 0 8px ${layer.color.dot}`
+                  : 'none',
             }"
           >
             {{ layer.title }}
@@ -68,45 +86,86 @@
       </div>
     </div>
 
-    <!-- 中間內容方格區 -->
-    <div class="content-container absolute left-[22%] top-[55%] -translate-y-1/2 w-[1200px] flex flex-col transition-opacity duration-300 opacity-100">
+    <div
+      class="content-container absolute left-[22%] top-[50%] -translate-y-[55%] w-[1200px] flex flex-col transition-opacity duration-300 opacity-100"
+    >
       <transition-group
         name="fade-in"
         tag="div"
         class="grid grid-cols-2 gap-x-2 gap-y-6 content-wrapper text-wordcolor"
       >
         <div
-          v-for="(step, index) in currentLayerSteps"
+          v-for="(step, index) in paginatedSteps"
           :key="step.base"
           class="px-4 py-3 rounded-xl shadow-lg text-left transition-all duration-300 ease-out w-[520px] relative overflow-hidden"
-          :style="{ backgroundColor: step.color.bg, transform: `translateY(${index * 5}px)` }"
+          :style="{
+            backgroundColor: step.color.bg,
+            transform: `translateY(${index * 5}px)`,
+          }"
         >
-          <!-- 標題列 -->
-          <div class="flex justify-between items-center cursor-pointer"
-               @click="toggleExpand(index)">
+          <div
+            class="flex justify-between items-center cursor-pointer"
+            @click="toggleExpand(index)"
+          >
             <h3 class="font-bold text-[18px]" v-html="step.base"></h3>
-            <svg class="w-6 h-6 transition-transform duration-300 transform"
-                             :style="{
-                                transform: expandedIndices.has(index) ? 'rotate(180deg)' : 'rotate(0deg)',
-                                color: currentColor.dot // 讓箭頭顏色跟隨當前層次的主題色
-                             }"
-                             xmlns="http://www.w3.org/2000/svg"
-                             fill="none"
-                             viewBox="0 0 24 24"
-                             stroke="currentColor"
-                             stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
+            <svg
+              class="w-6 h-6 transition-transform duration-300 transform"
+              :style="{
+                transform: expandedIndices.has(index)
+                  ? 'rotate(180deg)'
+                  : 'rotate(0deg)',
+                color: currentColor.dot,
+              }"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
           </div>
 
-          <!-- 內容展開 -->
           <transition name="expand">
-            <div v-if="expandedIndices.has(index)" class="mt-2 text-base leading-normal" v-html="step.detail"></div>
+            <div
+              v-if="expandedIndices.has(index)"
+              class="mt-2 text-base leading-normal"
+              v-html="step.detail"
+            ></div>
           </transition>
         </div>
       </transition-group>
     </div>
 
+    <div class="absolute bottom-10 left-[22%] w-[1200px]">
+      <div class="flex justify-center items-center space-x-4">
+        <button
+          class="px-3 py-1 rounded-lg font-bold shadow"
+          :style="{ backgroundColor: currentColor.dot, color: 'white' }"
+          @click="prevPage"
+          :disabled="currentPage === 1"
+        >
+          &lt;
+        </button>
+
+        <span class="text-lg font-semibold text-wordcolor">
+          {{ currentPage }} / {{ totalPages }}
+        </span>
+
+        <button
+          class="px-3 py-1 rounded-lg font-bold shadow"
+          :style="{ backgroundColor: currentColor.dot, color: 'white' }"
+          @click="nextPage"
+          :disabled="currentPage === totalPages"
+        >
+          &gt;
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -119,8 +178,8 @@ const colorGroups = {
   group7: { bg: "#D8C7D9", dot: "#A997B8", text: "#2E2B35", title: "應用層", description: "此層是<strong>唯一直接與使用者資料互動的層</strong>，提供應用程式所需的通訊協定。", theStep:"<li>使用者輸入網址，向瀏覽器發送請求。</li><li>瀏覽器向 DNS 伺服器查詢網址IP。</li><li>產生 HTTP/HTTPS 請求。</li>" },
   group6: { bg: "#C8D7E0", dot: "#7F9EB2", text: "#2E2B35", title: "表示層", description: "此層負責處理資料的<strong>轉譯、加密和壓縮</strong>，<br>以確保應用程式層能夠正確讀取資料。", theStep:"<li>將應用層的資料轉換成可傳輸格式。</li><li>在此層進行加密（SSL/TLS）。</li><li>字符編碼轉換(標準化格式)：如ASCII、Unicode等不同的字符集轉換。</li>" },
   group5: { bg: "#D8C7D9", dot: "#A997B8", text: "#2E2B35", title: "會話層", description: "此層負責<strong>建立、管理和終止</strong>兩個設備之間的通訊「會話」(Session)。", theStep:"<li>建立、管理和終止會話。</li><li>在發生故障時進行數據同步和恢復，確保數據完整。</li><li>設置對話控制，決定哪個終端可以在何時發送數據。</li>" },
-  group4: { bg: "#C8D7E0", dot: "#7F9EB2", text: "#2E2B35", title: "傳輸層", description: "此層負責兩個裝置之間端對端的通訊、流量控制與錯誤控制，<br>將<strong>上層資料分解為「區段」(Segment)</strong>。", theStep:"<li>在網路中的不同主機之間建立、維護和終止數據傳輸連接。</li><li>數據分段和重組，傳輸表頭（TH）加至資料以形成封包。</li><li>錯誤檢測和恢復。</li><li>流量控制和擁塞控制。</li>" },
-  group3: { bg: "#D8C7D9", dot: "#A997B8", text: "#2E2B35", title: "網路層", description: "此層負責在不同網路之間的資料傳輸與路由，<br>將<strong>傳輸層的區段分解為「封包」(Packet)</strong>，並為封包尋找最佳路徑。", theStep:"<li>路徑選擇和封包轉發。</li><li>將網路表頭（NH）加至封包，以形成封包，加上來源與目的 IP 地址。</li><li>決定路由。</li>" },
+  group4: { bg: "#C8D7E0", dot: "#7F9EB2", text: "#2E2B35", title: "傳輸層", description: "此層負責兩個裝置之間端對端的通訊、<br>流量控制與錯誤控制，<br>將<strong>上層資料分解為「區段」(Segment)</strong>。", theStep:"<li>在網路中的不同主機之間建立、維護和終止數據傳輸連接。</li><li>數據分段和重組，傳輸表頭（TH）加至資料以形成封包。</li><li>錯誤檢測和恢復。</li><li>流量控制和擁塞控制。</li>" },
+  group3: { bg: "#D8C7D9", dot: "#A997B8", text: "#2E2B35", title: "網路層", description: "此層負責在不同網路之間的資料傳輸與路由，<br>將<strong>傳輸層的區段分解為「封包」(Packet)</strong>，<br>並為封包尋找最佳路徑。", theStep:"<li>路徑選擇和封包轉發。</li><li>將網路表頭（NH）加至封包，以形成封包，加上來源與目的 IP 地址。</li><li>決定路由。</li>" },
   group2: { bg: "#C8D7E0", dot: "#7F9EB2", text: "#2E2B35", title: "資料鏈結層", description: "此層負責在<strong>同一個網路上的兩個設備之間建立可靠的資料傳輸</strong>，<br>並將來自網路層的封包分割成更小的「訊框」(Frame)。", theStep:"<li>將網路層封包封裝成Frame加入 MAC 地址。</li><li>控制流量傳輸速率，以防止網路擁塞。</li>" },
   group1: { bg: "#D8C7D9", dot: "#A997B8", text: "#2E2B35", title: "實體層", description: "處理網路中實體的設備和介質，<br/>並<strong>將數據轉換為由 1 和 0 組成的位元流</strong>進行傳輸。", theStep:"<li>Wi-Fi：封包轉成無線電波。</li><li>有線網路：封包轉為電壓信號。</li>" },
 };
@@ -161,11 +220,11 @@ const steps = [
   {base:"IPSec (Internet Protocol Security) - <br>網際網路安全協定", detail:"這是一套在 IP 層運作的「<strong>加密保全系統</strong>」。 它可以在兩個網路閘道之間建立一個「<strong>加密通道</strong>」，所有通過的IP封包都會被<strong>加密和認證</strong>。 這是建構<strong>VPN (虛擬私人網路)</strong> 的關鍵技術。", color:colorGroups.group3, layer: '網路層'},
 
   // 第二層：資料連結層 (Data Link Layer)
-  {base:"MAC (Media Access <br>Control) - 媒體存取控制", detail:"這是您網路卡（無論是有線還是Wi-Fi）的「<strong>身分證字號</strong>」。 這是一個<strong>全球唯一、燒錄在硬體中</strong>的實體位址（例如00:1A:2B:3C:4D:5E）。 在同一個區域網路內，設備之間就是靠這個位址來互相辨識和定位的。", color:colorGroups.group2, layer: '資料連結層'},
-  {base:"Framing - 訊框化", detail:"這就是「<strong>打包</strong>」的過程。此層會拿到來自第三層的「封包」（內容物），然後在它的<strong>前面加上「標頭」</strong>（包含接收方和發送方的MAC位址），在<strong>後面加上「結尾」</strong>（用於錯誤檢查），這個完整的包裹就稱為「訊框」。", color:colorGroups.group2, layer: '資料連結層'},
-  {base:"ARP (Address Resolution <br>Protocol) - 位址解析協定", detail:"這是在社區內「問路」的機制。您的電腦知道您印表機的IP位址（第三層，像是門牌號碼），但不知道它的MAC位址（第二層，身分證字號）。 於是您的電腦會透過ARP在網路中廣播：「嘿！請問<strong>IP是 192.168.1.100 的人，您的MAC位址是什麼？</strong>」。那台印表機收到後就會回覆：「是我是我！我的MAC是 xx:xx:xx:xx:xx:xx」。", color:colorGroups.group2, layer: '資料連結層'},
-  {base:"CSMA/CD (Carrier Sense <br>Multiple Access with <br>Collision Detection) - <br>載波感測多重存取/碰撞偵測", detail:"這是一套用在早期Hub網路上的「會議發言規則」。 它的運作方式為「<strong>先聽再說</strong>」：<br>1. <strong>Carrier Sense (先聽)</strong>：發言前先聽聽看有沒有人在講話。<br>2. <strong>Multiple Access (再說)</strong>：如果沒人講，我就開始講。<br>3. <strong>Collision <br>Detection (邊講邊聽)</strong>：我邊講邊聽，如果發現有人跟我同時講（發生碰撞），我們倆就立刻閉嘴，各自隨機等一小段時間，然後再重複第一步。", color:colorGroups.group2, layer: '資料連結層'},
-  {base:"VLAN (Virtual Local Area <br>Network) - 虛擬區域網路", detail:"這就像是在一間大辦公室（一台實體交換器）裡，用「透明隔板」隔出不同的小組（虛擬網路）。它可以將一台實體交換器在<strong>邏輯上劃分</strong>為多個獨立的廣播網域。 例如，會計部和業務部雖然插在同一台交換器上，但若分屬不同VLAN，它們在<strong>邏輯上就是兩個網路，無法互通</strong>，藉此提升了網路的安全性和管理性。", color:colorGroups.group2, layer: '資料連結層'},
+  {base:"MAC (Media Access <br>Control) - 媒體存取控制", detail:"這是您網路卡（無論是有線還是Wi-Fi）的「<strong>身分證字號</strong>」。 這是一個<strong>全球唯一、燒錄在硬體中</strong>的實體位址（例如00:1A:2B:3C:4D:5E）。 在同一個區域網路內，設備之間就是靠這個位址來互相辨識和定位的。", color:colorGroups.group2, layer: '資料鏈結層'},
+  {base:"Framing - 訊框化", detail:"這就是「<strong>打包</strong>」的過程。此層會拿到來自第三層的「封包」（內容物），然後在它的<strong>前面加上「標頭」</strong>（包含接收方和發送方的MAC位址），在<strong>後面加上「結尾」</strong>（用於錯誤檢查），這個完整的包裹就稱為「訊框」。", color:colorGroups.group2, layer: '資料鏈結層'},
+  {base:"ARP (Address Resolution <br>Protocol) - 位址解析協定", detail:"這是在社區內「問路」的機制。您的電腦知道您印表機的IP位址（第三層，像是門牌號碼），但不知道它的MAC位址（第二層，身分證字號）。 於是您的電腦會透過ARP在網路中廣播：「嘿！請問<strong>IP是 192.168.1.100 的人，您的MAC位址是什麼？</strong>」。那台印表機收到後就會回覆：「是我是我！我的MAC是 xx:xx:xx:xx:xx:xx」。", color:colorGroups.group2, layer: '資料鏈結層'},
+  {base:"CSMA/CD (Carrier Sense <br>Multiple Access with <br>Collision Detection) - <br>載波感測多重存取/碰撞偵測", detail:"這是一套用在早期Hub網路上的「會議發言規則」。 它的運作方式為「<strong>先聽再說</strong>」：<br>1. <strong>Carrier Sense (先聽)</strong>：發言前先聽聽看有沒有人在講話。<br>2. <strong>Multiple Access (再說)</strong>：如果沒人講，我就開始講。<br>3. <strong>Collision <br>Detection (邊講邊聽)</strong>：我邊講邊聽，如果發現有人跟我同時講（發生碰撞），我們倆就立刻閉嘴，各自隨機等一小段時間，然後再重複第一步。", color:colorGroups.group2, layer: '資料鏈結層'},
+  {base:"VLAN (Virtual Local Area <br>Network) - 虛擬區域網路", detail:"這就像是在一間大辦公室（一台實體交換器）裡，用「透明隔板」隔出不同的小組（虛擬網路）。它可以將一台實體交換器在<strong>邏輯上劃分</strong>為多個獨立的廣播網域。 例如，會計部和業務部雖然插在同一台交換器上，但若分屬不同VLAN，它們在<strong>邏輯上就是兩個網路，無法互通</strong>，藉此提升了網路的安全性和管理性。", color:colorGroups.group2, layer: '資料鏈結層'},
 
   // 第一層：實體層 (Physical Layer)
   {base:"UTP (Unshielded Twisted Pair) - <br>無遮蔽雙絞線", detail:"這就是您最常見到的<strong>網路線</strong>（例如電腦連接到牆上插座的線）。它被稱為「無遮蔽」是因為線材外面沒有額外的金屬層；「雙絞」則是指裡面的八條銅線兩兩一對地纏繞在一起。這樣做的目的是利用電磁原理，<strong>抵銷</strong>來自外部（如電源線、日光燈）的雜訊干擾，以確保訊號穩定。", color:colorGroups.group1, layer: '實體層'},
@@ -204,12 +263,6 @@ const currentLayerSteps = computed(() => {
   return steps.filter(step => step.layer === currentLayerName);
 });
 
-const expandedIndices = ref(new Set());
-function toggleExpand(index) {
-  if (expandedIndices.value.has(index)) expandedIndices.value.delete(index);
-  else expandedIndices.value.add(index);
-  expandedIndices.value = new Set(expandedIndices.value); // 觸發更新
-}
 
 const isFullyVisible = ref(false);
 const containerRef = ref(null);
@@ -278,6 +331,36 @@ onBeforeUnmount(() => {
     observer.unobserve(containerRef.value);
   }
 });
+// ✅ 新增分頁邏輯
+const currentPage = ref(1);
+const pageSize = 4;
+
+const totalPages = computed(() =>
+  Math.ceil(currentLayerSteps.value.length / pageSize)
+);
+
+const paginatedSteps = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  return currentLayerSteps.value.slice(start, start + pageSize);
+});
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) currentPage.value++;
+}
+
+function prevPage() {
+  if (currentPage.value > 1) currentPage.value--;
+}
+
+// 展開收合
+const expandedIndices = ref(new Set());
+function toggleExpand(index) {
+  if (expandedIndices.value.has(index)) {
+    expandedIndices.value.delete(index);
+  } else {
+    expandedIndices.value.add(index);
+  }
+}
 
 </script>
 

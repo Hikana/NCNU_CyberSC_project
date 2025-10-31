@@ -17,12 +17,12 @@
     </div>
 
     <!-- 上半部 說明內容 -->
-    <div class="flex-1 flex items-center">
+    <div class="flex-1 flex items-start">
       <div
         class="w-full px-8 md:px-16 grid md:grid-cols-2 gap-10"
       >
         <!-- 左欄 -->
-        <div class="text-left self-center">
+        <div class="text-left self-start">
           <h2 class="text-3xl md:text-5xl font-bold mb-6">
             非對稱式加密
           </h2>
@@ -206,7 +206,7 @@ export default {
           String.fromCharCode(...new Uint8Array(encryptedBuffer))
         );
       } catch (err) {
-        alert("Encryption Error: " + err.message);
+        alert("你沒有產生金鑰！！");
       }
     },
     async decrypt() {

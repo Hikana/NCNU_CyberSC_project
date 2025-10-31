@@ -1,12 +1,8 @@
 <template>
   <section class="cia-section w-screen min-h-screen bg-bgg text-wordcolor flex flex-col relative z-10">
     <!-- 背景 CIA 字 -->
-    <div
-      class="absolute inset-0 flex flex-col justify-center items-center pointer-events-none"
-    >
-      <span
-        class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[25rem]"
-      >
+    <div class="absolute inset-0 flex flex-col justify-center items-center pointer-events-none">
+      <span class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[25rem]">
         C I A
       </span>
     </div>
@@ -43,41 +39,68 @@
           </div>
         </div>
 
-        <!-- 右欄：內容 -->
+        <!-- 右欄：內容（加上白底長方形 + 可滾動） -->
         <div class="text-left self-start">
-
-          <!-- 顯示選中的內容 -->
-          <div v-if="selectedContent" class="space-y-6">
-            <h3 class="font-semibold text-2xl mb-4">
-              {{ selectedContent.title }}
-            </h3>
-            
-            <!-- 遍歷 contents -->
-            <div v-for="(content, cIndex) in selectedContent.contents" :key="cIndex" class="mb-6">
-              <h4 class="font-semibold text-xl mb-2">{{ content.subtitle }}</h4>
-              <p class="text-base md:text-xl leading-relaxed mb-3" v-html="content.text"></p>
+          <div
+            class="bg-lightGray text-wordcolor rounded-2xl shadow-lg p-6 md:p-8 max-h-[65vh] overflow-y-auto border border-gray-300"
+          >
+            <div v-if="selectedContent" class="space-y-6">
+              <h3 class="font-semibold text-2xl mb-4">
+                {{ selectedContent.title }}
+              </h3>
               
-              <!-- 如果有 subcontents -->
-              <div v-if="content.subcontents" class="ml-4 space-y-3">
-                <div v-for="(subcontent, sIndex) in content.subcontents" :key="sIndex">
-                  <h5 class="font-medium text-xl mb-1"><li>{{ subcontent.subtitle }}</li></h5>
-                  <p class="text-sm md:text-xl leading-relaxed" v-html="subcontent.text"></p>
-                  
-                  <!-- 如果有 subsubcontents -->
-                  <div v-if="subcontent.subsubcontents" class="ml-4 mt-2 space-y-2">
-                    <div v-for="(subsubcontent, ssIndex) in subcontent.subsubcontents" :key="ssIndex">
-                      <p class="text-lg leading-relaxed" v-html="subsubcontent.text"></p>
+              <!-- 遍歷 contents -->
+              <div
+                v-for="(content, cIndex) in selectedContent.contents"
+                :key="cIndex"
+                class="mb-6"
+              >
+                <h4 class="font-semibold text-xl mb-2">{{ content.subtitle }}</h4>
+                <p
+                  class="text-base md:text-xl leading-relaxed mb-3"
+                  v-html="content.text"
+                ></p>
+                
+                <!-- 如果有 subcontents -->
+                <div v-if="content.subcontents" class="ml-4 space-y-3">
+                  <div
+                    v-for="(subcontent, sIndex) in content.subcontents"
+                    :key="sIndex"
+                  >
+                    <h5 class="font-medium text-xl mb-1">
+                      <li>{{ subcontent.subtitle }}</li>
+                    </h5>
+                    <p
+                      class="text-sm md:text-xl leading-relaxed"
+                      v-html="subcontent.text"
+                    ></p>
+                    
+                    <!-- 如果有 subsubcontents -->
+                    <div
+                      v-if="subcontent.subsubcontents"
+                      class="ml-4 mt-2 space-y-2"
+                    >
+                      <div
+                        v-for="(subsubcontent, ssIndex) in subcontent.subsubcontents"
+                        :key="ssIndex"
+                      >
+                        <p
+                          class="text-lg leading-relaxed"
+                          v-html="subsubcontent.text"
+                        ></p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </div> <!-- end scrollable box -->
         </div>
       </div>
     </div>
   </section>
 </template>
+
 
 <script>
 import { ref, computed } from "vue"
