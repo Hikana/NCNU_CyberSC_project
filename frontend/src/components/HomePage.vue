@@ -71,6 +71,7 @@
         '不仿先到「練功坊」試試喔！',
       ]"
     />
+
     <section
       ref="gameSection"
       class="h-screen bg-bgg flex items-center justify-center"
@@ -263,12 +264,12 @@ body {
 /* ✅ 新增樣式 */
 .navigation-section {
   margin: 2rem 0;
-  padding: 2rem 2.5rem; 
+  padding: 2rem 2.5rem;
   border: 1px solid #e0e0e0;
-  border-radius: 12px; 
+  border-radius: 12px;
   background-color: #f9f9f9;
-  max-width: 960px; 
-  width: 90%; 
+  max-width: 960px;
+  width: 90%;
 }
 
 .loading-state {
@@ -375,11 +376,11 @@ body {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .primary-btn, .secondary-btn {
     width: 200px;
   }
-  
+
   .navigation-section {
     padding: 1rem;
   }

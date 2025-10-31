@@ -6,13 +6,13 @@
     <PixiGameCanvas @game-ready="onGameReady" />
     
     <div class="ui-layer">
-      <div style="position: absolute; top: 20px; left: 20px; z-index: 50; pointer-events: auto;">
-        <router-link to="/home">
-          <button style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
-            返回主頁
-          </button>
-        </router-link>
-      </div>
+      <router-link
+        to="/home"
+        class="home-link"
+      >
+        <span class="material-symbols-outlined">home</span>
+        <span>首頁</span>
+      </router-link>
       
       <!-- 音頻控制組件 -->
       <AudioControls />
@@ -68,7 +68,7 @@ import StatusBar from '@/components/game/StatusBar.vue';
 import NpcMenu from '@/components/game/NpcMenu.vue';
 import QuizPanel from '@/components/game/QuizPanel.vue';
 import ControlsHint from '@/components/game/ControlsHint.vue';
-import ConnectionModal from '@/components/ConnectionModal.vue';
+import ConnectionModal from '@/components/game/ConnectionModal.vue';
 import AudioControls from '@/components/game/AudioControls.vue';
 import BingoAnimation from '@/components/game/BingoAnimation.vue';
 
@@ -179,6 +179,25 @@ function onNpcClick() {
 /* UI 圖層內的具體元件，需要自己設定為可以被點擊 */
 .npc, .controls-hint /* 以及所有選單和按鈕 */ {
   pointer-events: auto;
+}
+
+.home-link {
+  position: absolute;
+  top: 24px;           
+  left: 2%;          
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;            
+  padding: 12px 16px;  
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  pointer-events: auto;
+  z-index: 30;
+}
+
+.home-link .material-symbols-outlined {
+  font-size: 1.5rem;  
 }
 
 .npc {
