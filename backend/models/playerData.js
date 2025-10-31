@@ -230,6 +230,46 @@ class PlayerData {
     console.log(`✅ Firestore 更新完成:`, result);
     return result;
   }
+
+  // --- 連線 (Connections) 相關 ---
+  // 取得玩家的所有連線
+  async getPlayerConnections(userId) {
+    const snapshot = await this.players.doc(userId).collection('connections').get();
+    if (snapshot.empty) return [];
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  // 添加新連線
+  async addConnection(userId, connection) {
+    const docRef = await this.players.doc(userId).collection('connections').add({
+      ...connection,
+      createdAt: FieldValue.serverTimestamp()
+    });
+    const newConnection = await docRef.get();
+    return { id: docRef.id, ...newConnection.data() };
+  }
+
+  // 刪除連線
+  async removeConnection(userId, connectionId) {
+    await this.players.doc(userId).collection('connections').doc(connectionId).delete();
+  }
+
+  // 刪除與指定建築相關的所有連線
+  async removeConnectionsByBuilding(userId, x, y) {
+    const snapshot = await this.players.doc(userId).collection('connections')
+      .where('from.x', '==', x).where('from.y', '==', y).get();
+    
+    for (const doc of snapshot.docs) {
+      await doc.ref.delete();
+    }
+
+    const snapshot2 = await this.players.doc(userId).collection('connections')
+      .where('to.x', '==', x).where('to.y', '==', y).get();
+    
+    for (const doc of snapshot2.docs) {
+      await doc.ref.delete();
+    }
+  }
 }
 
 module.exports = new PlayerData();

@@ -130,6 +130,9 @@ class BuildingService {
       throw new Error('該位置沒有建築');
     }
     
+    // 刪除與該建築相關的所有連線
+    await playerData.removeConnectionsByBuilding(userId, x, y);
+    
     // 更新地圖狀態為 developed
     await playerData.updateTile(userId, x, y, {
       status: 'developed',
@@ -139,6 +142,22 @@ class BuildingService {
     
     // 返回更新後的地圖
     return await this.getMapState(userId);
+  }
+
+  // --- 連線相關方法 ---
+  // 取得玩家的連線列表
+  async getConnections(userId) {
+    return await playerData.getPlayerConnections(userId);
+  }
+
+  // 添加連線
+  async addConnection(userId, connection) {
+    return await playerData.addConnection(userId, connection);
+  }
+
+  // 刪除連線
+  async removeConnection(userId, connectionId) {
+    await playerData.removeConnection(userId, connectionId);
   }
 
   // 取得建築商店列表

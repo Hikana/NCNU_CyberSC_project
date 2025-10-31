@@ -21,4 +21,15 @@ router.get('/shop', buildingController.getBuildingShop);
 // 取得建築資訊
 router.get('/info/:buildingId', buildingController.getBuildingInfo);
 
+// --- 連線相關路由 ---
+
+// 取得連線列表（需登入）
+router.get('/connections', auth, buildingController.getConnections);
+
+// 添加連線（需登入）
+router.post('/connections', auth, buildingController.addConnection);
+
+// 刪除連線（需登入）
+router.delete('/connections/:connectionId', auth, buildingController.removeConnection);
+
 module.exports = router;

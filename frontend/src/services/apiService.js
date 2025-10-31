@@ -354,6 +354,27 @@ export const apiService = {
     body: userData
   }),
   getPlayerState: () => request('/player/me'),
+
+  // --- 連線相關 API ---
+  // 取得連線列表
+  getConnections: async (userId) => {
+    return requestInventory(`${BUILDING_BASE_URL}/connections`, { method: 'GET' });
+  },
+
+  // 添加連線
+  addConnection: async (connection, userId) => {
+    return requestInventory(`${BUILDING_BASE_URL}/connections`, {
+      method: 'POST',
+      body: { connection }
+    });
+  },
+
+  // 刪除連線
+  removeConnection: async (connectionId, userId) => {
+    return requestInventory(`${BUILDING_BASE_URL}/connections/${connectionId}`, {
+      method: 'DELETE'
+    });
+  },
 };
 
 // 默認導出

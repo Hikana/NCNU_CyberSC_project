@@ -3,6 +3,7 @@ import grassImg from '@/assets/grass.png'
 import landImg from '@/assets/land.png'
 import { useBuildingStore } from '@/stores/buildings'
 import { useWallStore } from '@/stores/wall'
+import { getConnectionColor } from '@/game/connectionRules'
 import castleImg from '@/assets/castle0.png'
 import can1Img from '@/assets/can1.png'
 import { audioService } from '@/services/audioService'
@@ -36,7 +37,7 @@ const CASTLE_BOUNDS = (() => {
 })()
 
 export class IsoGrid {
-  constructor(app, rows, cols, tileSize = 150, onTileClick, mapData = null) {
+  constructor(app, rows, cols, tileSize = 150, onTileClick, mapData = null, buildingStore = null) {
     console.log('IsoGrid 構造器:', { rows, cols, tileSize, onTileClick: !!onTileClick })
     
     this.app = app
@@ -45,19 +46,25 @@ export class IsoGrid {
     this.tileSize = tileSize
     this.onTileClick = onTileClick
     this.mapData = mapData || this.createDefaultMap()
+    this.buildingStore = buildingStore || useBuildingStore()
     this.selectedTile = null
     this.gridContainer = new PIXI.Container()
     // 允許依據 zIndex 排序，確保地圖元素可正確分層
     this.gridContainer.sortableChildren = true
-    // 分層：地面(草地) 與 物件(建築/互動)
-    this.groundContainer = new PIXI.Container()
+    // 分層：地面(草地) 與 物件(建築/互動) 與 連線    第50-62行：連線容器設置
+    this.groundContainer = new PIXI.Container()    
     this.objectContainer = new PIXI.Container()
+    this.connectionContainer = new PIXI.Container()
     this.groundContainer.sortableChildren = true
     this.objectContainer.sortableChildren = true
+    this.connectionContainer.sortableChildren = true
     this.groundContainer.zIndex = 0
     this.objectContainer.zIndex = 1
+    this.connectionContainer.zIndex = 10 // 提高連線層級，確保在建築物之上
     // 物件層不攔截滑鼠事件，確保可點擊到地面格
     this.objectContainer.eventMode = 'none'
+    // 連線層也不攔截滑鼠事件
+    this.connectionContainer.eventMode = 'none'
     
     // 確保容器可以接收交互事件
     this.gridContainer.interactive = true
@@ -67,9 +74,13 @@ export class IsoGrid {
     this.castleHit = false // 是否已經碰到城堡
     this.castleContainer = null // 城堡容器引用
     
+    // 連線相關屬性
+    this.connectionLines = [] // 儲存連線圖形引用
+    
     this.app.stage.addChild(this.gridContainer)
     this.gridContainer.addChild(this.groundContainer)
     this.gridContainer.addChild(this.objectContainer)
+    this.gridContainer.addChild(this.connectionContainer)   //第75行：連線容器添加到地圖容器
     
     this.loadBuildingTextures()
     this.loadGrassTextures() 
@@ -390,6 +401,7 @@ export class IsoGrid {
     // 清除現有網格
     this.groundContainer.removeChildren()
     this.objectContainer.removeChildren()
+    this.connectionContainer.removeChildren()
 
     const halfW = this.tileSize / 2
     const halfH = this.tileSize / 4
@@ -606,6 +618,82 @@ export class IsoGrid {
           }
         }
       }
+    }
+
+    // 第四階段：繪製連線
+    this.drawConnections();
+  }
+
+  /**
+   * 繪製建築物之間的連線
+   */
+  drawConnections() {
+    // 清除現有連線
+    this.clearConnections();
+    
+    if (!this.buildingStore || !this.buildingStore.connections) {
+      console.log('drawConnections: 沒有 buildingStore 或 connections');
+      return;
+    }
+    
+    // 檢查是否應該顯示連線
+    if (!this.buildingStore.showConnections) {
+      console.log('drawConnections: 連線已隱藏');
+      return;
+    }
+    
+    console.log('drawConnections: 開始繪製連線，連線數量:', this.buildingStore.connections.length);
+    
+    const halfW = this.tileSize / 2;
+    const halfH = this.tileSize / 4;
+    
+    this.buildingStore.connections.forEach((connection, index) => {
+      // 計算起始和結束位置的等角座標
+      const fromX = (connection.from.x - connection.from.y) * halfW;
+      const fromY = (connection.from.x + connection.from.y) * halfH;
+      const toX = (connection.to.x - connection.to.y) * halfW;
+      const toY = (connection.to.x + connection.to.y) * halfH;
+      
+      console.log(`連線 ${index}:`, {
+        from: connection.from,
+        to: connection.to,
+        fromScreen: { x: fromX, y: fromY },
+        toScreen: { x: toX, y: toY }
+      });
+      
+      // 創建連線圖形
+      const connectionLine = new PIXI.Graphics();
+      connectionLine
+        .moveTo(fromX, fromY)
+        .lineTo(toX, toY)
+        .stroke({ width: 5, color: 0xff0000, alpha: 1.0 }); // 增加寬度和完全不透明
+      
+      connectionLine.zIndex = 10; // 提高層級確保在建築物之上
+      connectionLine.visible = true; // 確保可見
+      
+      this.objectContainer.addChild(connectionLine);
+      
+      // 儲存連線引用以便後續清除
+      if (!this.connectionLines) {
+        this.connectionLines = [];
+      }
+      this.connectionLines.push(connectionLine);
+    });
+    
+    console.log('drawConnections: 完成繪製，共繪製', this.connectionLines.length, '條連線');
+  }
+
+  /**
+   * 清除所有連線
+   */
+  clearConnections() {
+    if (this.connectionLines) {
+      this.connectionLines.forEach(line => {
+        if (line.parent) {
+          line.parent.removeChild(line);
+        }
+      });
+      this.connectionLines = [];
     }
   }
 
