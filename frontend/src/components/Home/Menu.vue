@@ -29,6 +29,27 @@
         </div>
       </transition>
 
+      <!-- OWASP Top 10 提示框 -->
+      <transition name="fade-left">
+        <div
+          v-if="showTop10Dialog"
+          class="absolute bottom-full left-full ml-6 bg-white shadow-2xl rounded-2xl p-4 w-[240px] text-gray-800 relative"
+        >
+          <button
+            @click="showTop10Dialog = false"
+            class="absolute top-1 right-3 text-gray-500 hover:text-gray-800 font-bold text-xl bg-white p-2"
+          >
+            ✕
+          </button>
+          <h3 class="font-bold mb-2 text-base">常見的網路安全風險</h3>
+          <p class="text-sm leading-relaxed">
+            想知道更多內容，<br />
+            可以點擊標題喔！<br/>
+            一起來了解吧！
+          </p>
+        </div>
+      </transition>
+
       <!-- 展開主選單 -->
       <transition name="fade-up">
         <div
@@ -158,70 +179,72 @@ export default {
       showRightDialog: false,
       showHackerDialog: false,
       hackerDialogShown: false,
+      showTop10Dialog: false,
+      top10DialogShown: false,
       dialogBlocks: [
-              {
-                selector: ".rsa-section",
-                title: "RSA\n加密解密過程",
-                encryptSteps: [
-                  "1. 準備明文 M (Plaintext)",
-                  "2. 使用接收方的公開金鑰 (e, n)",
-                  "3. 套用 RSA 加密:C = M<sup>e</sup> mod n",
-                  "4. 得到密文 C (Ciphertext)",
-                ],
-                decryptSteps: [
-                  "1. 準備密文 C (Ciphertext)",
-                  "2. 使用自己的私密金鑰 (d, n)",
-                  "3. 套用 RSA 解密:M = C<sup>d</sup> mod n",
-                  "4. 還原明文 M (Plaintext)",
-                ],
-                steps: [],
-                currentStep: 0,
-                displayContent: "",
-              },
-              {
-                selector: ".aes-section",
-                title: "AES\n加密解密過程",
-                encryptSteps: [
-                  "1. 準備明文 (Plaintext)",
-                  "2. 使用共享金鑰 (Key)",
-                  "3. 產生密文 (Ciphertext)",
-                ],
-                decryptSteps: [
-                  "1. 準備密文 (Ciphertext)",
-                  "2. 使用相同共享金鑰 (Key)",
-                  "3. 還原明文 (Plaintext)",
-                ],
-                steps: [],
-                currentStep: 0,
-                displayContent: "",
-              },
-              {
-                selector: ".hash-section",
-                title: "Hash\n雜湊過程",
-                encryptSteps: [
-                  "1. 輸入明文",
-                  "2. 套用 Hash 演算法 (如 SHA-256)",
-                  "3. 輸出固定長度的雜湊值 (Hash)",
-                ],
-                steps: [],
-                currentStep: 0,
-                displayContent: "",
-              },
-              {
-                selector: ".dh-section",
-                title: "DH Key Exchange\n金鑰交換過程",
-                encryptSteps: [
-                  "1. 公開質數 p 和基底 g",
-                  "2. Alice 選秘密數 a → A = g<sup>a</sup> mod p",
-                  "3. Bob 選秘密數 b → B = g<sup>b</sup> mod p",
-                  "4. 交換 A 與 B",
-                  "5. 雙方計算出相同金鑰 K = g<sup>ab</sup> mod p",
-                ],
-                steps: [],
-                currentStep: 0,
-                displayContent: "",
-              },
-            ],
+        {
+          selector: ".rsa-section",
+          title: "RSA\n加密解密過程",
+          encryptSteps: [
+            "1. 準備明文 M (Plaintext)",
+            "2. 使用接收方的公開金鑰 (e, n)",
+            "3. 套用 RSA 加密:C = M<sup>e</sup> mod n",
+            "4. 得到密文 C (Ciphertext)",
+          ],
+          decryptSteps: [
+            "1. 準備密文 C (Ciphertext)",
+            "2. 使用自己的私密金鑰 (d, n)",
+            "3. 套用 RSA 解密:M = C<sup>d</sup> mod n",
+            "4. 還原明文 M (Plaintext)",
+          ],
+          steps: [],
+          currentStep: 0,
+          displayContent: "",
+        },
+        {
+          selector: ".aes-section",
+          title: "AES\n加密解密過程",
+          encryptSteps: [
+            "1. 準備明文 (Plaintext)",
+            "2. 使用共享金鑰 (Key)",
+            "3. 產生密文 (Ciphertext)",
+          ],
+          decryptSteps: [
+            "1. 準備密文 (Ciphertext)",
+            "2. 使用相同共享金鑰 (Key)",
+            "3. 還原明文 (Plaintext)",
+          ],
+          steps: [],
+          currentStep: 0,
+          displayContent: "",
+        },
+        {
+          selector: ".hash-section",
+          title: "Hash\n雜湊過程",
+          encryptSteps: [
+            "1. 輸入明文",
+            "2. 套用 Hash 演算法 (如 SHA-256)",
+            "3. 輸出固定長度的雜湊值 (Hash)",
+          ],
+          steps: [],
+          currentStep: 0,
+          displayContent: "",
+        },
+        {
+          selector: ".dh-section",
+          title: "DH Key Exchange\n金鑰交換過程",
+          encryptSteps: [
+            "1. 公開質數 p 和基底 g",
+            "2. Alice 選秘密數 a → A = g<sup>a</sup> mod p",
+            "3. Bob 選秘密數 b → B = g<sup>b</sup> mod p",
+            "4. 交換 A 與 B",
+            "5. 雙方計算出相同金鑰 K = g<sup>ab</sup> mod p",
+          ],
+          steps: [],
+          currentStep: 0,
+          displayContent: "",
+        },
+      ],
       menuItems: [
         { label: "關於駭客", type: "scroll", ref: "blackOrWhite" },
         { label: "OSI7", type: "scroll", ref: "ss" },
@@ -292,6 +315,7 @@ export default {
     },
     checkVisibility() {
       this.checkDialogs()
+      this.checkTop10Section()
     },
     checkDialogs() {
       this.activeDialog = null
@@ -302,7 +326,7 @@ export default {
         const visibleHeight =
           Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0)
         const visibleRatio = visibleHeight / rect.height
-        if (visibleRatio >= 0.8) {
+        if (visibleRatio >= 0.5) {
           this.activeDialog = block
         }
       })
@@ -311,6 +335,23 @@ export default {
           this.dialogBlocks.forEach((b) => this.resetSteps(b))
         }
         this.showRightDialog = false
+      }
+    },
+    checkTop10Section() {
+      if (this.top10DialogShown) return
+
+      const el = document.querySelector(".top10-section")
+      if (!el) return
+
+      const rect = el.getBoundingClientRect()
+      const visibleHeight =
+        Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0)
+      const visibleRatio = visibleHeight / rect.height
+
+      // 當 top10-section 出現 10% 在畫面中時顯示對話框
+      if (visibleRatio >= 0.1) {
+        this.showTop10Dialog = true
+        this.top10DialogShown = true
       }
     },
     resetSteps(block) {

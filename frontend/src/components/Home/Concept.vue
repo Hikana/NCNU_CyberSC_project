@@ -9,7 +9,7 @@
           <h2 class="text-3xl md:text-5xl font-bold mb-6">明文、密文和密鑰</h2>
 
           <div class="leading-relaxed space-y-4 mb-8">
-            <h4 class="text-2xl font-semibold mb-2">理解加密之前，先要知道三個關鍵字。</h4>
+            <h4 class="text-2xl font-semibold mb-2"><br/>理解加密之前，先要知道三個關鍵字。</h4>
             <h4 class="text-2xl font-semibold mb-2">它們是所有密碼學的基礎組件。</h4>
             <h4 class="text-2xl font-semibold mb-2">了解這三者，才能明白資料保護的核心原理。</h4>
           </div>

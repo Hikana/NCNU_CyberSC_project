@@ -31,7 +31,7 @@
           </h2>
           <div class="text-lg md:text-xl leading-relaxed space-y-4">
             <h4 class="text-2xl font-bold mb-2">
-              <br/>核心概念： 加密和解密使用「同一把」密鑰。<br/><br/>
+              <br/>加密和解密使用「同一把」密鑰。<br/><br/>
               這就像你家用的大門鑰匙。你出門時用這把鑰匙鎖上門（加密），<br/>你的家人（接收者）回家時，必須擁有那把一模一樣的鑰匙，<br/>才能把門打開（解密）。
             </h4>
           </div>

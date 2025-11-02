@@ -8,7 +8,7 @@
         <div class="text-left self-start">
           <h2 class="text-3xl md:text-5xl font-bold mb-6">為什麼要有密碼學？</h2>
           <div class="leading-relaxed space-y-4 mb-8">
-            <h4 class="text-2xl font-semibold mb-2">因為我們需要在「不安全」的環境中，做「安全」的事情。</h4>
+            <h4 class="text-2xl font-semibold mb-2"><br/>因為我們需要在「不安全」的環境中，做「安全」的事情。</h4>
             <h4 class="text-2xl font-semibold mb-2">網際網路就像一個大廣場，每一句話都可能被所有人聽見。</h4>
             <h4 class="text-2xl font-semibold mb-2">密碼學就是確保即使資料被攔截，也無法被看懂。</h4>
             </div>

@@ -12,42 +12,68 @@
 
     <!-- 上半部 說明 -->
     <div class="flex-1 flex items-start">
-      <div class="w-full px-8 md:px-16 grid md:grid-cols-2 gap-10">
-        <!-- 左欄 -->
-        <div class="text-left self-start">
-          <h2 class="text-3xl md:text-5xl font-bold mb-6">
-            Diffie–Hellman
-          </h2>
-          <h2 class="text-3xl md:text-5xl font-bold mb-6">
-            Key Exchange
-          </h2>
-          <div class="text-lg md:text-xl leading-relaxed space-y-4">
-            <h4 class="text-2xl font-semibold mb-2">在不安全通道上協商金鑰的方法。</h4>
-            <h4 class="text-2xl font-semibold mb-2">Alice 與 Bob 不需直接傳送秘密，就能得到相同金鑰。</h4>
-          </div>
-        </div>
+    <div class="w-full px-8 md:px-16 grid md:grid-cols-2 gap-10">
 
-        <!-- 右欄 -->
-        <div class="text-left self-center">
-          <div class="mb-8">
-            <h3 class="text-2xl font-semibold mb-4">特性：</h3>
-            <ul class="list-disc pl-6 space-y-2 text-lg md:text-xl leading-relaxed">
-              <li><strong>安全性：</strong>基於離散對數問題，難以破解</li>
-              <li><strong>共享秘密：</strong>雙方得到相同金鑰</li>
-              <li><strong>防中間人：</strong>需搭配憑證或簽章</li>
-            </ul>
-          </div>
-          <div>
-            <h3 class="text-2xl font-semibold mb-4">常見應用：</h3>
-            <div class="flex flex-wrap gap-x-6 gap-y-2 text-lg md:text-xl italic">
-              <span>TLS / HTTPS</span>
-              <span>VPN</span>
-              <span>安全通訊協定</span>
+      <!-- 左欄 -->
+      <div class="text-left self-start">
+        <h2 class="text-5xl font-bold mb-6">DH 金鑰交換</h2>
+        <h2 class="text-4xl font-bold mb-6">Diffie-Hellman Key Exchange</h2>
+        <div class="text-lg md:text-xl leading-relaxed space-y-4">
+          <h4 class="text-2xl font-bold mb-2">
+            <br/>這不是加密，而是「在不安全的網路中共享一把秘密鑰匙」。<br/><br/>
+            像在大庭廣眾混顏色，每個人都公開「底色 + 自己的部分」，<br/>
+            但最終只有兩人能算出完全一樣的「最終顏色（共享密鑰）」。
+          </h4>
+        </div>
+      </div>
+
+      <!-- 右欄 -->
+      <div class="text-left self-center">
+        <div class="mb-8">
+
+          <!-- 優缺點 -->
+          <div class="grid grid-cols-2 gap-6 text-lg md:text-xl leading-relaxed mb-10">
+            <div>
+              <h3 class="text-2xl font-semibold mb-4">優點：</h3>
+              <ul class="list-disc pl-6 space-y-1">
+                <li>可在公開環境建立秘密金鑰</li>
+                <li>不需事先見面或傳遞密鑰</li>
+              </ul>
+            </div>
+            <div>
+              <h3 class="text-2xl font-semibold mb-4">缺點：</h3>
+              <ul class="list-disc pl-6 space-y-1">
+                <li>無法驗證對方身份（可能遭中間人攻擊）</li>
+                <li>通常需搭配 RSA 或憑證使用</li>
+              </ul>
             </div>
           </div>
+
+          <!-- 運作原理 -->
+          <div class="mb-10">
+            <h3 class="text-2xl font-semibold mb-4">運作原理：</h3>
+            <ul class="list-disc pl-6 space-y-1 text-lg md:text-xl italic">
+              <li>A 和 B 先公開一個共同底數 (g) 和模數 (p)。</li>
+              <li>A 選私密數 a → 算出 g<sup>a</sup> mod p → 傳給 B。</li>
+              <li>B 選私密數 b → 算出 g<sup>b</sup> mod p → 傳給 A。</li>
+              <li>A 算 (g<sup>b</sup>)<sup>a</sup> mod p，B 算 (g<sup>a</sup>)<sup>b</sup> mod p → 結果相同 = 共享密鑰。</li>
+            </ul>
+          </div>
+
+          <!-- 舉例 -->
+          <div class="mb-10">
+            <h3 class="text-2xl font-semibold mb-4">舉例應用：</h3>
+            <ul class="list-disc pl-6 space-y-1 text-lg md:text-xl italic">
+              <li>HTTPS / TLS 建立安全通道</li>
+              <li>VPN (IPSec)</li>
+              <li>SSH 連線建立時的金鑰協商</li>
+            </ul>
+          </div>
+
         </div>
       </div>
     </div>
+  </div>
 
     <!-- 下半部 Demo -->
 <div class="flex-1 flex items-center justify-center px-8 py-16">
