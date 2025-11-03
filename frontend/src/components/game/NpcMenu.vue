@@ -35,7 +35,6 @@
                   <div class="item-name">{{ item.name }}</div>
                   <div class="item-qty">x{{ item.qty }}</div>
                 </div>
-                <div class="item-defense">防禦值: {{ item.defenseValue }}</div>
               </div>
             </div>
             
@@ -45,7 +44,6 @@
               <p class="item-description">防禦工具 - {{ selectedItem.type }}</p>
               <div class="item-stats">
                 <div class="stat">數量: x{{ selectedItem.qty }}</div>
-                <div class="stat">防禦值: {{ selectedItem.defenseValue }}</div>
                 <div class="stat">類型: {{ selectedItem.type }}</div>
               </div>
               <div class="item-actions">
@@ -145,7 +143,6 @@
                   <div class="tool-info">
                     <div class="tool-name">{{ tool.name }}</div>
                     <div class="tool-qty">數量: {{ tool.qty }}</div>
-                    <div class="tool-defense">防禦值: {{ tool.defenseValue }}</div>
                   </div>
                   <div class="tool-status" 
                        :class="{ 
@@ -341,7 +338,7 @@ async function useItem(item) {
     console.log(`✅ 成功使用物品 ${item.name}`)
     
     // 顯示使用結果
-    alert(`成功使用 ${item.name}！\n防禦值 +${item.defenseValue}`)
+    alert(`成功使用 ${item.name}！`)
     
     // 更新玩家防禦值
     const playerStore = usePlayerStore()

@@ -33,7 +33,6 @@ exports.addItem = async (req, res) => {
           templateId,
           name: tmpl.name || templateId,
           qty: amount,
-          defenseValue: tmpl.defenseValue || 0,
           meta: tmpl.meta || {},
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
