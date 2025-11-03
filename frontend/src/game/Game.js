@@ -12,8 +12,9 @@ import { useWallStore } from '../stores/wall';
  * 職責：管理所有 PixiJS 世界的邏輯，包括場景、遊戲循環、玩家互動等。
  */
 export class Game {
-  constructor(containerElement) {
-    this.container = containerElement;   
+  constructor(containerElement, connectionContainerElement = null) {
+    this.container = containerElement;
+    this.connectionContainer = connectionContainerElement;
     this.playerStore = usePlayerStore();
     this.gameStore = useGameStore();   
     this.buildingStore = useBuildingStore();
@@ -21,7 +22,9 @@ export class Game {
  
     // 初始化所有遊戲相關的屬性
     this.app = null;
+    this.connectionApp = null; // 獨立的連線應用實例
     this.world = null; // 遊戲世界的主容器，用於攝影機移動
+    this.connectionWorld = null; // 連線世界容器
     this.player = null;
     this.grid = null;
     this.keys = {}; // 用於追蹤鍵盤按鍵狀態
@@ -57,6 +60,11 @@ export class Game {
     // 載入連線資料
     await this.buildingStore.loadConnections();
 
+    // 創建獨立的連線應用（如果提供了連線容器）
+    if (this.connectionContainer) {
+      await this._createConnectionApp();
+    }
+
     this._createMap();
     await this._createPlayer();
     this._setupControls();
@@ -74,6 +82,9 @@ export class Game {
     // 清理事件監聽器
     window.removeEventListener('keydown', this._handleKeydown);
     window.removeEventListener('keyup', this._handleKeyup);
+    if (this._moveToPositionHandler) {
+      window.removeEventListener('moveToPosition', this._moveToPositionHandler);
+    }
     
     if (this.app) {
       // 清理 ticker 回調函數 - 重要：防止記憶體洩漏
@@ -205,6 +216,12 @@ export class Game {
         }
     }
 
+    // 同步連線世界的位置和縮放（確保連線跟隨地圖移動）
+    if (this.connectionWorld) {
+      this.connectionWorld.position.copyFrom(this.world.position);
+      this.connectionWorld.scale.copyFrom(this.world.scale);
+    }
+
     // 如果玩家角色物件存在，更新角色的動畫/狀態
     if (this.player) {
         this.player.setMoving(hasMoved); // 設定角色是否處於移動狀態 (控制走路動畫)
@@ -302,14 +319,44 @@ export class Game {
   }
 
   /**
+   * 創建獨立的連線應用
+   */
+  async _createConnectionApp() {
+    if (!this.connectionContainer) return;
+    
+    this.connectionApp = new PIXI.Application();
+    await this.connectionApp.init({
+      width: this.connectionContainer.clientWidth,
+      height: this.connectionContainer.clientHeight,
+      backgroundColor: 0x000000,
+      backgroundAlpha: 0, // 完全透明
+      antialias: true,
+      resizeTo: this.connectionContainer,
+    });
+    this.connectionContainer.appendChild(this.connectionApp.canvas);
+    
+    this.connectionWorld = new PIXI.Container();
+    this.connectionWorld.sortableChildren = true;
+    this.connectionApp.stage.addChild(this.connectionWorld);
+    
+    // 同步主應用的位置和縮放
+    this.connectionWorld.position.copyFrom(this.world.position);
+    this.connectionWorld.scale.copyFrom(this.world.scale);
+  }
+
+  /**
    * 建立地圖
    */
   _createMap() {
     this.grid = new IsoGrid(
-      this.app, 20, 20, this.TILE_SIZE,
+      this.app, 
+      20, 20, 
+      this.TILE_SIZE,
       this._handleTileClick.bind(this),
       this.buildingStore.map,
-      this.buildingStore
+      this.buildingStore,
+      this.connectionApp, // 傳遞連線應用
+      this.connectionWorld // 傳遞連線世界容器
     );
     this.grid.gridContainer.zIndex = 0;
     this.world.addChild(this.grid.gridContainer);
@@ -427,11 +474,54 @@ export class Game {
     });
 
     // 監聽連線顯示狀態變化
-    watch(() => this.buildingStore.showConnections, () => {
+    watch(() => this.buildingStore.showConnections, async (showConnections) => {
+      if (this.grid) {
+        this.grid.drawConnections();
+      }
+      // 當顯示連線時，如果連線應用還未創建，則創建它
+      if (showConnections && this.connectionContainer && !this.connectionApp) {
+        await this._createConnectionApp();
+        // 重新創建地圖以連接連線應用（或只更新連線部分）
+        if (this.grid) {
+          this.grid.connectionApp = this.connectionApp;
+          this.grid.connectionWorld = this.connectionWorld;
+          this.grid.drawConnections(); // 重新繪製連線到新應用
+        }
+      }
+    });
+
+    // 監聽選中連線變化，重新繪製連線（只顯示選中的連線）
+    watch(() => this.buildingStore.selectedConnectionId, () => {
       if (this.grid) {
         this.grid.drawConnections();
       }
     });
+
+    // 監聽地圖移動事件
+    this._moveToPositionHandler = this._handleMoveToPosition.bind(this);
+    window.addEventListener('moveToPosition', this._moveToPositionHandler);
+  }
+
+  /**
+   * 處理移動到指定位置的事件
+   */
+  _handleMoveToPosition(event) {
+    if (event.detail && this.world) {
+      const { x, y } = event.detail;
+      // 計算世界位置（需要考慮視窗中心）
+      const screenWidth = this.app.screen.width;
+      const screenHeight = this.app.screen.height;
+      const targetWorldX = x - screenWidth / 2;
+      const targetWorldY = y - screenHeight / 2;
+      
+      // 平滑移動到目標位置
+      this.world.position.set(targetWorldX, targetWorldY);
+      // 同步連線世界的位置
+      if (this.connectionWorld) {
+        this.connectionWorld.position.set(targetWorldX, targetWorldY);
+      }
+      console.log('地圖已移動到位置:', { x, y, targetWorldX, targetWorldY });
+    }
   }
 
   /**
@@ -474,6 +564,10 @@ export class Game {
         const newX = e.global.x - this.dragStart.x;
         const newY = e.global.y - this.dragStart.y;
         this.world.position.set(newX, newY);
+        // 同步連線世界的位置
+        if (this.connectionWorld) {
+          this.connectionWorld.position.set(newX, newY);
+        }
       }
     };
 

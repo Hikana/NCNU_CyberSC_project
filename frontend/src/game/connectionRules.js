@@ -268,7 +268,7 @@ export const CONNECTION_RULES = {
     HOST_TO_HOST: 0xff6b6b,      // 紅色 - Host-Host (Peer-to-Peer)
     HOST_TO_SWITCH: 0x4ecdc4,     // 青色 - Host-Switch
     HOST_TO_ROUTER: 0xffa726,     // 橙色 - Host-Router
-    SWITCH_TO_ROUTER: 0x45b7d1,   // 藍色 - Switch-Router
+    SWITCH_TO_ROUTER: 0xff0000,   // 紅色 - Switch-Router（郵筒-郵局）
     ROUTER_TO_ROUTER: 0x96ceb4,   // 綠色 - Router-Router
     SWITCH_TO_SWITCH: 0x9c27b0,   // 紫色 - Switch-Switch
     DEFAULT: 0x00ff00             // 預設綠色

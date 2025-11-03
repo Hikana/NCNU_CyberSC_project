@@ -1,5 +1,15 @@
 <template>
-  <div ref="pixiContainer" class="pixi-canvas"></div>
+  <!-- 主遊戲畫布（地圖和建築物） -->
+  <div 
+    ref="pixiContainer" 
+    class="pixi-canvas"
+  ></div>
+  
+  <!-- 獨立的連線畫布層 -->
+  <div 
+    ref="connectionCanvas" 
+    class="connection-canvas"
+  ></div>
   
   <div v-if="buildingStore.isPlacing" class="placement-ui">
     <div class="placement-info">
@@ -117,16 +127,27 @@
   <div class="connection-toggle-ui">
     <button 
       class="toggle-btn" 
-      @click="toggleConnections"
+      @click="handleToggleConnections"
+      @keydown.enter.stop
       :class="{ active: buildingStore.showConnections }"
+      type="button"
+      tabindex="-1"
     >
       {{ buildingStore.showConnections ? '隱藏連線' : '顯示連線' }}
     </button>
   </div>
+
+  <!-- 連線顯示時的蒙版 -->
+  <div 
+    v-if="buildingStore.showConnections" 
+    class="connection-overlay"
+  >
+    <!-- 蒙版内容为空，只是作为遮罩层，不响应点击事件 -->
+  </div>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBuildingStore } from '@/stores/buildings';
 import { Game } from '@/game/Game.js';
@@ -134,20 +155,32 @@ import { Game } from '@/game/Game.js';
 const emit = defineEmits(['game-ready']);
 
 const pixiContainer = ref(null);
+const connectionCanvas = ref(null);
 const buildingStore = useBuildingStore();
 let gameInstance = null;
 const router = useRouter();
 
 onMounted(async () => {
   if (pixiContainer.value) {
-    // 建立遊戲實例，它會自己處理所有事
-    gameInstance = new Game(pixiContainer.value);
+    // 建立遊戲實例，傳遞連線容器
+    gameInstance = new Game(pixiContainer.value, connectionCanvas.value);
     await gameInstance.init();
     console.log('✅ PixiGameCanvas.vue: Game 引擎已啟動，並由 Game.js 自主管理');
     
     // 觸發遊戲準備完成事件
     emit('game-ready');
   }
+  
+  // 監聽連線顯示狀態，控制連線畫布的顯示
+  watch(() => buildingStore.showConnections, (show) => {
+    if (connectionCanvas.value) {
+      if (show) {
+        connectionCanvas.value.classList.add('show');
+      } else {
+        connectionCanvas.value.classList.remove('show');
+      }
+    }
+  });
 });
 
 onUnmounted(() => {
@@ -225,6 +258,17 @@ function cancelCastleInteraction() {
   buildingStore.hideCastleInteraction();
 }
 
+// 切換連線顯示（只允許滑鼠點擊，不允許鍵盤觸發）
+function handleToggleConnections(event) {
+  // 如果是鍵盤觸發的（Enter 或 Space），則阻止
+  if (event.detail === 0 || event.type === 'keydown') {
+    event.preventDefault()
+    event.stopPropagation()
+    return
+  }
+  toggleConnections()
+}
+
 function toggleConnections() {
   buildingStore.toggleConnections();
 }
@@ -242,9 +286,26 @@ function cancelConnection() {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 0;
+  z-index: 0; /* 地圖和建築物在蒙版下方 */
   min-width: 100vw;
   min-height: 100dvh;
+}
+
+/* 獨立的連線畫布層 */
+.connection-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 55; /* 在蒙版（z-index: 50）上方，但在菜單（z-index: 300）下方 */
+  pointer-events: none; /* 不攔截滑鼠事件 */
+  visibility: hidden; /* 默認隱藏，只在需要時顯示 */
+}
+
+/* 當顯示連線時，顯示連線畫布 */
+.connection-canvas.show {
+  visibility: visible;
 }
 
 .pixi-canvas canvas {
@@ -672,5 +733,31 @@ function cancelConnection() {
 .delete-connection-controls .cancel-btn:hover {
   background: #fca5a5;
 }
+
+/* 連線顯示時的蒙版 */
+.connection-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%);
+  backdrop-filter: blur(0.5px); /* 減少模糊效果 */
+  z-index: 50; /* 在遊戲畫面上方，但在連線和UI元素下方 */
+  pointer-events: none; /* 不攔截滑鼠事件，允許點擊後面的元素 */
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 蒙版已經設置為 z-index: 50，其他UI元素的 z-index 都高於此值，所以會正常顯示在蒙版上方 */
 
 </style>

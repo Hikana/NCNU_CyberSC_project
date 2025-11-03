@@ -171,7 +171,7 @@ function onNpcClick() {
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 10;
+  z-index: 400; /* 提高UI層級，確保包含菜單等UI元素 */
   /* 關鍵：讓滑鼠點擊可以穿透此圖層，點到下面的 PixiJS canvas */
   pointer-events: none; 
 }
@@ -235,7 +235,7 @@ function onNpcClick() {
 
 /* 確保 NpcMenu 有正確的層級 */
 :deep(.npc-menu) {
-  z-index: 30;
+  z-index: 500 !important; /* 確保在蒙版（z-index: 50）、連線畫布（z-index: 55）和其他所有UI上方 */
   pointer-events: auto;
 }
 

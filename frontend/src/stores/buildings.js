@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { usePlayerStore } from './player';
 import { apiService } from '@/services/apiService'; // 引入我們統一的 apiService
 import { BUILDING_TYPES, createConnectionValidator, getConnectionColor } from '@/game/connectionRules'; // 引入連線規則模組
+import { audioService } from '@/services/audioService'; // 引入音頻服務
 import routerImg from '@/assets/router.png';
 import switchImg from '@/assets/switch.png';
 
@@ -39,9 +40,7 @@ export const useBuildingStore = defineStore('buildings', {
     isConnecting: false,
     connectionSource: null, // 連線的起始建築物位置
     connections: [], // 已建立的連線列表
-    showConnections: localStorage.getItem('showConnections') !== null 
-      ? localStorage.getItem('showConnections') === 'true' 
-      : true, // 是否顯示連線
+    showConnections: false, // 是否顯示連線（默認隱藏，每次進入遊戲都從隱藏開始）
     
     // 刪除連線模式相關狀態
     isDeletingConnection: false,
@@ -384,6 +383,22 @@ export const useBuildingStore = defineStore('buildings', {
       this.showConnections = !this.showConnections;
       localStorage.setItem('showConnections', this.showConnections.toString());
       console.log('連線顯示狀態:', this.showConnections ? '顯示' : '隱藏');
+      // 如果關閉連線顯示，清除選中狀態
+      if (!this.showConnections) {
+        this.selectedConnectionId = null;
+      }
+    },
+
+    // 選中連線並顯示
+    selectConnection(connectionId) {
+      this.selectedConnectionId = connectionId;
+      this.showConnections = true;
+      console.log('選中連線:', connectionId);
+    },
+
+    // 清除選中連線
+    clearSelectedConnection() {
+      this.selectedConnectionId = null;
     },
 
     // 連線規則相關方法
@@ -418,22 +433,36 @@ export const useBuildingStore = defineStore('buildings', {
       this.connectionModal.isVisible = false;
     },
 
-    showConnectionSuccess(fromType, toType) {
+    async showConnectionSuccess(fromType, toType) {
       this.showConnectionModal(
         'success',
         '連線成功！',
         `✅ 成功建立連線：${fromType?.name} → ${toType?.name}`,
         false
       );
+      
+      // 播放連線成功音效（fix.mp3，2秒）
+      try {
+        await audioService.playConnectionSuccessSound();
+      } catch (error) {
+        console.warn('播放連線成功音效失敗:', error);
+      }
     },
 
-    showConnectionError(reason) {
+    async showConnectionError(reason) {
       this.showConnectionModal(
         'error',
         '連線失敗',
         reason,
         true // 顯示連線規則
       );
+      
+      // 播放連線失敗音效（wrong.mp3）
+      try {
+        await audioService.playWrongAnswerSound();
+      } catch (error) {
+        console.warn('播放連線失敗音效失敗:', error);
+      }
     },
 
     // 刪除連線模式相關方法

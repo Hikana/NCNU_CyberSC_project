@@ -171,15 +171,56 @@
           </div>
         </div>
 
-        
+        <!-- 連線列表頁面 -->
+        <div v-else-if="currentView === 'connections'" class="connections-container">
+          <h2 class="page-title">連線列表</h2>
+          <div class="connections-content">
+            <div v-if="!buildingStore.connections || buildingStore.connections.length === 0" class="empty-connections">
+              <p>目前沒有任何連線</p>
+            </div>
+            <div v-else class="connections-list-scrollable">
+              <div class="connection-count-header">
+                共 {{ buildingStore.connections.length }} 條連線
+              </div>
+              <div 
+                v-for="conn in buildingStore.connections" 
+                :key="conn.id"
+                class="connection-info-item"
+                :class="{ 'selected': buildingStore.selectedConnectionId === conn.id }"
+              >
+                <div class="connection-info-content" @click="selectConnectionOnMap(conn)">
+                  <div class="connection-line">
+                    <span class="connection-from">{{ getConnectionTypeText(conn.from) }}</span>
+                    <span class="connection-arrow">→</span>
+                    <span class="connection-to">{{ getConnectionTypeText(conn.to) }}</span>
+                  </div>
+                  <div class="connection-coords">
+                    <span class="coord">({{ conn.from.x }}, {{ conn.from.y }}) → ({{ conn.to.x }}, {{ conn.to.y }})</span>
+                  </div>
+                  <div class="connection-hint">(點擊確認連線)</div>
+                </div>
+                <div class="connection-actions">
+                  <button 
+                    @click.stop="deleteConnection(conn.id)" 
+                    class="delete-connection-btn"
+                    title="刪除此連線"
+                  >
+                    刪除
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue' 
+import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue'
 import BuildingShop from '@/components/game/BuildingShop.vue'
 import AchievementMenu from '@/components/game/AchievementMenu.vue'
 import HistoryPanel from '@/components/game/HistoryPanel.vue'
@@ -188,12 +229,14 @@ import { useInventoryStore } from '@/stores/inventory.js';
 import { useAuthStore } from '@/stores/authStore';
 import { useEventLogStore } from '@/stores/eventLogStore';
 import { usePlayerStore } from '@/stores/player'
+import { useBuildingStore } from '@/stores/buildings';
 
 
 const player = usePlayerStore()
 const inv = useInventoryStore()
 const authStore = useAuthStore(); 
 const eventLogStore = useEventLogStore();
+const buildingStore = useBuildingStore();
 
 // 動態載入說明頁面
 const HelpPanel = defineAsyncComponent(() => import('@/components/game/HelpPanel.vue'))
@@ -382,6 +425,7 @@ const menuItems = ref([
   { id: 'shop', name: '建築商店', icon: '🏪' },
   { id: 'logs', name: '資安事件紀錄', icon: '📜' },
   { id: 'records', name: '答題紀錄', icon: '📝' },
+  { id: 'connections', name: '連線', icon: '🔗' },
   { id: 'achievement', name: '成就', icon: '🏆' }, 
   { id: 'help', name: '說明', icon: '❓' },
 ]);
@@ -426,21 +470,81 @@ function onDrop(item) {
 function closeMenu() {
   emit('close')
 }
+
+function getConnectionTypeText(position) {
+  if (!buildingStore.map || !buildingStore.map[position.y] || !buildingStore.map[position.y][position.x]) {
+    return '未知';
+  }
+  
+  const buildingId = buildingStore.map[position.y][position.x].buildingId;
+  const buildingType = buildingStore.getBuildingType(buildingId);
+  
+  if (!buildingType) {
+    return '未知';
+  }
+  
+  // 根據建築類型返回中文名稱
+  const typeNames = {
+    'host': '貓屋',
+    'switch': '郵筒',
+    'router': '郵局'
+  };
+  
+  return typeNames[buildingType.type] || buildingType.type;
+}
+
+// 選中連線並跳回地圖
+function selectConnectionOnMap(conn) {
+  // 選中連線並顯示
+  buildingStore.selectConnection(conn.id);
+  
+  // 關閉菜單
+  closeMenu();
+  
+  // 計算連線中心點（兩個建築物的中間位置）
+  const centerX = (conn.from.x + conn.to.x) / 2;
+  const centerY = (conn.from.y + conn.to.y) / 2;
+  
+  // 將地圖座標轉換為等角座標
+  const TILE_SIZE = 150;
+  const halfW = TILE_SIZE / 2;
+  const halfH = TILE_SIZE / 4;
+  const isoX = (centerX - centerY) * halfW;
+  const isoY = (centerX + centerY) * halfH;
+  
+  // 通過 store 存儲要移動到的位置，Game 會監聽並移動地圖
+  // 或者通過事件通知（需要先實現）
+  console.log('選中連線，準備移動到位置:', { centerX, centerY, isoX, isoY });
+  
+  // 觸發自定義事件，讓 Game 接收並移動地圖
+  window.dispatchEvent(new CustomEvent('moveToPosition', {
+    detail: { x: isoX, y: isoY }
+  }));
+}
+
+// 直接刪除連線（不需要確認）
+async function deleteConnection(connectionId) {
+  try {
+    await buildingStore.deleteSingleConnection(connectionId);
+  } catch (error) {
+    console.error('刪除連線失敗:', error);
+  }
+}
 </script>
 
 <style scoped>
 .npc-menu {
-  position: absolute;
+  position: fixed; /* 改为 fixed 以确保在正确的堆叠上下文中 */
   bottom: 20px;
-  left: 170px;
-  width: calc(100% - 200px);
+  left: 220px; /* 從 170px 增加到 220px，往右移動 50px */
+  width: calc(100% - 250px); /* 調整寬度以保持合適的右邊距 */
   max-width: 900px;
   height: 70vh;
   max-height: 550px;
   background-color: rgba(230, 240, 255, 0.95);
   border-radius: 20px;
   padding: 20px;
-  z-index: 10;
+  z-index: 500; /* 確保在蒙版（z-index: 50）、連線畫布（z-index: 55）和其他所有元素上方 */
   box-shadow: 0 5px 25px rgba(0,0,0,0.2);
   backdrop-filter: blur(5px);
   pointer-events: auto;
@@ -475,10 +579,13 @@ function closeMenu() {
   gap: 15px;
   padding-right: 20px;
   border-right: 2px solid rgba(0,0,0,0.1);
+  min-width: 80px; /* 确保有足够宽度 */
+  flex-shrink: 0; /* 防止被压缩 */
 }
 .menu-button {
   width: 60px;
   height: 60px;
+  min-width: 60px; /* 防止被压缩 */
   border: 3px solid transparent;
   border-radius: 15px;
   background-color: rgba(255, 255, 255, 0.5);
@@ -487,6 +594,10 @@ function closeMenu() {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden; /* 防止内容溢出 */
+  position: relative; /* 用于定位 */
+  padding: 0; /* 确保没有内边距 */
+  box-sizing: border-box; /* 包含边框在尺寸内 */
 }
 .menu-button:hover {
   background-color: rgba(255, 255, 255, 0.9);
@@ -561,9 +672,20 @@ function closeMenu() {
 .menu-button .icon {
   font-size: 28px;
   transition: transform 0.2s;
+  display: flex; /* 使用flex确保正确对齐 */
+  align-items: center;
+  justify-content: center;
+  line-height: 1; /* 防止行高影响 */
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* 防止溢出 */
+  text-align: center;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 .menu-button.active .icon {
     transform: scale(1.2);
+    max-width: 100%; /* 限制放大后的最大宽度 */
+    max-height: 100%; /* 限制放大后的最大高度 */
 }
 .menu-right {
   flex-grow: 1;
@@ -675,7 +797,182 @@ function closeMenu() {
   grid-template-rows: auto 1fr; /* 標題固定，內容滾動 */
 }
 
-/* 答題紀錄 */
+/* 連線列表 */
+.connections-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 0 20px 20px;
+  display: grid;
+  grid-template-rows: auto 1fr; /* 標題固定，內容滾動 */
+}
+
+.connections-content {
+  overflow-y: auto;
+  padding: 20px;
+  min-height: 0; /* 關鍵：允許在 Grid/Flex 下正確計算剩餘高度 */
+}
+
+.empty-connections {
+  padding: 40px 20px;
+  text-align: center;
+  color: #888;
+  font-size: 16px;
+}
+
+.connections-list-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+}
+
+.connection-count-header {
+  padding: 12px 16px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  color: #3b82f6;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+}
+
+.connection-info-item {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.connection-info-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.connection-info-item:last-child {
+  margin-bottom: 0;
+}
+
+.connection-info-item {
+  cursor: pointer;
+}
+
+.connection-info-item:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+.connection-info-item.selected {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+}
+
+.connection-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.view-connection-btn {
+  padding: 6px 12px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.view-connection-btn:hover {
+  background-color: #2563eb;
+  transform: scale(1.05);
+}
+
+.view-connection-btn:active {
+  transform: scale(0.95);
+}
+
+.delete-connection-btn {
+  padding: 6px 12px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.delete-connection-btn:hover {
+  background-color: #dc2626;
+  transform: scale(1.05);
+}
+
+.delete-connection-btn:active {
+  transform: scale(0.95);
+}
+
+.connection-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.connection-from,
+.connection-to {
+  color: #3b82f6;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.connection-arrow {
+  color: #60a5fa;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.connection-coords {
+  margin-top: 4px;
+}
+
+.connection-coords .coord {
+  color: #6b7280;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+}
+
+.connection-hint {
+  color: #3b82f6;
+  font-size: 11px;
+  font-style: italic;
+  margin-top: 6px;
+  opacity: 0.7;
+  font-family: 'Courier New', monospace;
+}
+
+.connection-info-content:hover .connection-hint {
+  opacity: 1;
+  color: #2563eb;
+}
+
 .records-container {
   width: 100%;
   height: 100%;

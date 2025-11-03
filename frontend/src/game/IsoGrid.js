@@ -37,10 +37,12 @@ const CASTLE_BOUNDS = (() => {
 })()
 
 export class IsoGrid {
-  constructor(app, rows, cols, tileSize = 150, onTileClick, mapData = null, buildingStore = null) {
+  constructor(app, rows, cols, tileSize = 150, onTileClick, mapData = null, buildingStore = null, connectionApp = null, connectionWorld = null) {
     console.log('IsoGrid 構造器:', { rows, cols, tileSize, onTileClick: !!onTileClick })
     
     this.app = app
+    this.connectionApp = connectionApp // 獨立的連線應用
+    this.connectionWorld = connectionWorld // 連線世界容器
     this.rows = rows
     this.cols = cols
     this.tileSize = tileSize
@@ -76,6 +78,9 @@ export class IsoGrid {
     
     // 連線相關屬性
     this.connectionLines = [] // 儲存連線圖形引用
+    this.connectionGlowLayers = [] // 儲存發光層引用，用於動畫
+    this.connectionAnimations = [] // 儲存動畫時間參數
+    this.connectionGlowTicker = null // 儲存ticker引用
     
     this.app.stage.addChild(this.gridContainer)
     this.gridContainer.addChild(this.groundContainer)
@@ -86,6 +91,9 @@ export class IsoGrid {
     this.loadGrassTextures() 
     this.loadLandTexture()
     this.loadCastleTextures()
+    
+    // 啟動連線發光動畫
+    this.startConnectionGlowAnimation()
   }
   
   // 從 Graphics 對象創建紋理 (PixiJS v8 兼容)
@@ -642,12 +650,23 @@ export class IsoGrid {
       return;
     }
     
-    console.log('drawConnections: 開始繪製連線，連線數量:', this.buildingStore.connections.length);
+    // 如果有選中的連線，只繪製該連線
+    const selectedConnectionId = this.buildingStore.selectedConnectionId;
+    const connectionsToDraw = selectedConnectionId 
+      ? this.buildingStore.connections.filter(conn => conn.id === selectedConnectionId)
+      : this.buildingStore.connections;
+    
+    if (connectionsToDraw.length === 0) {
+      console.log('drawConnections: 沒有需要繪製的連線');
+      return;
+    }
+    
+    console.log('drawConnections: 開始繪製連線，共有', connectionsToDraw.length, '條連線', selectedConnectionId ? '(只顯示選中連線)' : '(顯示所有連線)');
     
     const halfW = this.tileSize / 2;
     const halfH = this.tileSize / 4;
     
-    this.buildingStore.connections.forEach((connection, index) => {
+    connectionsToDraw.forEach((connection, index) => {
       // 計算起始和結束位置的等角座標
       const fromX = (connection.from.x - connection.from.y) * halfW;
       const fromY = (connection.from.x + connection.from.y) * halfH;
@@ -661,23 +680,88 @@ export class IsoGrid {
         toScreen: { x: toX, y: toY }
       });
       
-      // 創建連線圖形
+      // 獲取連線顏色
+      let connectionColor = 0x00ff00; // 預設綠色
+      if (this.buildingStore.map && 
+          this.buildingStore.map[connection.from.y] && 
+          this.buildingStore.map[connection.from.y][connection.from.x] &&
+          this.buildingStore.map[connection.to.y] && 
+          this.buildingStore.map[connection.to.y][connection.to.x]) {
+        const fromBuildingId = this.buildingStore.map[connection.from.y][connection.from.x].buildingId;
+        const toBuildingId = this.buildingStore.map[connection.to.y][connection.to.x].buildingId;
+        const fromType = this.buildingStore.getBuildingType(fromBuildingId);
+        const toType = this.buildingStore.getBuildingType(toBuildingId);
+        if (fromType && toType) {
+          connectionColor = getConnectionColor(fromType, toType);
+        }
+      }
+      
+      // 創建多層發光效果（外層、中層、內層）讓發光更明顯
+      // 外層發光（最寬、最淡）
+      const glowOuter = new PIXI.Graphics();
+      glowOuter
+        .moveTo(fromX, fromY)
+        .lineTo(toX, toY)
+        .stroke({ width: 28, color: connectionColor, alpha: 0.2 });
+      glowOuter.zIndex = 150; // 確保在蒙版（z-index: 50）上方
+      glowOuter.visible = true;
+      
+      // 中層發光（中等寬度）
+      const glowMiddle = new PIXI.Graphics();
+      glowMiddle
+        .moveTo(fromX, fromY)
+        .lineTo(toX, toY)
+        .stroke({ width: 20, color: connectionColor, alpha: 0.4 });
+      glowMiddle.zIndex = 151; // 確保在蒙版上方
+      glowMiddle.visible = true;
+      
+      // 內層發光（較窄、較亮，會動畫）
+      const glowInner = new PIXI.Graphics();
+      glowInner
+        .moveTo(fromX, fromY)
+        .lineTo(toX, toY)
+        .stroke({ width: 14, color: connectionColor, alpha: 0.5 });
+      glowInner.zIndex = 152; // 確保在蒙版上方
+      glowInner.visible = true;
+      
+      // 創建主線（稍微加粗）
       const connectionLine = new PIXI.Graphics();
       connectionLine
         .moveTo(fromX, fromY)
         .lineTo(toX, toY)
-        .stroke({ width: 5, color: 0xff0000, alpha: 1.0 }); // 增加寬度和完全不透明
+        .stroke({ width: 6, color: connectionColor, alpha: 1.0 }); // 稍微加粗主線
+      connectionLine.zIndex = 153; // 確保在蒙版（z-index: 50）上方
+      connectionLine.visible = true;
       
-      connectionLine.zIndex = 10; // 提高層級確保在建築物之上
-      connectionLine.visible = true; // 確保可見
-      
-      this.objectContainer.addChild(connectionLine);
+      // 添加到連線容器（如果有獨立連線層，則添加到連線世界，否則添加到對象容器）
+      const targetContainer = this.connectionWorld || this.objectContainer;
+      targetContainer.addChild(glowOuter);
+      targetContainer.addChild(glowMiddle);
+      targetContainer.addChild(glowInner);
+      targetContainer.addChild(connectionLine);
       
       // 儲存連線引用以便後續清除
       if (!this.connectionLines) {
         this.connectionLines = [];
       }
+      if (!this.connectionGlowLayers) {
+        this.connectionGlowLayers = [];
+      }
+      if (!this.connectionAnimations) {
+        this.connectionAnimations = [];
+      }
+      
+      // 儲存連線圖形和所有發光層
       this.connectionLines.push(connectionLine);
+      this.connectionGlowLayers.push(glowOuter, glowMiddle, glowInner);
+      
+      // 儲存動畫參數（讓內層發光層動畫，alpha從0.5到1.0，更明顯）
+      this.connectionAnimations.push({
+        time: Math.random() * 1.5, // 隨機起始時間，讓連線不同步
+        glowInner: glowInner,
+        glowMiddle: glowMiddle, // 中層也稍微動畫
+        glowOuter: glowOuter // 外層也稍微動畫
+      });
     });
     
     console.log('drawConnections: 完成繪製，共繪製', this.connectionLines.length, '條連線');
@@ -695,6 +779,95 @@ export class IsoGrid {
       });
       this.connectionLines = [];
     }
+    
+    // 清除發光層
+    if (this.connectionGlowLayers) {
+      this.connectionGlowLayers.forEach(glow => {
+        if (glow.parent) {
+          glow.parent.removeChild(glow);
+        }
+      });
+      this.connectionGlowLayers = [];
+    }
+    
+    // 清除動畫參數
+    if (this.connectionAnimations) {
+      this.connectionAnimations = [];
+    }
+  }
+  
+  /**
+   * 啟動連線發光動畫（類似successGlow效果）
+   */
+  startConnectionGlowAnimation() {
+    // 選擇使用主應用或連線應用的ticker
+    const appToUse = this.connectionApp || this.app;
+    
+    // 如果已經有ticker，先移除
+    if (this.connectionGlowTicker && appToUse.ticker) {
+      appToUse.ticker.remove(this.connectionGlowTicker);
+    }
+    
+    // 創建綁定的更新函數
+    this.connectionGlowTicker = this.updateConnectionGlow.bind(this);
+    
+    // 使用PIXI的Ticker來更新動畫
+    if (appToUse.ticker) {
+      appToUse.ticker.add(this.connectionGlowTicker);
+    }
+  }
+  
+  /**
+   * 更新連線發光動畫
+   * 類似successGlow動畫：1.5秒循環，發光強度從0.3到0.8
+   */
+  updateConnectionGlow() {
+    if (!this.connectionAnimations || this.connectionAnimations.length === 0) {
+      return;
+    }
+    
+    // 選擇使用主應用或連線應用的ticker
+    const appToUse = this.connectionApp || this.app;
+    
+    // PIXI ticker的deltaTime已經是按幀的，需要轉換為秒
+    // deltaTime是基於60fps的，所以除以60得到秒
+    const deltaTime = appToUse.ticker.deltaTime / 60; // 轉換為秒（假設60fps）
+    const animationDuration = 1.5; // 1.5秒循環（與successGlow相同）
+    
+    this.connectionAnimations.forEach(anim => {
+      // 更新時間
+      anim.time += deltaTime;
+      if (anim.time >= animationDuration) {
+        anim.time -= animationDuration;
+      }
+      
+      // 計算動畫進度（0到1）
+      const progress = anim.time / animationDuration;
+      
+      // 使用正弦波創建平滑的脈衝效果（增強版，更明顯）
+      // 內層發光：alpha從0.5到1.0（更強）
+      // 中層發光：alpha從0.4到0.7（中等）
+      // 外層發光：alpha從0.2到0.4（較弱）
+      const pulseValue = (Math.sin(progress * Math.PI * 2) + 1) / 2; // 0 到 1
+      
+      // 更新內層發光（最明顯）
+      if (anim.glowInner && anim.glowInner.visible) {
+        const innerAlpha = 0.5 + (1.0 - 0.5) * pulseValue;
+        anim.glowInner.alpha = innerAlpha;
+      }
+      
+      // 更新中層發光（中等明顯）
+      if (anim.glowMiddle && anim.glowMiddle.visible) {
+        const middleAlpha = 0.4 + (0.7 - 0.4) * pulseValue;
+        anim.glowMiddle.alpha = middleAlpha;
+      }
+      
+      // 更新外層發光（較弱但保持可見）
+      if (anim.glowOuter && anim.glowOuter.visible) {
+        const outerAlpha = 0.2 + (0.4 - 0.2) * pulseValue;
+        anim.glowOuter.alpha = outerAlpha;
+      }
+    });
   }
 
   /**

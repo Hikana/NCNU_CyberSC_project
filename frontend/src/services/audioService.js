@@ -8,13 +8,15 @@ class AudioService {
     this.bgmAudio = null
     this.isPlaying = false
     this.volume = 0.5 // 預設音量 50%
-    this.isMuted = this.loadMuteState() // 從 localStorage 載入靜音狀態
+    this.isMuted = this.loadMuteState() // 從 localStorage 載入靜音狀態（保留舊的兼容性）
+    this.isBgmMuted = this.loadBgmMuteState() // BGM 靜音狀態
+    this.isSoundEffectsMuted = this.loadSoundEffectsMuteState() // 音效靜音狀態
     this.isInitialized = false
     this.soundEffects = new Map() // 存儲音效對象
   }
   
   /**
-   * 從 localStorage 載入靜音狀態
+   * 從 localStorage 載入靜音狀態（舊版兼容）
    */
   loadMuteState() {
     try {
@@ -25,15 +27,63 @@ class AudioService {
       return false
     }
   }
-  
+
   /**
-   * 保存靜音狀態到 localStorage
+   * 從 localStorage 載入 BGM 靜音狀態
+   */
+  loadBgmMuteState() {
+    try {
+      const saved = localStorage.getItem('bgmMuted')
+      return saved === 'true'
+    } catch (error) {
+      console.warn('無法載入 BGM 靜音狀態:', error)
+      return false
+    }
+  }
+
+  /**
+   * 從 localStorage 載入音效靜音狀態
+   */
+  loadSoundEffectsMuteState() {
+    try {
+      const saved = localStorage.getItem('soundEffectsMuted')
+      return saved === 'true'
+    } catch (error) {
+      console.warn('無法載入音效靜音狀態:', error)
+      return false
+    }
+  }
+
+  /**
+   * 保存靜音狀態到 localStorage（舊版兼容）
    */
   saveMuteState() {
     try {
       localStorage.setItem('audioMuted', this.isMuted.toString())
     } catch (error) {
       console.warn('無法保存靜音狀態:', error)
+    }
+  }
+
+  /**
+   * 保存 BGM 靜音狀態到 localStorage
+   */
+  saveBgmMuteState() {
+    try {
+      localStorage.setItem('bgmMuted', this.isBgmMuted.toString())
+    } catch (error) {
+      console.warn('無法保存 BGM 靜音狀態:', error)
+    }
+  }
+
+  /**
+   * 保存音效靜音狀態到 localStorage
+   */
+  saveSoundEffectsMuteState() {
+    try {
+      localStorage.setItem('soundEffectsMuted', this.isSoundEffectsMuted.toString())
+    } catch (error) {
+      console.warn('無法保存音效靜音狀態:', error)
     }
   }
 
@@ -112,13 +162,13 @@ class AudioService {
       await this.bgmAudio.play()
       this.isPlaying = true
       
-      // 應用當前的靜音狀態
-      if (this.isMuted) {
+      // 應用當前的 BGM 靜音狀態
+      if (this.isBgmMuted) {
         this.bgmAudio.volume = 0
-        console.log('🔇 音頻已靜音')
+        console.log('🔇 BGM 已靜音')
       } else {
         this.bgmAudio.volume = this.volume
-        console.log('🔊 音頻正常播放')
+        console.log('🔊 BGM 正常播放')
       }
       
       console.log('✅ 背景音樂自動播放成功')
@@ -149,6 +199,12 @@ class AudioService {
       
       await this.bgmAudio.play()
       this.isPlaying = true
+      
+      // 應用 BGM 靜音狀態
+      if (this.bgmAudio) {
+        this.bgmAudio.volume = this.isBgmMuted ? 0 : this.volume
+      }
+      
       console.log('✅ 背景音樂開始播放')
     } catch (error) {
       console.error('❌ 播放背景音樂失敗:', error)
@@ -207,26 +263,58 @@ class AudioService {
     this.volume = Math.max(0, Math.min(1, volume))
     
     if (this.bgmAudio) {
-      this.bgmAudio.volume = this.isMuted ? 0 : this.volume
+      this.bgmAudio.volume = this.isBgmMuted ? 0 : this.volume
     }
     
     console.log(`🔊 音量設置為: ${Math.round(this.volume * 100)}%`)
   }
 
   /**
-   * 靜音/取消靜音
+   * 靜音/取消靜音（舊版兼容，同時控制 BGM 和音效）
    */
   toggleMute() {
     this.isMuted = !this.isMuted
+    this.isBgmMuted = this.isMuted
+    this.isSoundEffectsMuted = this.isMuted
     
     if (this.bgmAudio) {
-      this.bgmAudio.volume = this.isMuted ? 0 : this.volume
+      this.bgmAudio.volume = this.isBgmMuted ? 0 : this.volume
     }
     
     // 保存靜音狀態
     this.saveMuteState()
+    this.saveBgmMuteState()
+    this.saveSoundEffectsMuteState()
     
     console.log(this.isMuted ? '🔇 已靜音' : '🔊 已取消靜音')
+  }
+
+  /**
+   * 切換 BGM 靜音/取消靜音
+   */
+  toggleBgmMute() {
+    this.isBgmMuted = !this.isBgmMuted
+    
+    if (this.bgmAudio) {
+      this.bgmAudio.volume = this.isBgmMuted ? 0 : this.volume
+    }
+    
+    // 保存 BGM 靜音狀態
+    this.saveBgmMuteState()
+    
+    console.log(this.isBgmMuted ? '🔇 BGM 已靜音' : '🔊 BGM 已取消靜音')
+  }
+
+  /**
+   * 切換音效靜音/取消靜音
+   */
+  toggleSoundEffectsMute() {
+    this.isSoundEffectsMuted = !this.isSoundEffectsMuted
+    
+    // 保存音效靜音狀態
+    this.saveSoundEffectsMuteState()
+    
+    console.log(this.isSoundEffectsMuted ? '🔇 音效已靜音' : '🔊 音效已取消靜音')
   }
 
   /**
@@ -236,7 +324,9 @@ class AudioService {
     return {
       isPlaying: this.isPlaying,
       volume: this.volume,
-      isMuted: this.isMuted,
+      isMuted: this.isMuted, // 舊版兼容
+      isBgmMuted: this.isBgmMuted,
+      isSoundEffectsMuted: this.isSoundEffectsMuted,
       isInitialized: this.isInitialized
     }
   }
@@ -252,7 +342,7 @@ class AudioService {
       
       const audio = new Audio(path)
       audio.preload = 'auto'
-      audio.volume = this.isMuted ? 0 : this.volume
+      audio.volume = this.isSoundEffectsMuted ? 0 : this.volume
       
       // 等待音效載入完成
       await new Promise((resolve, reject) => {
@@ -276,7 +366,7 @@ class AudioService {
    * @param {number} volumeMultiplier - 音量倍數（預設1.0）
    */
   async playSoundEffect(name, startTime = 0, duration = null, volumeMultiplier = 1.0) {
-    if (this.isMuted) {
+    if (this.isSoundEffectsMuted) {
       console.log(`🔇 音效 ${name} 被靜音，跳過播放`)
       return
     }
@@ -291,7 +381,7 @@ class AudioService {
       // 創建新的音頻實例以避免衝突
       const soundEffect = audio.cloneNode()
       soundEffect.currentTime = startTime
-      soundEffect.volume = this.volume * volumeMultiplier
+      soundEffect.volume = this.isSoundEffectsMuted ? 0 : (this.volume * volumeMultiplier)
       
       await soundEffect.play()
       
@@ -347,6 +437,14 @@ class AudioService {
   async playAchievementSuccessSound() {
     console.log(`🎉 播放成就獲得音效`)
     await this.playSoundEffect('success', 0, null, 1.8) // 播放完整音效，增加80%音量
+  }
+
+  /**
+   * 播放連線成功音效（fix.mp3，播放2秒）
+   */
+  async playConnectionSuccessSound() {
+    console.log(`🔗 播放連線成功音效 (fix.mp3, 2秒)`)
+    await this.playSoundEffect('fix', 2, 3, 1.5) // 播放2秒，增加50%音量
   }
 
   /**
