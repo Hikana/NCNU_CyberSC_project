@@ -264,14 +264,32 @@ export default {
     },
 
     // ✅ 根據登入狀態導向練功房
-    goTrainingRoom() {
-      const auth = getAuth()
-      const user = auth.currentUser
+    async goTrainingRoom() {
+      try {
+        const auth = getAuth()
 
-      if (user) {
-        this.$router.push("/questions")
-      } else {
-        this.$router.push("/Login")
+        // 🔧 改成直接使用 auth.currentUser，若無則再檢查
+        let user = auth.currentUser
+        if (!user) {
+          // 等 Firebase 回報狀態，最多等待 1 秒
+          user = await new Promise((resolve) => {
+            const unsubscribe = onAuthStateChanged(auth, (u) => {
+              unsubscribe()
+              resolve(u)
+            })
+            // 若 1 秒內沒回覆，就直接判定為未登入，避免卡住
+            setTimeout(() => resolve(null), 1000)
+          })
+        }
+        if (user) {
+          console.log("✅ 已登入，前往 /questions")
+          this.$router.push("/questions")
+        } else {
+          console.log("🚫 未登入，導向登入頁")
+          this.$router.push({ path: "/login", query: { redirect: "/questions" } })
+        }
+      } catch (err) {
+        console.error("❌ goTrainingRoom 發生錯誤：", err)
       }
     },
 

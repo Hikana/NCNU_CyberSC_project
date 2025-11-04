@@ -106,7 +106,7 @@
           </div>
 
           <div class="button-group">
-            <router-link to="/Login" class="nav-link">
+            <router-link :to="{ name: 'Login', query: { redirect: '/questions' } }" class="nav-link">
               <button class="primary-btn">🔑 登入</button>
             </router-link>
 

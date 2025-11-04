@@ -40,8 +40,11 @@ async function handleLogin() {
   try {
     // 呼叫 authStore 中的 login 動作
     await authStore.login(email.value, password.value);
-    // 登入成功後，使用 router 跳轉到遊戲主頁面
-    router.push('/game'); 
+    
+    // 如果有 redirect 參數 → 登入後導回指定頁面
+    const redirectPath = router.currentRoute.value.query.redirect || '/game';
+    router.push(redirectPath);
+
   } catch (error) {
     console.error("登入失敗:", error);
     // 根據 Firebase 回傳的錯誤碼，顯示更友善的訊息
