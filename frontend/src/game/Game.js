@@ -215,6 +215,26 @@ export class Game {
           this.wasInCastle = isInCastle;
         }
     }
+    
+    // 更新玩家所在的格子位置（用於顯示綠色高亮）
+    if (this.grid) {
+      const halfW = this.TILE_SIZE / 2;
+      const halfH = this.TILE_SIZE / 4;
+      const { x, y } = this.playerStore.position;
+      
+      // 將等角座標轉換為網格座標
+      const cartX = (x / halfW + y / halfH) / 2;
+      const cartY = (y / halfH - x / halfW) / 2;
+      
+      // 四捨五入取得整數網格座標
+      const col = Math.round(cartX);
+      const row = Math.round(cartY);
+      
+      // 檢查座標是否在有效範圍內
+      if (row >= 0 && row < this.grid.rows && col >= 0 && col < this.grid.cols) {
+        this.grid.setPlayerTile(row, col);
+      }
+    }
 
     // 同步連線世界的位置和縮放（確保連線跟隨地圖移動）
     if (this.connectionWorld) {
@@ -382,6 +402,11 @@ export class Game {
     
     this.playerStore.updatePosition({ x: isoX, y: isoY });
     console.log(`🎮 玩家初始位置設置為網格 (${initialRow}, ${initialCol})，等角座標 (${isoX}, ${isoY})`);
+    
+    // 設置玩家初始位置的高亮顯示
+    if (this.grid) {
+      this.grid.setPlayerTile(initialRow, initialCol);
+    }
   }
 
   /*處理地圖格子的點擊事件 (智慧點擊)*/

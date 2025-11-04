@@ -145,12 +145,26 @@
       </div>
     </div>
   </transition>
+  
+  <!-- 資安事件紀錄對話框 -->
+  <transition name="fade">
+    <div v-if="showEventLogDialog" class="event-log-modal-overlay" @click.self="showEventLogDialog = false">
+      <div class="event-log-modal">
+        <button class="modal-close-btn" @click="showEventLogDialog = false">×</button>
+        <SecurityEventLog />
+      </div>
+    </div>
+  </transition>
 </template>
 
 <script>
 import { getAuth } from "firebase/auth"
+import SecurityEventLog from '@/components/game/SecurityEventLog.vue'
 
 export default {
+  components: {
+    SecurityEventLog
+  },
   data() {
     return {
       isOpen: false,
@@ -227,7 +241,9 @@ export default {
         { label: "OSI7", type: "scroll", ref: "ss" },
         { label: "密碼學", type: "scroll", ref: "crypto" },
         { label: "OWASP", type: "scroll", ref: "top10Section" },
+        { label: "資安事件紀錄", type: "dialog", component: "SecurityEventLog" },
       ],
+      showEventLogDialog: false,
     }
   },
   mounted() {
@@ -288,6 +304,18 @@ export default {
       if (item.type === "scroll") {
         const target = this.$parent.$refs[item.ref]?.$el || this.$parent.$refs[item.ref]
         if (target) target.scrollIntoView({ behavior: "smooth" })
+      } else if (item.type === "dialog") {
+        if (item.component === "SecurityEventLog") {
+          // 檢查登入狀態
+          const auth = getAuth()
+          const user = auth.currentUser
+          if (user) {
+            this.showEventLogDialog = true
+            this.isOpen = false // 關閉選單
+          } else {
+            this.$router.push("/Login")
+          }
+        }
       }
     },
     checkVisibility() {
@@ -348,5 +376,67 @@ export default {
 .fade-left-leave-to {
   opacity: 0;
   transform: translateX(30px);
+}
+
+/* 資安事件紀錄對話框樣式 */
+.event-log-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.event-log-modal {
+  position: relative;
+  background: white;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 900px;
+  height: 85vh;
+  max-height: 700px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 36px;
+  height: 36px;
+  background: rgba(231, 76, 60, 0.9);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: all 0.2s;
+}
+
+.modal-close-btn:hover {
+  background: rgba(231, 76, 60, 1);
+  transform: scale(1.1);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

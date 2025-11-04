@@ -50,6 +50,7 @@ export class IsoGrid {
     this.mapData = mapData || this.createDefaultMap()
     this.buildingStore = buildingStore || useBuildingStore()
     this.selectedTile = null
+    this.playerTile = null // 追蹤玩家所在的格子 { row, col }
     this.gridContainer = new PIXI.Container()
     // 允許依據 zIndex 排序，確保地圖元素可正確分層
     this.gridContainer.sortableChildren = true
@@ -396,6 +397,16 @@ export class IsoGrid {
 
   setSelectedTile(x, y) { this.selectedTile = { x, y }; this.drawGrid(); }
   clearSelectedTile() { this.selectedTile = null; this.drawGrid(); }
+  
+  // 更新玩家所在的格子位置
+  setPlayerTile(row, col) { 
+    if (this.playerTile?.row === row && this.playerTile?.col === col) {
+      return; // 位置沒有變化，不需要重繪
+    }
+    this.playerTile = { row, col }; 
+    this.drawGrid(); 
+  }
+  clearPlayerTile() { this.playerTile = null; this.drawGrid(); }
 
   revealTile(row, col) { 
     if (this.mapData[row] && this.mapData[row][col]) {
@@ -429,8 +440,11 @@ export class IsoGrid {
 
         const cell = this.mapData[row]?.[col] || { status: 'locked' }
         
-        // 檢查是否為選中的瓦片
+        // 檢查是否為選中的瓦片（建築放置）
         const isSelected = this.selectedTile && this.selectedTile.x === col && this.selectedTile.y === row;
+        
+        // 檢查是否為玩家所在的瓦片
+        const isPlayerTile = this.playerTile && this.playerTile.row === row && this.playerTile.col === col;
 
         // 先鋪草地作為地面（每格都鋪，包括城堡格）
         if (this.grassTextures && this.grassTextures.grass) {
@@ -509,7 +523,7 @@ export class IsoGrid {
           groundTileContainer.on('pointerout', () => { tile.tint = 0xffffff; });
         }
 
-        // 如果是選中的瓦片，添加邊框
+        // 如果是選中的瓦片（建築放置），添加綠色邊框
         if (isSelected) {
           const highlight = new PIXI.Graphics();
           highlight
@@ -522,6 +536,21 @@ export class IsoGrid {
           
           highlight.zIndex = 10;
           groundTileContainer.addChild(highlight);
+        }
+        
+        // 如果是玩家所在的瓦片，添加綠色邊框（與建築放置一樣的樣式）
+        if (isPlayerTile) {
+          const playerHighlight = new PIXI.Graphics();
+          playerHighlight
+            .moveTo(0, -halfH)
+            .lineTo(halfW, 0)
+            .lineTo(0, halfH)
+            .lineTo(-halfW, 0)
+            .closePath()
+            .stroke({ width: 3, color: 0x00ff00, alpha: 1 });
+          
+          playerHighlight.zIndex = 10;
+          groundTileContainer.addChild(playerHighlight);
         }
 
         this.groundContainer.addChild(groundTileContainer);

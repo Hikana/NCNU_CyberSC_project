@@ -214,9 +214,16 @@
         </div>
 
       </div>
-    </div>
+      </div>
 
   </div>
+  
+  <!-- 成功訊息 -->
+  <SuccessMessage 
+    :message="successMessage" 
+    :show="showSuccessMessage"
+    @close="showSuccessMessage = false"
+  />
 </template>
 
 <script setup>
@@ -224,6 +231,7 @@ import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue'
 import BuildingShop from '@/components/game/BuildingShop.vue'
 import AchievementMenu from '@/components/game/AchievementMenu.vue'
 import HistoryPanel from '@/components/game/HistoryPanel.vue'
+import SuccessMessage from '@/components/game/SuccessMessage.vue'
 import { useUiStore } from '@/stores/ui';
 import { useInventoryStore } from '@/stores/inventory.js';
 import { useAuthStore } from '@/stores/authStore';
@@ -246,6 +254,10 @@ const selectedItem = ref(null)
 const selectedEvent = ref(null)
 const showToolSelection = ref(false)
 const selectedEventForTool = ref(null)
+
+// 成功訊息
+const showSuccessMessage = ref(false)
+const successMessage = ref('')
 
 // 點擊物品顯示詳細資訊
 function selectItem(item) {
@@ -286,7 +298,9 @@ async function useToolForEvent(tool) {
       // 使用物品（會扣掉數量）
       await inventoryStore.useItem(tool.id)
       
-      alert(`✅ 成功使用 ${tool.name} 處理了事件：${selectedEventForTool.value.eventName}！`)
+      // 顯示成功訊息
+      showSuccessMessage.value = true
+      successMessage.value = `成功使用 ${tool.name} 處理了事件：${selectedEventForTool.value.eventName}！`
       
       // 更新玩家防禦值
       const playerStore = usePlayerStore()
@@ -297,6 +311,7 @@ async function useToolForEvent(tool) {
     } else {
       // 工具無效，但仍會消耗
       await inventoryStore.useItem(tool.id)
+      // 顯示錯誤訊息
       alert(`❌ ${tool.name} 無法處理此事件，但工具已消耗！\n\n正確的工具應該是：${getRequiredTools(selectedEventForTool.value)}`)
     }
     

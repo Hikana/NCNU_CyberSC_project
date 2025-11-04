@@ -8,6 +8,8 @@ export const useEventLogStore = defineStore('eventLog', {
   state: () => ({
     // 未處理的資安事件列表
     unresolvedEvents: [],
+    // 所有資安事件列表（包括已解決的）
+    allEvents: [],
     // 載入狀態
     loading: false,
     // 是否已完成初始化
@@ -31,10 +33,16 @@ export const useEventLogStore = defineStore('eventLog', {
     
     // 未處理事件總數
     unresolvedCount: (state) => state.unresolvedEvents.length,
+    
+    // 已解決事件列表
+    resolvedEvents: (state) => state.allEvents.filter(event => event.resolved),
+    
+    // 所有事件總數
+    allEventsCount: (state) => state.allEvents.length,
   },
   
   actions: {
-    // 載入資安事件
+    // 載入資安事件（只載入未處理的）
     async loadSecurityEvents() {
       const authStore = useAuthStore();
       if (!authStore.user?.uid) {
@@ -59,6 +67,28 @@ export const useEventLogStore = defineStore('eventLog', {
       } catch (error) {
         console.error('❌ 載入資安事件失敗:', error);
         this.unresolvedEvents = [];
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    // 載入所有資安事件（包括已解決的）
+    async loadAllSecurityEvents() {
+      const authStore = useAuthStore();
+      if (!authStore.user?.uid) {
+        console.warn('loadAllSecurityEvents: 缺少 userId');
+        return;
+      }
+      
+      this.loading = true;
+      try {
+        const events = await apiService.getSecurityEvents(authStore.user.uid);
+        this.allEvents = events;
+        this.unresolvedEvents = events.filter(event => !event.resolved);
+        console.log('📜 載入所有資安事件:', this.allEvents.length, '個事件（', this.unresolvedEvents.length, '個未處理）');
+      } catch (error) {
+        console.error('❌ 載入所有資安事件失敗:', error);
+        this.allEvents = [];
       } finally {
         this.loading = false;
       }
