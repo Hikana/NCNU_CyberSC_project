@@ -43,7 +43,7 @@
         <!-- 右欄：內容（白底框＋可滾動） -->
         <div class="text-left self-start">
           <div
-            class="bg-lightGray text-wordcolor rounded-2xl shadow-lg p-6 md:p-8 max-h-[65vh] overflow-y-auto border border-gray-300"
+            class="bg-lightGray text-wordcolor rounded-2xl shadow-lg p-6 md:p-8 max-h-[85vh] overflow-y-auto border border-gray-300"
           >
             <!-- 顯示選中的內容 -->
             <div v-if="selectedContent" class="space-y-6">

@@ -42,7 +42,7 @@
         <!-- 右欄：內容（加上白底長方形 + 可滾動） -->
         <div class="text-left self-start">
           <div
-            class="bg-lightGray text-wordcolor rounded-2xl shadow-lg p-6 md:p-8 max-h-[65vh] overflow-y-auto border border-gray-300"
+            class="bg-lightGray text-wordcolor rounded-2xl shadow-lg p-6 md:p-8 max-h-[85vh] overflow-y-auto border border-gray-300"
           >
             <div v-if="selectedContent" class="space-y-6">
               <h3 class="font-semibold text-2xl mb-4">

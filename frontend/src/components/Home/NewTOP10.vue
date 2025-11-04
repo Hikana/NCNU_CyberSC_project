@@ -42,7 +42,7 @@
         class="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50"
       >
         <div
-          class="relative bg-lightGray rounded-xl p-8 flex flex-col w-[80vw] h-[80vh] overflow-hidden"
+          class="relative bg-lightGray rounded-xl p-8 flex flex-col w-[73vw] h-[75vh] overflow-hidden"
           >
 
           <div class="text-center mb-2"> <h2 class="text-3xl font-bold text-wordcolor mb-0"> {{ selectedStone }} 的詳細說明
