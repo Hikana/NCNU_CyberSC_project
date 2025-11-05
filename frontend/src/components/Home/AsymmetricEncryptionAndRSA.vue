@@ -247,7 +247,7 @@ export default {
         );
         this.decrypted = new TextDecoder().decode(decryptedBuffer);
       } catch (err) {
-        alert("Decryption Error: " + err.message);
+        alert("你的密文錯誤了！！");
       }
     },
   },

@@ -8,19 +8,9 @@
     <SectionAnimation
       :lines="[
         '歡迎來到我們的資安教育網站，',
-        '首先，讓我們一起認識駭客的種類吧！',
+        '首先，讓我們一起認識駭客的種類吧！(應該要改)',
       ]"
     />
-    <BlackOrWhite ref="blackOrWhite"/>
-
-    <header class="relative w-screen bg-bgg py-32">
-      <div class="absolute top-14 left-8 text-wordcolor px-8">
-        <h2 class="text-4xl md:text-5xl font-bold">
-          探索資安領域：必備技能、工具與證照
-        </h2>
-      </div>
-    </header>
-    <Future />
 
     <!-- 網路七層 -->
     <header class="relative w-screen bg-bgg py-32">
@@ -96,10 +86,8 @@ import Menu from "@/components/Home/Menu.vue"
 import SymmetricEncryptionAndAES from "@/components/Home/SymmetricEncryptionAndAES.vue"
 import AsymmetricEncryptionAndRSA from "@/components/Home/AsymmetricEncryptionAndRSA.vue"
 import DH from "@/components/Home/DH.vue"
-import BlackOrWhite from "@/components/Home/BlackOrWhite.vue"
 import SevenStage from "@/components/Home/SevenStage.vue"
 import SectionAnimation from "@/components/Home/SectionAnimation.vue"
-import Future from "@/components/Home/Future.vue"
 import AAA from "@/components/Home/3A.vue"
 import Concept from "@/components/Home/Concept.vue"
 import WhyCrypto from "@/components/Home/WhyCrypto.vue"
@@ -110,7 +98,6 @@ defineOptions({ name: "SecurityEducationPage" })
 </script>
 
 <style>
-/* 背景圖保留 */
 body {
   background-image: url('/src/assets/image/AAA.png');
   background-repeat: no-repeat;
@@ -118,4 +105,18 @@ body {
   background-size: cover;
   background-attachment: fixed;
 }
+button:focus {
+  outline: none;
+}
+
+button:hover {
+  outline: none;
+  border: none;
+}
+
+button {
+  outline: none;
+  border: none;
+}
 </style>
+

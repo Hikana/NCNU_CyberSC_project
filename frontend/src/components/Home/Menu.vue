@@ -1,104 +1,29 @@
 <template>
-  <!-- 固定在左下角的選單 -->
-  <div class="fixed bottom-6 left-6 z-[9999] flex flex-col items-center space-y-1">
-    <!-- GIF 圖示 -->
-    <div class="relative w-40 h-40">
-      <img
-        src="/src/assets/image/Menu/menu.gif"
-        class="w-40 h-40 cursor-pointer hover:scale-110 transition-transform"
-        @click="toggleMenu"
-      />
+  <!-- ✅ 固定在畫面頂部的導覽列 -->
+  <div class="fixed top-0 left-0 w-full z-[9999] bg-black bg-opacity-80 backdrop-blur-md flex justify-between items-center px-10 py-4">
 
-      <!-- 駭客提示框 -->
-      <transition name="fade-left">
-        <div
-          v-if="showHackerDialog"
-          class="absolute bottom-full left-full ml-6 bg-white shadow-2xl rounded-2xl p-4 w-[240px] text-gray-800 relative"
-        >
-          <button
-            @click="showHackerDialog = false"
-            class="absolute top-1 right-3 text-gray-500 hover:text-gray-800 font-bold text-xl bg-white p-2"
-          >
-            ✕
-          </button>
-          <h3 class="font-bold mb-2 text-base">探索更多！</h3>
-          <p class="text-sm leading-relaxed">
-            想了解更多資安知識？<br />
-            點擊我，帶你快速瀏覽主題！
-          </p>
-        </div>
-      </transition>
-
-      <!-- OWASP Top 10 提示框 -->
-      <transition name="fade-left">
-        <div
-          v-if="showTop10Dialog"
-          class="absolute bottom-full left-full ml-6 bg-white shadow-2xl rounded-2xl p-4 w-[240px] text-gray-800 relative"
-        >
-          <button
-            @click="showTop10Dialog = false"
-            class="absolute top-1 right-3 text-gray-500 hover:text-gray-800 font-bold text-xl bg-white p-2"
-          >
-            ✕
-          </button>
-          <h3 class="font-bold mb-2 text-base">常見的網路安全風險</h3>
-          <p class="text-sm leading-relaxed">
-            想知道更多內容，<br />
-            可以點擊標題喔！<br/>
-            一起來了解吧！
-          </p>
-        </div>
-      </transition>
-
-      <!-- 展開主選單 -->
-      <transition name="fade-up">
-        <div
-          v-if="isOpen"
-          class="absolute bottom-full left-1/2 -translate-x-1/2 flex flex-col space-y-3"
-        >
-          <button
-            v-for="(item, index) in menuItems"
-            :key="index"
-            class="bg-white text-wordcolor font-semibold shadow-lg rounded-lg px-7 py-3 hover:bg-gray-200 transition cursor-pointer whitespace-nowrap w-auto inline-flex justify-center"
-            @click="handleClick(item)"
-          >
-            {{ item.label }}
-          </button>
-        </div>
-      </transition>
-
-      <!-- 左側說明對話框 -->
-      <transition name="fade-left">
-        <div
-          v-if="activeDialog"
-          class="absolute bottom-0 left-full ml-4 bg-white shadow-lg rounded-xl p-4 max-w-xs w-auto min-w-[150px]"
-        >
-          <h3 class="font-bold text-black text-lg mb-2 whitespace-pre-wrap">
-            {{ activeDialog.title }}
-          </h3>
-          <button
-            class="bg-gray-300 text-black font-semibold shadow-lg rounded-lg px-6 py-2 hover:bg-gray-400 transition cursor-pointer"
-            @click="openRightDialog"
-          >
-            想知道！
-          </button>
-        </div>
-      </transition>
+    <!-- 左側功能按鈕（關於駭客、OSI7...） -->
+    <div class="flex space-x-4">
+      <button
+        v-for="(item, index) in menuItems"
+        :key="index"
+        class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
+        @click="handleClick(item)"
+      >
+        {{ item.label }}
+      </button>
     </div>
 
-    <!-- 橘色按鈕區 -->
-    <div class="flex space-x-3 mt-1">
-      <!-- ✅ 改：資安小鎮按鈕會根據登入狀態自動導向 -->
+    <!-- 右側按鈕（資安小鎮 / 練功房） -->
+    <div class="flex space-x-4">
       <button
-        class="bg-white hover:bg-gray-200 text-black font-semibold rounded-lg px-5 py-2 shadow-md transition"
+        class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
         @click="goCyberTown"
       >
         資安小鎮
       </button>
-
-      <!-- ✅ 改：練功房按鈕一樣檢查登入狀態 -->
       <button
-        class="bg-white hover:bg-gray-200 text-black font-semibold rounded-lg px-5 py-2 shadow-md transition"
+        class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
         @click="goTrainingRoom"
       >
         練功房
@@ -106,7 +31,7 @@
     </div>
   </div>
 
-  <!-- 右下角對話框 -->
+  <!-- ✅ 右下角彈窗：顯示 RSA / AES / Hash / DH 流程 -->
   <transition name="fade-left">
     <div
       v-if="showRightDialog"
@@ -118,51 +43,25 @@
         v-html="activeDialog.displayContent"
       ></div>
 
-      <div class="flex justify-between items-center mt-3">
+      <div class="flex justify-end items-center mt-3 space-x-2">
+        <!-- 加密按鈕 -->
         <button
-          v-if="activeDialog.steps.length && activeDialog.currentStep < activeDialog.steps.length"
-          class="px-3 py-2 bg-gray-400 text-white rounded hover:border-gray-500 font-semibold"
-          @click="nextStep"
+          v-if="activeDialog.title.includes('RSA') || activeDialog.title.includes('AES')"
+          class="px-4 py-2 bg-blueGray text-white rounded hover:bg-blueGrayPressed font-semibold"
+          @click="showEncryptFull"
         >
-          下一步
+          加密
         </button>
-
-        <div class="flex space-x-2 ml-auto">
-          <button
-            v-if="activeDialog.title.includes('RSA') || activeDialog.title.includes('AES')"
-            class="px-4 py-2 bg-blueGray text-white rounded hover:bg-blueGrayPressed font-semibold"
-            @click="startEncrypt"
-          >
-            加密
-          </button>
-          <button
-            v-if="activeDialog.title.includes('RSA') || activeDialog.title.includes('AES')"
-            class="px-4 py-2 bg-pinkGray text-white rounded hover:bg-pinkGrayPressed font-semibold"
-            @click="startDecrypt"
-          >
-            解密
-          </button>
-          <button
-            v-if="activeDialog.title.includes('Hash')"
-            class="px-4 py-2 bg-blueGray text-white rounded hover:bg-blueGrayPressed font-semibold"
-            @click="startEncrypt"
-          >
-            雜湊
-          </button>
-          <button
-            v-if="activeDialog.title.includes('DH')"
-            class="px-4 py-2 bg-blueGray text-white rounded hover:bg-blueGrayPressed font-semibold"
-            @click="startEncrypt"
-          >
-            取得金鑰
-          </button>
-          <button
-            @click="toggleRightDialog"
-            class="absolute top-1 right-3 text-gray-500 hover:text-gray-800 font-bold text-xl bg-white p-2"
-          >
-            ✕
-          </button>
-        </div>
+        <!-- 解密按鈕 -->
+        <button
+          v-if="activeDialog.title.includes('RSA') || activeDialog.title.includes('AES')"
+          class="px-4 py-2 bg-pinkGray text-white rounded hover:bg-pinkGrayPressed font-semibold"
+          @click="showDecryptFull"
+        >
+          解密
+        </button>
+        <!-- 關閉按鈕 -->
+        <button @click="toggleRightDialog" class="absolute top-1 right-3 text-gray-500 hover:text-gray-800 font-bold text-xl bg-white p-2" > ✕ </button>
       </div>
     </div>
   </transition>
@@ -174,77 +73,55 @@ import { getAuth } from "firebase/auth"
 export default {
   data() {
     return {
-      isOpen: false,
       activeDialog: null,
       showRightDialog: false,
-      showHackerDialog: false,
-      hackerDialogShown: false,
       showTop10Dialog: false,
       top10DialogShown: false,
+
       dialogBlocks: [
         {
           selector: ".rsa-section",
           title: "RSA\n加密解密過程",
           encryptSteps: [
-            "1. 準備明文 M (Plaintext)",
-            "2. 使用接收方的公開金鑰 (e, n)",
-            "3. 套用 RSA 加密:C = M<sup>e</sup> mod n",
-            "4. 得到密文 C (Ciphertext)",
+            "1. 準備明文 M",
+            "2. 使用接收方公鑰 (e, n)",
+            "3. C = M^e mod n → 得到密文"
           ],
           decryptSteps: [
-            "1. 準備密文 C (Ciphertext)",
-            "2. 使用自己的私密金鑰 (d, n)",
-            "3. 套用 RSA 解密:M = C<sup>d</sup> mod n",
-            "4. 還原明文 M (Plaintext)",
+            "1. 準備密文 C",
+            "2. 使用私鑰 (d, n)",
+            "3. M = C^d mod n → 得到明文"
           ],
-          steps: [],
-          currentStep: 0,
           displayContent: "",
         },
         {
           selector: ".aes-section",
           title: "AES\n加密解密過程",
-          encryptSteps: [
-            "1. 準備明文 (Plaintext)",
-            "2. 使用共享金鑰 (Key)",
-            "3. 產生密文 (Ciphertext)",
-          ],
-          decryptSteps: [
-            "1. 準備密文 (Ciphertext)",
-            "2. 使用相同共享金鑰 (Key)",
-            "3. 還原明文 (Plaintext)",
-          ],
-          steps: [],
-          currentStep: 0,
+          encryptSteps: ["1. 準備明文", "2. 使用對稱金鑰", "3. 產出密文"],
+          decryptSteps: ["1. 準備密文", "2. 使用相同金鑰", "3. 還原明文"],
           displayContent: "",
         },
         {
           selector: ".hash-section",
           title: "Hash\n雜湊過程",
-          encryptSteps: [
-            "1. 輸入明文",
-            "2. 套用 Hash 演算法 (如 SHA-256)",
-            "3. 輸出固定長度的雜湊值 (Hash)",
-          ],
-          steps: [],
-          currentStep: 0,
+          encryptSteps: ["1. 輸入明文", "2. 使用 SHA-256 等演算法", "3. 產生固定長度雜湊值"],
           displayContent: "",
         },
         {
           selector: ".dh-section",
-          title: "DH Key Exchange\n金鑰交換過程",
+          title: "DH 金鑰交換",
           encryptSteps: [
             "1. 公開質數 p 和基底 g",
-            "2. Alice 選秘密數 a → A = g<sup>a</sup> mod p",
-            "3. Bob 選秘密數 b → B = g<sup>b</sup> mod p",
-            "4. 交換 A 與 B",
-            "5. 雙方計算出相同金鑰 K = g<sup>ab</sup> mod p",
+            "2. Alice 算 A = g^a mod p",
+            "3. Bob 算 B = g^b mod p",
+            "4. 交換 A / B",
+            "5. 雙方算出 K = g^(ab) mod p"
           ],
-          steps: [],
-          currentStep: 0,
           displayContent: "",
         },
       ],
+
+      /* ✅ 選單按鈕列表 */
       menuItems: [
         { label: "關於駭客", type: "scroll", ref: "blackOrWhite" },
         { label: "OSI7", type: "scroll", ref: "ss" },
@@ -253,128 +130,72 @@ export default {
       ],
     }
   },
+
   mounted() {
     window.addEventListener("scroll", this.checkVisibility)
-    this.checkVisibility()
-    setTimeout(() => {
-      if (!this.hackerDialogShown) {
-        this.showHackerDialog = true
-        this.hackerDialogShown = true
-      }
-    }, 1000)
   },
+
   beforeUnmount() {
     window.removeEventListener("scroll", this.checkVisibility)
   },
+
   methods: {
-    toggleMenu() {
-      this.isOpen = !this.isOpen
-    },
-    goLogin() {
-      this.$router.push("/Login")
-    },
-
-    // ✅ 根據登入狀態導向資安小鎮
+    /* ✅ 導頁至資安小鎮 / 練功房 */
     goCyberTown() {
-      const auth = getAuth()
-      const user = auth.currentUser
-
-      if (user) {
-        this.$router.push("/game") // 已登入
-      } else {
-        this.$router.push("/Login") // 未登入
-      }
+      const user = getAuth().currentUser
+      this.$router.push(user ? "/game" : "/Login")
     },
-
-    // ✅ 根據登入狀態導向練功房
     goTrainingRoom() {
-      const auth = getAuth()
-      const user = auth.currentUser
-
-      if (user) {
-        this.$router.push("/questions")
-      } else {
-        this.$router.push("/Login")
-      }
+      const user = getAuth().currentUser
+      this.$router.push(user ? "/questions" : "/Login")
     },
 
-    openRightDialog() {
-      this.showRightDialog = true
-    },
-    toggleRightDialog() {
-      this.showRightDialog = !this.showRightDialog
-      if (!this.showRightDialog && this.activeDialog) {
-        this.resetSteps(this.activeDialog)
-      }
-    },
+    /* ✅ 點按鈕 → 滾動到指定區塊 */
     handleClick(item) {
       if (item.type === "scroll") {
         const target = this.$parent.$refs[item.ref]?.$el || this.$parent.$refs[item.ref]
         if (target) target.scrollIntoView({ behavior: "smooth" })
       }
     },
+
+    /* ✅ 滾動後檢查 RSA / AES 是否進入畫面 → 顯示右下角視窗 */
     checkVisibility() {
-      this.checkDialogs()
-      this.checkTop10Section()
-    },
-    checkDialogs() {
       this.activeDialog = null
       this.dialogBlocks.forEach((block) => {
         const el = document.querySelector(block.selector)
         if (!el) return
         const rect = el.getBoundingClientRect()
-        const visibleHeight =
-          Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0)
-        const visibleRatio = visibleHeight / rect.height
+        const visibleRatio =
+          (Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0)) / rect.height
+
         if (visibleRatio >= 0.5) {
           this.activeDialog = block
+          this.showRightDialog = true
+          this.showFullContent(block)
         }
       })
+
       if (!this.activeDialog) {
-        if (this.showRightDialog) {
-          this.dialogBlocks.forEach((b) => this.resetSteps(b))
-        }
         this.showRightDialog = false
       }
     },
-    checkTop10Section() {
-      if (this.top10DialogShown) return
 
-      const el = document.querySelector(".top10-section")
-      if (!el) return
-
-      const rect = el.getBoundingClientRect()
-      const visibleHeight =
-        Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0)
-      const visibleRatio = visibleHeight / rect.height
-
-      // 當 top10-section 出現 10% 在畫面中時顯示對話框
-      if (visibleRatio >= 0.1) {
-        this.showTop10Dialog = true
-        this.top10DialogShown = true
+    /* ✅ 預設只顯示加密，不顯示解密 */
+    showFullContent(block) {
+      block.displayContent = block.encryptSteps.join("<br/>")
+    },
+    showEncryptFull() {
+      if (this.activeDialog) {
+        this.activeDialog.displayContent = this.activeDialog.encryptSteps.join("<br/>")
       }
     },
-    resetSteps(block) {
-      block.steps = []
-      block.currentStep = 0
-      block.displayContent = ""
-    },
-    startEncrypt() {
-      this.resetSteps(this.activeDialog)
-      this.activeDialog.steps = [...this.activeDialog.encryptSteps]
-      this.nextStep()
-    },
-    startDecrypt() {
-      this.resetSteps(this.activeDialog)
-      this.activeDialog.steps = [...this.activeDialog.decryptSteps]
-      this.nextStep()
-    },
-    nextStep() {
-      if (this.activeDialog.currentStep < this.activeDialog.steps.length) {
-        this.activeDialog.displayContent +=
-          this.activeDialog.steps[this.activeDialog.currentStep] + "<br/>"
-        this.activeDialog.currentStep++
+    showDecryptFull() {
+      if (this.activeDialog && this.activeDialog.decryptSteps) {
+        this.activeDialog.displayContent = this.activeDialog.decryptSteps.join("<br/>")
       }
+    },
+    toggleRightDialog() {
+      this.showRightDialog = !this.showRightDialog
     },
   },
 }

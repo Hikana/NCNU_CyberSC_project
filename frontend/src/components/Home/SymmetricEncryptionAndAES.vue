@@ -27,7 +27,7 @@
             對稱式加密
           </h2>
           <h2 class="text-4xl font-bold mb-6">
-            Symmetric Cryption
+            Symmetric Encryption
           </h2>
           <div class="text-lg md:text-xl leading-relaxed space-y-4">
             <h4 class="text-2xl font-bold mb-2">
@@ -223,7 +223,7 @@ export default {
       try {
         encrypted.value = await encryptData(plain.value, key.value);
       } catch (err) {
-        alert("Encryption Error: " + err.message);
+        alert("你的Key錯誤了！！");
       }
     };
 
