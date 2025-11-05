@@ -10,36 +10,6 @@
           @click="activeType = t.value">
           {{ t.label }}
         </button>
-        
-        <!-- 連線功能按鈕  連線控制UI (第14-42行) -->
-        <div class="connection-controls">
-          <button 
-            class="connection-btn" 
-            :class="{ active: buildingStore.isConnecting }"
-            @click="toggleConnectionMode">
-            {{ buildingStore.isConnecting ? '退出連線' : '連線模式' }}
-          </button>
-          <button 
-            v-if="buildingStore.connections.length > 0"
-            class="clear-connections-btn" 
-            @click="clearAllConnections">
-            清除連線
-          </button>
-          
-          <!-- 連線規則說明 -->
-          <div class="connection-rules" v-if="buildingStore.isConnecting">
-            <h4>連線規則</h4>
-            <div class="rule-item">
-              <strong>貓屋 (Host):</strong> 只能連1個設備（一張網卡），可連貓屋/郵筒/郵局
-            </div>
-            <div class="rule-item">
-              <strong>郵筒 (Switch):</strong> 最多連4個貓屋，可連郵筒和郵局
-            </div>
-            <div class="rule-item">
-              <strong>郵局 (Router):</strong> 可連任何設備，Host限制1個，其他不限
-            </div>
-          </div>
-        </div>
       </div>
       <div class="shop-list">
       <div class="shop-item" v-for="item in filteredItems" :key="item.id">
@@ -115,21 +85,6 @@ function buy(item) {
   }
 }
 
-//連線功能方法 (第118-132行)
-function toggleConnectionMode() {
-  if (buildingStore.isConnecting) {
-    buildingStore.stopConnectionMode()
-  } else {
-    buildingStore.startConnectionMode()
-  }
-}
-
-function clearAllConnections() {
-  if (confirm('確定要清除所有連線嗎？')) {
-    buildingStore.clearAllConnections()
-  }
-}
-
 // 定義 emit 事件
 const emit = defineEmits(['purchaseSuccess'])
 </script>
@@ -172,91 +127,6 @@ const emit = defineEmits(['purchaseSuccess'])
 }
 .category-btn:hover { border-color: #3498db; box-shadow: 0 2px 8px rgba(52,152,219,0.25); }
 .category-btn.active { background: #3498db; color: #fff; border-color: #2980b9; }
-
-/* 連線控制按鈕樣式   連線規則CSS樣式 (第176-259行) */
-.connection-controls {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.connection-btn {
-  padding: 6px 8px;
-  border-radius: 12px;
-  border: 2px solid #e74c3c33;
-  background: #ffffff;
-  color: #2c3e50;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 0.9rem;
-}
-
-.connection-btn:hover { 
-  border-color: #e74c3c; 
-  box-shadow: 0 2px 8px rgba(231,76,60,0.25); 
-}
-
-.connection-btn.active { 
-  background: #e74c3c; 
-  color: #fff; 
-  border-color: #c0392b; 
-}
-
-.clear-connections-btn {
-  padding: 4px 6px;
-  border-radius: 8px;
-  border: 2px solid #f39c1233;
-  background: #ffffff;
-  color: #2c3e50;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 0.8rem;
-}
-
-.clear-connections-btn:hover { 
-  border-color: #f39c12; 
-  box-shadow: 0 2px 8px rgba(243,156,18,0.25); 
-}
-
-/* 連線規則樣式 */
-.connection-rules {
-  margin-top: 15px;
-  padding: 10px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.connection-rules h4 {
-  margin: 0 0 8px 0;
-  font-size: 0.9rem;
-  color: #495057;
-  font-weight: 600;
-}
-
-.rule-item {
-  font-size: 0.8rem;
-  color: #6c757d;
-  margin-bottom: 4px;
-  line-height: 1.3;
-}
-
-.rule-item:last-child {
-  margin-bottom: 0;
-}
-
-.rule-item strong {
-  color: #495057;
-}
 
 .shop-list {
   display: grid;
