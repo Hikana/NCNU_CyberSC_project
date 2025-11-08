@@ -1,7 +1,6 @@
 <template>
   <div class="font-sans w-full overflow-x-hidden">
     <TitleBar />
-    <header class="w-screen bg-bgg py-64"></header>
     <header class="w-screen bg-bgg py-12"></header>
 
     <!-- 開頭 -->
@@ -18,8 +17,10 @@
         <h2 class="text-4xl md:text-5xl font-bold">網路七層</h2>
       </div>
     </header>
-    <SevenStage ref="ss"/>
-
+    <div ref="ss">
+        <header class="w-screen bg-bgg py-10"></header>
+        <SevenStage />
+    </div>
     <!-- 密碼學 -->
     <SectionAnimation
       :lines="[
@@ -27,27 +28,30 @@
         '得先了解網路的運作方式與保密的核心原則。',
       ]"
     />
-    <WhyCrypto ref="crypto"/>
-    <header class="w-screen bg-bgg py-32"></header>
+    <div ref="crypto">
+        <header class="w-screen bg-bgg py-10"></header>
+        <WhyCrypto />
+        <header class="w-screen bg-bgg py-32"></header>
 
-    <Concept />
-    <Key />
-    <CIABar />
-    <AAA />
+        <Concept />
+        <Key />
+        <CIABar />
+        <AAA />
 
-    <header class="w-screen bg-bgg py-16"></header>
-    <SymmetricEncryptionAndAES />
-    <header class="w-screen bg-bgg py-16"></header>
+        <header class="w-screen bg-bgg py-16"></header>
+        <SymmetricEncryptionAndAES />
+        <header class="w-screen bg-bgg py-16"></header>
 
-    <AsymmetricEncryptionAndRSA />
-    <header class="w-screen bg-bgg py-16"></header>
+        <AsymmetricEncryptionAndRSA />
+        <header class="w-screen bg-bgg py-16"></header>
 
-    <WhyAsymmetric />
-    <HashAll />
+        <WhyAsymmetric />
+        <HashAll />
 
-    <header class="w-screen bg-bgg py-16"></header>
-    <DH />
-    <header class="w-screen bg-bgg py-16"></header>
+        <header class="w-screen bg-bgg py-16"></header>
+        <DH />
+        <header class="w-screen bg-bgg py-16"></header>
+    </div>
 
     <!-- OWASP -->
     <SectionAnimation
@@ -56,12 +60,15 @@
         '了解常見漏洞就是防禦的第一步！',
       ]"
     />
-    <header class="relative w-screen bg-bgg py-32">
-      <div class="absolute top-14 left-8 text-wordcolor px-8">
-        <h2 class="text-4xl md:text-5xl font-bold">OWASP TOP10</h2>
-      </div>
-    </header>
-    <NewTOP10 ref="top10Section"/>
+    <div ref="top10Section">
+        <header class="w-screen bg-bgg py-10"></header>
+        <header class="relative w-screen bg-bgg py-32">
+          <div class="absolute top-14 left-8 text-wordcolor px-8">
+            <h2 class="text-4xl md:text-5xl font-bold">OWASP TOP10</h2>
+          </div>
+        </header>
+        <NewTOP10 />
+    </div>
 
     <!-- 結尾提示 -->
     <SectionAnimation

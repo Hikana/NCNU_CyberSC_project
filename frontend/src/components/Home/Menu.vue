@@ -1,21 +1,36 @@
 <template>
-  <!-- ✅ 固定在畫面頂部的導覽列 -->
-  <div class="fixed top-0 left-0 w-full z-[9999] bg-black bg-opacity-80 backdrop-blur-md flex justify-between items-center px-10 py-4">
+  <!-- ✅ 固定導覽列 -->
+  <div class="fixed top-0 left-0 w-full z-[9999] bg-wordcolor bg-opacity-80 backdrop-blur-md flex justify-between items-center px-10 py-4">
 
-    <!-- 左側功能按鈕（關於駭客、OSI7...） -->
-    <div class="flex space-x-4">
-      <button
-        v-for="(item, index) in menuItems"
-        :key="index"
-        class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
-        @click="handleClick(item)"
-      >
-        {{ item.label }}
-      </button>
+    <!-- 🔹 左側 logo + 選單 -->
+    <div class="flex items-center space-x-9">
+      <!-- ✅ menu.gif / menu2.gif  -->
+      <img
+        :src="isScrolling ? '/src/assets/image/Menu/menu2.gif' : '/src/assets/image/Menu/menu.gif'"
+        class="w-14 h-14 cursor-pointer transition-transform "
+      />
+
+
+      <!-- ✅ 動態選單按鈕 -->
+      <div class="flex space-x-7">
+        <button
+          v-for="(item, index) in menuItems"
+          :key="index"
+          @click="handleClick(item)"
+          :class="[
+            'px-6 py-2 font-semibold rounded-xl shadow-md transition',
+            activeSection === item.ref
+              ? 'bg-wordcolor text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-200'
+          ]"
+        >
+          {{ item.label }}
+        </button>
+      </div>
     </div>
 
-    <!-- 右側按鈕（資安小鎮 / 練功房） -->
-    <div class="flex space-x-4">
+    <!-- 🔹 右側功能按鈕 -->
+    <div class="flex space-x-7">
       <button
         class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
         @click="goCyberTown"
@@ -28,23 +43,27 @@
       >
         練功房
       </button>
+      <button
+          class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
+          @click="handleAuthAction"
+        >
+          {{ isLoggedIn ? '登出' : '登入 / 註冊' }}
+        </button>
     </div>
   </div>
 
-  <!-- ✅ 右下角彈窗：顯示 RSA / AES / Hash / DH 流程 -->
+  <!-- ✅ 右下角 RSA/AES Hash 解說彈窗 -->
   <transition name="fade-left">
     <div
       v-if="showRightDialog"
       class="fixed bottom-6 right-6 bg-white shadow-lg rounded-xl p-4 w-[320px] min-h-[40vh] overflow-auto z-50 flex flex-col"
     >
       <h3 class="font-bold text-black text-[17px] mb-2">{{ activeDialog.title }}</h3>
-      <div
-        class="border rounded text-black bg-gray-100 p-3 flex-1 whitespace-pre-wrap"
-        v-html="activeDialog.displayContent"
-      ></div>
+      <div class="border rounded text-black bg-gray-100 p-3 flex-1 whitespace-pre-wrap" v-html="activeDialog.displayContent"></div>
 
+      <!-- 功能按鈕 -->
       <div class="flex justify-end items-center mt-3 space-x-2">
-        <!-- 加密按鈕 -->
+        <!-- 加密 -->
         <button
           v-if="activeDialog.title.includes('RSA') || activeDialog.title.includes('AES')"
           class="px-4 py-2 bg-blueGray text-white rounded hover:bg-blueGrayPressed font-semibold"
@@ -52,7 +71,7 @@
         >
           加密
         </button>
-        <!-- 解密按鈕 -->
+        <!-- 解密 -->
         <button
           v-if="activeDialog.title.includes('RSA') || activeDialog.title.includes('AES')"
           class="px-4 py-2 bg-pinkGray text-white rounded hover:bg-pinkGrayPressed font-semibold"
@@ -60,38 +79,42 @@
         >
           解密
         </button>
-        <!-- 關閉按鈕 -->
-        <button @click="toggleRightDialog" class="absolute top-1 right-3 text-gray-500 hover:text-gray-800 font-bold text-xl bg-white p-2" > ✕ </button>
+        <!-- 關閉 -->
+        <button @click="toggleRightDialog" class="absolute top-1 right-3 text-gray-500 hover:text-gray-800 font-bold text-xl bg-white p-2">
+          ✕
+        </button>
       </div>
     </div>
   </transition>
 </template>
-
 <script>
-import { getAuth } from "firebase/auth"
+import { getAuth, signOut } from "firebase/auth";
 
 export default {
   data() {
     return {
+      isLoggedIn: false,
+      isScrolled: false,
+      isScrolling: false,
+      scrollTimeout: null,
+      activeSection: null,
       activeDialog: null,
       showRightDialog: false,
-      showTop10Dialog: false,
-      top10DialogShown: false,
 
+      /* ✅ 導覽列選項，ref 必須與父層 section 對應 */
+      menuItems: [
+        { label: "OSI7", ref: "ss" },
+        { label: "密碼學", ref: "crypto" },
+        { label: "OWASP", ref: "top10Section" },
+      ],
+
+      /* ✅ 原本你寫的內容流程 */
       dialogBlocks: [
         {
           selector: ".rsa-section",
           title: "RSA\n加密解密過程",
-          encryptSteps: [
-            "1. 準備明文 M",
-            "2. 使用接收方公鑰 (e, n)",
-            "3. C = M^e mod n → 得到密文"
-          ],
-          decryptSteps: [
-            "1. 準備密文 C",
-            "2. 使用私鑰 (d, n)",
-            "3. M = C^d mod n → 得到明文"
-          ],
+          encryptSteps: ["1. 準備明文 M", "2. 使用接收方公鑰 (e, n)", "3. C = M^e mod n → 得到密文"],
+          decryptSteps: ["1. 準備密文 C", "2. 使用私鑰 (d, n)", "3. M = C^d mod n → 得到明文"],
           displayContent: "",
         },
         {
@@ -110,97 +133,142 @@ export default {
         {
           selector: ".dh-section",
           title: "DH 金鑰交換",
-          encryptSteps: [
-            "1. 公開質數 p 和基底 g",
-            "2. Alice 算 A = g^a mod p",
-            "3. Bob 算 B = g^b mod p",
-            "4. 交換 A / B",
-            "5. 雙方算出 K = g^(ab) mod p"
-          ],
+          encryptSteps: ["1. 公開質數 p 和基底 g", "2. A = g^a mod p", "3. B = g^b mod p", "4. 雙方算 K = g^(ab) mod p"],
           displayContent: "",
         },
-      ],
-
-      /* ✅ 選單按鈕列表 */
-      menuItems: [
-        { label: "關於駭客", type: "scroll", ref: "blackOrWhite" },
-        { label: "OSI7", type: "scroll", ref: "ss" },
-        { label: "密碼學", type: "scroll", ref: "crypto" },
-        { label: "OWASP", type: "scroll", ref: "top10Section" },
       ],
     }
   },
 
   mounted() {
-    window.addEventListener("scroll", this.checkVisibility)
-  },
+      window.addEventListener("scroll", this.handleScroll)
 
-  beforeUnmount() {
-    window.removeEventListener("scroll", this.checkVisibility)
-  },
+      const auth = getAuth()
+      this.isLoggedIn = !!auth.currentUser
 
-  methods: {
-    /* ✅ 導頁至資安小鎮 / 練功房 */
-    goCyberTown() {
-      const user = getAuth().currentUser
-      this.$router.push(user ? "/game" : "/Login")
-    },
-    goTrainingRoom() {
-      const user = getAuth().currentUser
-      this.$router.push(user ? "/questions" : "/Login")
-    },
-
-    /* ✅ 點按鈕 → 滾動到指定區塊 */
-    handleClick(item) {
-      if (item.type === "scroll") {
-        const target = this.$parent.$refs[item.ref]?.$el || this.$parent.$refs[item.ref]
-        if (target) target.scrollIntoView({ behavior: "smooth" })
-      }
-    },
-
-    /* ✅ 滾動後檢查 RSA / AES 是否進入畫面 → 顯示右下角視窗 */
-    checkVisibility() {
-      this.activeDialog = null
-      this.dialogBlocks.forEach((block) => {
-        const el = document.querySelector(block.selector)
-        if (!el) return
-        const rect = el.getBoundingClientRect()
-        const visibleRatio =
-          (Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0)) / rect.height
-
-        if (visibleRatio >= 0.5) {
-          this.activeDialog = block
-          this.showRightDialog = true
-          this.showFullContent(block)
-        }
+      auth.onAuthStateChanged((user) => {
+        this.isLoggedIn = !!user
       })
-
-      if (!this.activeDialog) {
-        this.showRightDialog = false
-      }
     },
 
-    /* ✅ 預設只顯示加密，不顯示解密 */
+    beforeUnmount() {
+      window.removeEventListener("scroll", this.handleScroll)
+    },
+
+   methods: {
+       /* ✅ 登入 / 登出 */
+       async handleAuthAction() {
+         const auth = getAuth()
+
+         if (this.isLoggedIn) {
+           // ✅ 登出並清除 Firebase 的 Token / Session
+           await signOut(auth)
+
+           // ✅ 如果你還有額外存 localStorage 或 sessionStorage，也一起清除
+           // localStorage.clear()
+           // sessionStorage.clear()
+
+           this.isLoggedIn = false
+
+           // ✅ 導回首頁或登入頁
+           this.$router.push("/home")
+         } else {
+           // ✅ 尚未登入 → 跳到登入頁
+           this.$router.push("/Login")
+         }
+       },
+    /* ✅ 滾動時：換 gif + 檢查目前區域 */
+    handleScroll() {
+        // ✅ 偵測是否滾到一定距離（控制導覽列黑底 ＆ 第一次變 GIF）
+        this.isScrolled = window.scrollY > 10
+
+        // ✅ 一滾動就換成 menu2.gif
+        this.isScrolling = true
+
+        // ✅ 如果之前有計時器 → 清掉
+        clearTimeout(this.scrollTimeout)
+
+        // ✅ 停止 500ms 後 → 換回 menu.gif
+        this.scrollTimeout = setTimeout(() => {
+          this.isScrolling = false
+        }, 500)
+
+        // ✅ 檢查目前在哪個區塊 → 導覽列對應按鈕變紅
+        for (const item of this.menuItems) {
+          const target = this.$parent.$refs[item.ref]?.$el || this.$parent.$refs[item.ref]
+          if (!target) continue
+          const rect = target.getBoundingClientRect()
+          if (rect.top < window.innerHeight * 0.4 && rect.bottom > window.innerHeight * 0.4) {
+            this.activeSection = item.ref
+          }
+        }
+
+        // ✅ 原本 RSA / AES 顯示功能保持不變…
+        this.activeDialog = null
+        this.dialogBlocks.forEach((block) => {
+          const el = document.querySelector(block.selector)
+          if (!el) return
+          const rect = el.getBoundingClientRect()
+          const visibleRatio =
+            (Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0)) / rect.height
+
+          if (visibleRatio >= 0.5) {
+            this.activeDialog = block
+            this.showRightDialog = true
+            this.showFullContent(block)
+          }
+        })
+
+        if (!this.activeDialog) {
+          this.showRightDialog = false
+        }
+      },
+
+
+    /* ✅ 點選導覽列 → 滾至對應區塊 */
+    handleClick(item) {
+      const target = this.$parent.$refs[item.ref]?.$el || this.$parent.$refs[item.ref];
+      if (target) target.scrollIntoView({ behavior: "smooth" });
+    },
+
+    /* ✅ 顯示 AES/RSA 內容 */
     showFullContent(block) {
-      block.displayContent = block.encryptSteps.join("<br/>")
+      block.displayContent = block.encryptSteps.join("<br/>");
     },
     showEncryptFull() {
-      if (this.activeDialog) {
-        this.activeDialog.displayContent = this.activeDialog.encryptSteps.join("<br/>")
-      }
+      this.activeDialog.displayContent = this.activeDialog.encryptSteps.join("<br/>");
     },
     showDecryptFull() {
-      if (this.activeDialog && this.activeDialog.decryptSteps) {
-        this.activeDialog.displayContent = this.activeDialog.decryptSteps.join("<br/>")
+      if (this.activeDialog.decryptSteps) {
+        this.activeDialog.displayContent = this.activeDialog.decryptSteps.join("<br/>");
       }
     },
     toggleRightDialog() {
-      this.showRightDialog = !this.showRightDialog
+      this.showRightDialog = !this.showRightDialog;
     },
-  },
+
+    /* ✅ 去小鎮、練功房 */
+    goCyberTown() {
+      const user = getAuth().currentUser
+      if (!user) {
+        alert('請先登入，才能進入資安小鎮！')
+        return
+      }
+      this.$router.push('/game')
+    },
+
+    goTrainingRoom() {
+      const user = getAuth().currentUser
+      if (!user) {
+        alert('請先登入，才能進入練功房！')
+        return
+      }
+      this.$router.push('/questions')
+    },
+
+  }
 }
 </script>
-
 <style scoped>
 .fade-left-enter-active,
 .fade-left-leave-active {
