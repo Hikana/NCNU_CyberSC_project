@@ -7,24 +7,24 @@ import { useAuthStore } from '@/stores/authStore';
 
 // 防禦工具定義
 const DEFENSE_TOOLS = {
-  waf: { name: 'WAF 應用程式防火牆', defenseValue: 15 },
-  prepared_statements: { name: 'Prepared Statements（參數化查詢）', defenseValue: 20 },
-  output_encoding: { name: 'Output Encoding（輸出編碼）', defenseValue: 12 },
-  csrf: { name: 'CSRF Token（隨機驗證碼）', defenseValue: 18 },
-  mfa: { name: 'MFA（多因素驗證）', defenseValue: 25 },
-  security_awareness: { name: 'Security Awareness Training（資安意識訓練）', defenseValue: 10 },
-  tls_https: { name: 'TLS/HTTPS 加密', defenseValue: 22 },
-  backup: { name: '定期備份（3-2-1 備份原則）', defenseValue: 16 },
-  least_privilege: { name: 'Least Privilege（最小權限原則）', defenseValue: 14 },
-  http_cookie: { name: 'HttpOnly & Secure Cookie 屬性', defenseValue: 8 },
-  dnssec: { name: 'DNSSEC（Domain Name System Security Extensions）', defenseValue: 13 },
-  code_signing: { name: 'Code Signing（軟體簽章驗證）', defenseValue: 17 }
+  waf: { name: 'WAF 應用程式防火牆' },
+  prepared_statements: { name: 'Prepared Statements（參數化查詢）' },
+  output_encoding: { name: 'Output Encoding（輸出編碼）' },
+  csrf: { name: 'CSRF Token（隨機驗證碼）' },
+  mfa: { name: 'MFA（多因素驗證）' },
+  security_awareness: { name: 'Security Awareness Training（資安意識訓練）' },
+  tls_https: { name: 'TLS/HTTPS 加密' },
+  backup: { name: '定期備份（3-2-1 備份原則）' },
+  least_privilege: { name: 'Least Privilege（最小權限原則）' },
+  http_cookie: { name: 'HttpOnly & Secure Cookie 屬性' },
+  dnssec: { name: 'DNSSEC（Domain Name System Security Extensions）' },
+  code_signing: { name: 'Code Signing（軟體簽章驗證）' }
 };
 
 export const useInventoryStore = defineStore('inventory', {
   state: () => ({
-    // 防禦工具列表；每項包含 id、名稱、數量、防禦值
-    items: [], // 每項: { id, name, qty, defenseValue }
+    // 防禦工具列表；每項包含 id、名稱、數量
+    items: [], // 每項: { id, name, qty }
     // 載入指示
     loading: false,
     // 是否已完成初始化（至少載入一次資料）
@@ -103,7 +103,6 @@ export const useInventoryStore = defineStore('inventory', {
             id: toolId,
             name: toolInfo.name,
             qty: qty,
-            defenseValue: toolInfo.defenseValue,
             type: 'defense'
           });
         }

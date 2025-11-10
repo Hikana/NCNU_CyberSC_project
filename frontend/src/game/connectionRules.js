@@ -3,8 +3,9 @@
  * 負責處理建築物之間的連線規則驗證和相關邏輯
  */
 
-// 建築物類型定義
+// 建築物類型定義（與商店數據保持一致）
 export const BUILDING_TYPES = {
+  // Host 建築（貓屋）
   1: { 
     name: '貓屋', 
     type: 'host', 
@@ -12,16 +13,102 @@ export const BUILDING_TYPES = {
     description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
   },
   2: { 
-    name: '郵筒', 
-    type: 'switch', 
-    maxConnections: 6, 
-    description: 'Switch - 連接多個貓屋形成 LAN，提升資料傳送效率' 
+    name: '貓屋', 
+    type: 'host', 
+    maxConnections: 1, 
+    description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
   },
   3: { 
+    name: '貓屋', 
+    type: 'host', 
+    maxConnections: 1, 
+    description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
+  },
+  5: { 
+    name: '貓屋', 
+    type: 'host', 
+    maxConnections: 1, 
+    description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
+  },
+  6: { 
+    name: '貓屋', 
+    type: 'host', 
+    maxConnections: 1, 
+    description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
+  },
+  7: { 
+    name: '貓屋', 
+    type: 'host', 
+    maxConnections: 1, 
+    description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
+  },
+  11: { 
+    name: '貓屋', 
+    type: 'host', 
+    maxConnections: 1, 
+    description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
+  },
+  12: { 
+    name: '貓屋', 
+    type: 'host', 
+    maxConnections: 1, 
+    description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
+  },
+  13: { 
+    name: '貓屋', 
+    type: 'host', 
+    maxConnections: 1, 
+    description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
+  },
+  14: { 
+    name: '貓屋', 
+    type: 'host', 
+    maxConnections: 1, 
+    description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
+  },
+  15: { 
+    name: '貓屋', 
+    type: 'host', 
+    maxConnections: 1, 
+    description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
+  },
+  16: { 
+    name: '貓屋', 
+    type: 'host', 
+    maxConnections: 1, 
+    description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
+  },
+  17: { 
+    name: '貓屋', 
+    type: 'host', 
+    maxConnections: 1, 
+    description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
+  },
+  18: { 
+    name: '貓屋', 
+    type: 'host', 
+    maxConnections: 1, 
+    description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
+  },
+  19: { 
+    name: '貓屋', 
+    type: 'host', 
+    maxConnections: 1, 
+    description: '電腦 (Host) - 可發送或接收信件（資料），只能連一個設備' 
+  },
+  // Router 建築（郵局）
+  101: { 
     name: '郵局', 
     type: 'router', 
     maxConnections: 10, 
     description: 'Router - 連接多個郵差站（不同LAN），建立區域網絡' 
+  },
+  // Switch 建築（郵筒）
+  102: { 
+    name: '郵筒', 
+    type: 'switch', 
+    maxConnections: 6, 
+    description: 'Switch - 連接多個貓屋形成 LAN，提升資料傳送效率' 
   }
 };
 

@@ -159,18 +159,18 @@ class GameService {
     try {
       // 防禦工具清單
       const defenseTools = [
-        { id: 'waf', name: 'WAF 應用程式防火牆', defenseValue: 15 },
-        { id: 'prepared_statements', name: 'Prepared Statements（參數化查詢）', defenseValue: 20 },
-        { id: 'output_encoding', name: 'Output Encoding（輸出編碼）', defenseValue: 12 },
-        { id: 'csrf', name: 'CSRF Token（隨機驗證碼）', defenseValue: 18 },
-        { id: 'mfa', name: 'MFA（多因素驗證）', defenseValue: 25 },
-        { id: 'security_awareness', name: 'Security Awareness Training（資安意識訓練）', defenseValue: 10 },
-        { id: 'tls_https', name: 'TLS/HTTPS 加密', defenseValue: 22 },
-        { id: 'backup', name: '定期備份（3-2-1 備份原則）', defenseValue: 16 },
-        { id: 'least_privilege', name: 'Least Privilege（最小權限原則）', defenseValue: 14 },
-        { id: 'http_cookie', name: 'HttpOnly & Secure Cookie 屬性', defenseValue: 8 },
-        { id: 'dnssec', name: 'DNSSEC（Domain Name System Security Extensions）', defenseValue: 13 },
-        { id: 'code_signing', name: 'Code Signing（軟體簽章驗證）', defenseValue: 17 }
+        { id: 'waf', name: 'WAF 應用程式防火牆' },
+        { id: 'prepared_statements', name: 'Prepared Statements（參數化查詢）' },
+        { id: 'output_encoding', name: 'Output Encoding（輸出編碼）' },
+        { id: 'csrf', name: 'CSRF Token（隨機驗證碼）' },
+        { id: 'mfa', name: 'MFA（多因素驗證）' },
+        { id: 'security_awareness', name: 'Security Awareness Training（資安意識訓練）' },
+        { id: 'tls_https', name: 'TLS/HTTPS 加密' },
+        { id: 'backup', name: '定期備份（3-2-1 備份原則）' },
+        { id: 'least_privilege', name: 'Least Privilege（最小權限原則）' },
+        { id: 'http_cookie', name: 'HttpOnly & Secure Cookie 屬性' },
+        { id: 'dnssec', name: 'DNSSEC（Domain Name System Security Extensions）' },
+        { id: 'code_signing', name: 'Code Signing（軟體簽章驗證）' }
       ];
 
       // 隨機選擇一個防禦工具
