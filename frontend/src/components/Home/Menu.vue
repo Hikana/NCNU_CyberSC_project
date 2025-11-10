@@ -1,10 +1,10 @@
 <template>
-  <!-- ✅ 固定導覽列 -->
+  <!-- 固定導覽列 -->
   <div class="fixed top-0 left-0 w-full z-[9999] bg-wordcolor bg-opacity-80 backdrop-blur-md flex justify-between items-center px-10 py-4">
 
-    <!-- 🔹 左側 logo + 選單 -->
+    <!-- 左側 logo + 選單 -->
     <div class="flex items-center space-x-9">
-      <!-- ✅ menu.gif / menu2.gif  -->
+      <!-- menu.gif / menu2.gif  -->
       <img
         :src="isScrolling ? '/src/assets/image/Menu/menu2.gif' : '/src/assets/image/Menu/menu.gif'"
         class="w-14 h-14 cursor-pointer transition-transform "
@@ -14,7 +14,7 @@
       />
 
 
-      <!-- ✅ 動態選單按鈕 -->
+      <!-- 動態選單按鈕 -->
       <div class="flex space-x-7">
         <button
           v-for="(item, index) in menuItems"
@@ -32,7 +32,7 @@
       </div>
     </div>
 
-    <!-- 🔹 右側功能按鈕 -->
+    <!-- 右側功能按鈕 -->
     <div class="flex space-x-7">
       <button
         class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
@@ -55,7 +55,7 @@
     </div>
   </div>
 
-  <!-- ✅ 右下角 RSA/AES Hash 解說彈窗 -->
+  <!-- 右下角 RSA/AES Hash 解說彈窗 -->
   <transition name="fade-left">
     <div
       v-if="showRightDialog"
@@ -89,6 +89,19 @@
       </div>
     </div>
   </transition>
+
+  <!-- 簡易通知 Toast（取代 alert） -->
+  <transition name="fade">
+    <div
+      v-if="notifyVisible"
+      class="fixed top-24 right-6 z-[10000] bg-gray-900 text-white px-5 py-4 rounded-xl shadow-lg flex items-start space-x-3 max-w-[360px]"
+      role="status"
+      aria-live="polite"
+    >
+      <span class="material-symbols-outlined text-2xl md:text-3xl">notifications_active</span>
+      <div class="flex-1 text-base md:text-lg leading-7 mt-1">{{ notifyMessage }}</div>
+    </div>
+  </transition>
 </template>
 <script>
 import { getAuth, signOut } from "firebase/auth";
@@ -104,14 +117,19 @@ export default {
       activeDialog: null,
       showRightDialog: false,
 
-      /* ✅ 導覽列選項，ref 必須與父層 section 對應 */
+      /* 通知 UI 狀態 */
+      notifyVisible: false,
+      notifyMessage: "",
+      notifyTimeout: null,
+
+      /* 導覽列選項，ref 必須與父層 section 對應 */
       menuItems: [
         { label: "OSI7", ref: "ss" },
         { label: "密碼學", ref: "crypto" },
         { label: "OWASP", ref: "top10Section" },
       ],
 
-      /* ✅ 原本你寫的內容流程 */
+      /* 原本你寫的內容流程 */
       dialogBlocks: [
         {
           selector: ".rsa-section",
@@ -155,29 +173,55 @@ export default {
       })
     },
 
-    beforeUnmount() {
-      window.removeEventListener("scroll", this.handleScroll)
+    // 根據登入狀態導向練功房
+    async goTrainingRoom() {
+      try {
+        const auth = getAuth()
+
+        // 改成直接使用 auth.currentUser，若無則再檢查
+        let user = auth.currentUser
+        if (!user) {
+          // 等 Firebase 回報狀態，最多等待 1 秒
+          user = await new Promise((resolve) => {
+            const unsubscribe = onAuthStateChanged(auth, (u) => {
+              unsubscribe()
+              resolve(u)
+            })
+            // 若 1 秒內沒回覆，就直接判定為未登入，避免卡住
+            setTimeout(() => resolve(null), 1000)
+          })
+        }
+        if (user) {
+          console.log("✅ 已登入，前往 /questions")
+          this.$router.push("/questions")
+        } else {
+          console.log("🚫 未登入，導向登入頁")
+          this.$router.push({ path: "/login", query: { redirect: "/questions" } })
+        }
+      } catch (err) {
+        console.error("❌ goTrainingRoom 發生錯誤：", err)
+      }
     },
 
    methods: {
-       /* ✅ 登入 / 登出 */
+       /* 登入 / 登出 */
        async handleAuthAction() {
          const auth = getAuth()
 
          if (this.isLoggedIn) {
-           // ✅ 登出並清除 Firebase 的 Token / Session
+           // 登出並清除 Firebase 的 Token / Session
            await signOut(auth)
 
-           // ✅ 如果你還有額外存 localStorage 或 sessionStorage，也一起清除
+           // 如果你還有額外存 localStorage 或 sessionStorage，也一起清除
            // localStorage.clear()
            // sessionStorage.clear()
 
            this.isLoggedIn = false
 
-           // ✅ 導回首頁或登入頁
+           // 導回首頁或登入頁
            this.$router.push("/home")
          } else {
-           // ✅ 尚未登入 → 跳到登入頁
+           // 尚未登入 → 跳到登入頁
            this.$router.push("/Login")
          }
        },
@@ -188,23 +232,33 @@ export default {
           this.$router.push('/home')
         }
       },
-    /* ✅ 滾動時：換 gif + 檢查目前區域 */
+
+      /* 顯示通知（取代 alert） */
+      showNotify(message) {
+        this.notifyMessage = message
+        this.notifyVisible = true
+        clearTimeout(this.notifyTimeout)
+        this.notifyTimeout = setTimeout(() => {
+          this.notifyVisible = false
+        }, 5000)
+      },
+    /* 滾動時：換 gif + 檢查目前區域 */
     handleScroll() {
-        // ✅ 偵測是否滾到一定距離（控制導覽列黑底 ＆ 第一次變 GIF）
+        // 偵測是否滾到一定距離（控制導覽列黑底 ＆ 第一次變 GIF）
         this.isScrolled = window.scrollY > 10
 
-        // ✅ 一滾動就換成 menu2.gif
+        // 一滾動就換成 menu2.gif
         this.isScrolling = true
 
-        // ✅ 如果之前有計時器 → 清掉
+        // 如果之前有計時器 → 清掉
         clearTimeout(this.scrollTimeout)
 
-        // ✅ 停止 500ms 後 → 換回 menu.gif
+        // 停止 500ms 後 → 換回 menu.gif
         this.scrollTimeout = setTimeout(() => {
           this.isScrolling = false
         }, 500)
 
-        // ✅ 檢查目前在哪個區塊 → 導覽列對應按鈕變紅
+        // 檢查目前在哪個區塊 → 導覽列對應按鈕變紅
         for (const item of this.menuItems) {
           const target = this.$parent.$refs[item.ref]?.$el || this.$parent.$refs[item.ref]
           if (!target) continue
@@ -214,7 +268,7 @@ export default {
           }
         }
 
-        // ✅ 原本 RSA / AES 顯示功能保持不變…
+        // 原本 RSA / AES 顯示功能保持不變…
         this.activeDialog = null
         this.dialogBlocks.forEach((block) => {
           const el = document.querySelector(block.selector)
@@ -236,13 +290,13 @@ export default {
       },
 
 
-    /* ✅ 點選導覽列 → 滾至對應區塊 */
+    /* 點選導覽列 → 滾至對應區塊 */
     handleClick(item) {
       const target = this.$parent.$refs[item.ref]?.$el || this.$parent.$refs[item.ref];
       if (target) target.scrollIntoView({ behavior: "smooth" });
     },
 
-    /* ✅ 顯示 AES/RSA 內容 */
+    /* 顯示 AES/RSA 內容 */
     showFullContent(block) {
       block.displayContent = block.encryptSteps.join("<br/>");
     },
@@ -258,11 +312,11 @@ export default {
       this.showRightDialog = !this.showRightDialog;
     },
 
-    /* ✅ 去小鎮、練功房 */
+    /* 去小鎮、練功房 */
     goCyberTown() {
       const user = getAuth().currentUser
       if (!user) {
-        alert('請先登入，才能進入資安小鎮！')
+        this.showNotify('請先登入，才能進入資安小鎮！')
         return
       }
       this.$router.push('/game')
@@ -271,7 +325,7 @@ export default {
     goTrainingRoom() {
       const user = getAuth().currentUser
       if (!user) {
-        alert('請先登入，才能進入練功房！')
+        this.showNotify('請先登入，才能進入練功房！')
         return
       }
       this.$router.push('/questions')
@@ -289,58 +343,6 @@ export default {
 .fade-left-leave-to {
   opacity: 0;
   transform: translateX(30px);
-}
-
-/* 資安事件紀錄對話框樣式 */
-.event-log-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.event-log-modal {
-  position: relative;
-  background: white;
-  border-radius: 20px;
-  width: 90%;
-  max-width: 900px;
-  height: 85vh;
-  max-height: 700px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-close-btn {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  width: 36px;
-  height: 36px;
-  background: rgba(231, 76, 60, 0.9);
-  border: none;
-  border-radius: 50%;
-  color: white;
-  font-size: 24px;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  transition: all 0.2s;
-}
-
-.modal-close-btn:hover {
-  background: rgba(231, 76, 60, 1);
-  transform: scale(1.1);
 }
 
 .fade-enter-active,
