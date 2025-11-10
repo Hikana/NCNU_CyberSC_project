@@ -1,12 +1,8 @@
 <template>
   <section class="cia-section w-screen min-h-screen bg-bgg text-wordcolor flex flex-col relative z-10">
     <!-- 背景 CIA 字 -->
-    <div
-      class="absolute inset-0 flex flex-col justify-center items-center pointer-events-none"
-    >
-      <span
-        class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[25rem]"
-      >
+    <div class="absolute inset-0 flex flex-col justify-center items-center pointer-events-none">
+      <span class="font-extrabold text-wordcolor opacity-5 select-none tracking-wider text-[25rem]">
         C I A
       </span>
     </div>
@@ -20,7 +16,7 @@
             安全三要素 <span class="italic">CIA</span>
           </h2>
           <div class="leading-relaxed space-y-4 mb-8">
-            <h4 class="text-2xl font-semibold mb-2">CIA資訊安全三要素是常見的模型，</h4>
+            <h4 class="text-2xl font-semibold mb-2"><br/>CIA資訊安全三要素是常見的模型，</h4>
             <h4 class="text-2xl font-semibold mb-2">構成安全系統開發的基礎。</h4>
             <h4 class="text-2xl font-semibold mb-2">它們是用來尋找弱點和建立解決方案的方法。</h4>
           </div>
@@ -43,41 +39,68 @@
           </div>
         </div>
 
-        <!-- 右欄：內容 -->
+        <!-- 右欄：內容（加上白底長方形 + 可滾動） -->
         <div class="text-left self-start">
-
-          <!-- 顯示選中的內容 -->
-          <div v-if="selectedContent" class="space-y-6">
-            <h3 class="font-semibold text-2xl mb-4">
-              {{ selectedContent.title }}
-            </h3>
-            
-            <!-- 遍歷 contents -->
-            <div v-for="(content, cIndex) in selectedContent.contents" :key="cIndex" class="mb-6">
-              <h4 class="font-semibold text-xl mb-2">{{ content.subtitle }}</h4>
-              <p class="text-base md:text-xl leading-relaxed mb-3" v-html="content.text"></p>
+          <div
+            class="bg-lightGray text-wordcolor rounded-2xl shadow-lg p-6 md:p-8 max-h-[85vh] overflow-y-auto border border-gray-300"
+          >
+            <div v-if="selectedContent" class="space-y-6">
+              <h3 class="font-semibold text-2xl mb-4">
+                {{ selectedContent.title }}
+              </h3>
               
-              <!-- 如果有 subcontents -->
-              <div v-if="content.subcontents" class="ml-4 space-y-3">
-                <div v-for="(subcontent, sIndex) in content.subcontents" :key="sIndex">
-                  <h5 class="font-medium text-xl mb-1"><li>{{ subcontent.subtitle }}</li></h5>
-                  <p class="text-sm md:text-xl leading-relaxed" v-html="subcontent.text"></p>
-                  
-                  <!-- 如果有 subsubcontents -->
-                  <div v-if="subcontent.subsubcontents" class="ml-4 mt-2 space-y-2">
-                    <div v-for="(subsubcontent, ssIndex) in subcontent.subsubcontents" :key="ssIndex">
-                      <p class="text-lg leading-relaxed" v-html="subsubcontent.text"></p>
+              <!-- 遍歷 contents -->
+              <div
+                v-for="(content, cIndex) in selectedContent.contents"
+                :key="cIndex"
+                class="mb-6"
+              >
+                <h4 class="font-semibold text-xl mb-2">{{ content.subtitle }}</h4>
+                <p
+                  class="text-base md:text-xl leading-relaxed mb-3"
+                  v-html="content.text"
+                ></p>
+                
+                <!-- 如果有 subcontents -->
+                <div v-if="content.subcontents" class="ml-4 space-y-3">
+                  <div
+                    v-for="(subcontent, sIndex) in content.subcontents"
+                    :key="sIndex"
+                  >
+                    <h5 class="font-medium text-xl mb-1">
+                      <li>{{ subcontent.subtitle }}</li>
+                    </h5>
+                    <p
+                      class="text-sm md:text-xl leading-relaxed"
+                      v-html="subcontent.text"
+                    ></p>
+                    
+                    <!-- 如果有 subsubcontents -->
+                    <div
+                      v-if="subcontent.subsubcontents"
+                      class="ml-4 mt-2 space-y-2"
+                    >
+                      <div
+                        v-for="(subsubcontent, ssIndex) in subcontent.subsubcontents"
+                        :key="ssIndex"
+                      >
+                        <p
+                          class="text-lg leading-relaxed"
+                          v-html="subsubcontent.text"
+                        ></p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </div> <!-- end scrollable box -->
         </div>
       </div>
     </div>
   </section>
 </template>
+
 
 <script>
 import { ref, computed } from "vue"
@@ -134,6 +157,23 @@ export default {
               {
                 subtitle: "資料分池（Sharding）& 金鑰分池（Key Sharding）：",
                 text: "<ul><li>資料分池將一份機密檔案拆成三部分，分別存放在不同伺服器，就算駭客入侵其中一台，也無法看到完整的資料。</li><li>金鑰分池就是讓多個人分別掌握加密金鑰的一部分，沒有人可以單獨解密資料。即使駭客攻破其中一個資料庫或者金鑰，也無法取得完整的資訊。</li></ul>",
+              },
+            ]
+          },
+          {
+            subtitle: "實際案例：",
+            subcontents: [
+              {
+                subtitle: "明星iCloud照片外洩事件：",
+                text: "2014年，多位明星的iCloud帳號遭駭客破解，私人照片外流，造成嚴重的隱私與名譽損害。這就是機密性被破壞。"
+              },
+              {
+                subtitle: "醫院電腦中毒，病患資料被公開販售：",
+                text: "駭客入侵醫療系統，將患者病歷與聯絡方式放到暗網販售，導致個資曝光、勒索案件發生。"
+              },
+              {
+                subtitle: "公司USB遺失：",
+                text: "員工將客戶資料存入USB，結果在捷運上遺失。若資料未加密，任何人撿到就能查看，造成重大洩密。"
               }
             ]
           }
@@ -170,6 +210,19 @@ export default {
                     text: "<ul><li>雜湊函數：單向不可逆的計算，只要有一點點變動，兩個就是不一樣的東西了。</li><li>數位簽章：使用私鑰加密、公鑰解密，就是「電子世界的簽名」。</li></ul>"
                   }
                 ]
+              },
+            ]
+          },
+          {
+            subtitle: "實際案例：",
+            subcontents: [
+              {
+                subtitle: "轉帳金額被竄改：",
+                text: "你透過公共Wi-Fi轉帳給朋友 1000 元，但中間人攻擊讓金額被竄改為100000元且收款人變成駭客。這就是完整性被破壞。"
+              },
+              {
+                subtitle: "維基百科惡搞事件：",
+                text: "有人惡意修改維基百科條目，把歷史人物名字改掉或貼上不實資訊，使讀者無法獲得正確資料。"
               },
             ]
           }
@@ -211,9 +264,26 @@ export default {
                 subtitle: "災難復原 (Disaster Recovery, DR) & 自動備份：",
                 subsubcontents: [
                   {
-                    text: "<ul><li>異地備援 ( Geo-Redundancy)，確保即使某個地區的伺服器故障，其他地區仍能提供服務。</li><li>自動備份，讓資料能夠快速還原，即使勒索病毒攻擊也不怕。</li></ul>"
+                    text: "<ul><li>異地備援 (Geo-Redundancy)，確保即使某個地區的伺服器故障，其他地區仍能提供服務。</li><li>自動備份，讓資料能夠快速還原，即使勒索病毒攻擊也不怕。</li></ul>"
                   }
                 ]
+              }
+            ]
+          },
+          {
+            subtitle: "實際案例：",
+            subcontents: [
+              {
+                subtitle: "LINE / IG 突然連不上：",
+                text: "如果像LINE或Instagram因伺服器故障、DDoS被癱瘓幾小時，全世界的人都無法傳訊息，這就是可用性失效。"
+              },
+              {
+                subtitle: "銀行系統維護突然關閉：",
+                text: "某銀行因系統更新中斷3小時，使用者無法提款、轉帳或刷卡，被視為可用性不足。"
+              },
+              {
+                subtitle: "勒索病毒攻擊醫院：",
+                text: "醫院系統被勒索軟體攻擊，所有病患資料被鎖住，醫師無法開藥、安排手術，造成醫療延誤。"
               }
             ]
           }

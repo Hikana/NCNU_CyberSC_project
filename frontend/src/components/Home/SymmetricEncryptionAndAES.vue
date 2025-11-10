@@ -17,21 +17,22 @@
     </div>
 
     <!-- 上半部 說明內容 -->
-    <div class="flex-1 flex items-center">
+    <div class="flex-1 flex items-start">
       <div
         class="w-full px-8 md:px-16 grid md:grid-cols-2 gap-10"
       >
         <!-- 左欄 -->
-        <div class="text-left self-center">
-          <h2 class="text-3xl md:text-5xl font-bold mb-6">
+        <div class="text-left self-start">
+          <h2 class="text-5xl font-bold mb-6">
             對稱式加密
           </h2>
-          <h2 class="text-3xl md:text-5xl font-bold mb-6">
-            Symmetric Cryption
+          <h2 class="text-4xl font-bold mb-6">
+            Symmetric Encryption
           </h2>
           <div class="text-lg md:text-xl leading-relaxed space-y-4">
-            <h4 class="text-2xl font-semibold mb-2">
-              加密與解密使用相同的金鑰。
+            <h4 class="text-2xl font-bold mb-2">
+              <br/>加密和解密使用「同一把」密鑰。<br/><br/>
+              這就像你家用的大門鑰匙。你出門時用這把鑰匙鎖上門（加密），<br/>你的家人（接收者）回家時，必須擁有那把一模一樣的鑰匙，<br/>才能把門打開（解密）。
             </h4>
           </div>
         </div>
@@ -39,7 +40,8 @@
         <!-- 右欄 -->
         <div class="text-left self-center">
           <div class="mb-8">
-            <div class="grid grid-cols-2 gap-6 text-lg md:text-xl leading-relaxed">
+            <!-- 優缺點 -->
+            <div class="grid grid-cols-2 gap-6 text-lg md:text-xl leading-relaxed mb-10">
               <div>
                 <h3 class="text-2xl font-semibold mb-4">優點：</h3>
                 <ul class="list-disc pl-6 space-y-1">
@@ -56,14 +58,42 @@
                 </ul>
               </div>
             </div>
-          </div>
-          <div>
-            <h3 class="text-2xl font-semibold mb-4">常見演算法：</h3>
-            <div class="flex flex-wrap gap-x-6 gap-y-2 text-lg md:text-xl italic">
-              <span>AES</span>
-              <span>DES</span>
-              <span>3DES</span>
-              <span>RC4</span>
+
+            <!-- 運作原理 -->
+            <div class="mb-10">
+              <h3 class="text-2xl font-semibold mb-4">運作原理：</h3>
+              <div class="flex flex-wrap gap-x-6 gap-y-2 text-lg md:text-xl italic">
+                <ul class="list-disc pl-6 space-y-1">
+                  <li>發送方 (A) 和 接收方 (B) 必須先安全地<span class="font-bold">共享一把「秘密密鑰」。</span></li>
+                  <li>A 使用這把密鑰將「明文」訊息加密，產生「密文」。</li>
+                  <li>A 將「密文」透過網路傳送給 B（即使被竊聽也沒關係）。</li>
+                  <li>B 收到「密文」後，使用<span class="font-bold">同一把「秘密密鑰」</span>將其解密，還原為「明文」。</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 舉例 -->
+            <div class="mb-10">
+              <h3 class="text-2xl font-semibold mb-4">舉例應用：</h3>
+              <div class="flex flex-wrap gap-x-6 gap-y-2 text-lg md:text-xl italic">
+                <ul class="list-disc pl-6 space-y-1">
+                  <li class="font-bold">加密壓縮檔 (.zip, .rar)： </li>
+                  <p>當您在電腦上壓縮一個資料夾並設定密碼時，您就是在使用對稱式加密（例如 AES 演算法）。 您必須透過其他管道（例如口頭告知、私訊）將這個密碼（密鑰）告訴您的朋友，他才能解壓縮這個檔案。</p>
+                  <li class="font-bold">Wi-Fi 安全 (WPA2/WPA3)：</li>
+                  <p> 當您的手機連上家中的 Wi-Fi 時，您輸入的「Wi-Fi 密碼」會被用來產生一把共享的「對稱式密鑰」。 之後，您的手機和路由器之間所有的網路流量（例如您瀏覽網頁的內容）都會使用這把密鑰來快速加密和解密。</p>
+                  </ul>
+              </div>
+            </div>
+
+            <!-- 常見演算法 -->
+            <div>
+              <h3 class="text-2xl font-semibold mb-4">常見演算法：</h3>
+              <div class="flex flex-wrap gap-x-6 gap-y-2 text-lg md:text-xl italic">
+                <span>AES</span>
+                <span>DES</span>
+                <span>3DES</span>
+                <span>RC4</span>
+              </div>
             </div>
           </div>
         </div>
@@ -193,7 +223,7 @@ export default {
       try {
         encrypted.value = await encryptData(plain.value, key.value);
       } catch (err) {
-        alert("Encryption Error: " + err.message);
+        alert("你的Key錯誤了！！");
       }
     };
 

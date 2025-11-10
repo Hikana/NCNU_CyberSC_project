@@ -13,41 +13,81 @@
     </div>
 
     <!-- 上半部 說明內容 -->
-    <div class="flex-1 flex items-center">
-      <div class="w-full px-8 md:px-16 grid md:grid-cols-2 gap-10">
-        <!-- 左欄 -->
-        <div class="text-left self-center">
-          <h2 class="text-3xl md:text-5xl font-bold mb-6">
-            雜湊 Hash Function
-          </h2>
-          <div class="text-lg md:text-xl leading-relaxed space-y-4">
-            <h4 class="text-2xl font-semibold mb-2">雜湊是一種對資料的處理方法，透過一連串的演算，</h4>
-            <h4 class="text-2xl font-semibold mb-2">將資料轉換成看似亂碼的字串。</h4>
-          </div>
-        </div>
+    <!-- 上半部 說明內容 -->
+  <div class="flex-1 flex items-start">
+    <div class="w-full px-8 md:px-16 grid md:grid-cols-2 gap-10">
 
-        <!-- 右欄 -->
-        <div class="text-left self-center">
-          <div class="mb-8">
-            <h3 class="text-2xl font-semibold mb-4">特性：</h3>
-            <ul class="list-disc pl-6 space-y-2 text-lg md:text-xl leading-relaxed">
-              <li><strong>一致性：</strong>相同輸入，雜湊值相同</li>
-              <li><strong>不可逆：</strong>無法從雜湊值反推出原始內容</li>
-              <li><strong>抗碰撞：</strong>難以找出不同資料卻產生相同雜湊值</li>
+      <!-- 左欄 -->
+      <div class="text-left self-start">
+        <h2 class="text-5xl font-bold mb-6">雜湊函數 Hash</h2>
+        <div class="text-lg md:text-xl leading-relaxed space-y-4">
+          <h4 class="text-2xl font-bold mb-2">
+            <br/>這不是加密，而是「單向不可逆」的運算。<br/><br/>
+            就像把牛肉放進絞肉機，變成絞肉後無法還原成牛肉。<br/>
+            只要輸入有一點改變，輸出就會完全不同。
+          </h4>
+        </div>
+      </div>
+
+      <!-- 右欄 -->
+      <div class="text-left self-center">
+        <div class="mb-8">
+
+          <!-- 優缺點 -->
+          <div class="grid grid-cols-2 gap-6 text-lg md:text-xl leading-relaxed mb-10">
+            <div>
+              <h3 class="text-2xl font-semibold mb-4">優點：</h3>
+              <ul class="list-disc pl-6 space-y-1">
+                <li>驗證資料完整性</li>
+                <li>運算速度快</li>
+                <li>無需保存原始資料即可比對</li>
+              </ul>
+            </div>
+            <div>
+              <h3 class="text-2xl font-semibold mb-4">缺點：</h3>
+              <ul class="list-disc pl-6 space-y-1">
+                <li>無法還原原始資料</li>
+                <li>可能遭受碰撞攻擊（不同資料產生相同雜湊）</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 運作原理 -->
+          <div class="mb-10">
+            <h3 class="text-2xl font-semibold mb-4">運作原理：</h3>
+            <ul class="list-disc pl-6 space-y-1 text-lg md:text-xl italic">
+              <li>輸入任何長度的資料 → 經過雜湊演算法 → 產生固定長度的雜湊值。</li>
+              <li>相同輸入 → 一定得到相同結果。</li>
+              <li>輸入改一個字 → 結果完全不同（雪崩效應）。</li>
+              <li>無法從雜湊值反推出原始資料。</li>
             </ul>
           </div>
+
+          <!-- 舉例應用 -->
+          <div class="mb-10">
+            <h3 class="text-2xl font-semibold mb-4">舉例應用：</h3>
+            <ul class="list-disc pl-6 space-y-1 text-lg md:text-xl italic">
+              <li class="font-bold">密碼儲存：</li>
+              <p>網站不會直接存密碼，而是存 Hash(密碼)。登入時比對雜湊值即可。</p>
+              <li class="font-bold">檔案驗證：</li>
+              <p>下載軟體時會提供 SHA-256 或 MD5 值，確認檔案是否被竄改。</p>
+            </ul>
+          </div>
+
+          <!-- 常見演算法 -->
           <div>
             <h3 class="text-2xl font-semibold mb-4">常見演算法：</h3>
             <div class="flex flex-wrap gap-x-6 gap-y-2 text-lg md:text-xl italic">
-              <span>MD-5（不安全）</span>
-              <span>SHA-1（不安全）</span>
               <span>SHA-256</span>
-              <span>RIPEMD-160</span>
+              <span>SHA-1</span>
+              <span>MD-5（已不安全）</span>
             </div>
           </div>
+
         </div>
       </div>
     </div>
+  </div>
 
     <!-- 下半部 HASH Demo -->
     <div class="flex-1 flex items-center justify-center px-8 py-16">

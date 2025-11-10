@@ -7,7 +7,7 @@
         <div class="text-left self-start">
           <h2 class="text-3xl md:text-5xl font-bold mb-6">為什麼需要非對稱加密？</h2>
           <div class="leading-relaxed space-y-4 mb-8">
-            <h4 class="text-2xl font-semibold mb-2">對稱式加密速度快但存在「金鑰交換問題」。</h4>
+            <h4 class="text-2xl font-semibold mb-2"><br/>對稱式加密速度快但存在「金鑰交換問題」。</h4>
             <h4 class="text-2xl font-semibold mb-2">非對稱加密完美解決了這個問題，</h4>
             <h4 class="text-2xl font-semibold mb-2">讓我們能在不安全的網路上建立安全信任。</h4>
           </div>

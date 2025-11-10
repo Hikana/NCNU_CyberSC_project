@@ -17,47 +17,69 @@
     </div>
 
     <!-- 上半部 說明內容 -->
-    <div class="flex-1 flex items-center">
-      <div
-        class="w-full px-8 md:px-16 grid md:grid-cols-2 gap-10"
-      >
-        <!-- 左欄 -->
-        <div class="text-left self-center">
-          <h2 class="text-3xl md:text-5xl font-bold mb-6">
-            非對稱式加密
-          </h2>
-          <h2 class="text-3xl md:text-5xl font-bold mb-6">
-            Asymmetric Cryption
-          </h2>
-          <div class="text-lg md:text-xl leading-relaxed space-y-4">
-            <h4 class="text-2xl font-semibold mb-2">
-              使用一組「公鑰」與「私鑰」，
-            </h4>
-            <h4 class="text-2xl font-semibold mb-2">
-              公鑰加密的內容必須用私鑰解密。
-            </h4>
-          </div>
-        </div>
+  <div class="flex-1 flex items-start">
+    <div class="w-full px-8 md:px-16 grid md:grid-cols-2 gap-10">
 
-        <!-- 右欄 -->
-        <div class="text-left self-center">
-          <div class="mb-8">
-            <div class="grid grid-cols-2 gap-6 text-lg md:text-xl leading-relaxed">
-              <div>
-                <h3 class="text-2xl font-semibold mb-4">優點：</h3>
-                <ul class="list-disc pl-6 space-y-1">
-                  <li>解決金鑰分配問題</li>
-                  <li>常用於數位簽章、身分驗證</li>
-                </ul>
-              </div>
-              <div>
-                <h3 class="text-2xl font-semibold mb-4">缺點：</h3>
-                <ul class="list-disc pl-6 space-y-1">
-                  <li>加密速度比對稱式慢，<br>不適合大量資料</li>
-                </ul>
-              </div>
+      <!-- 左欄 -->
+      <div class="text-left self-start">
+        <h2 class="text-5xl font-bold mb-6">非對稱式加密</h2>
+        <h2 class="text-4xl font-bold mb-6">Asymmetric Encryption</h2>
+        <div class="text-lg md:text-xl leading-relaxed space-y-4">
+          <h4 class="text-2xl font-bold mb-2">
+            <br/>使用「一對密鑰」進行加解密：公鑰與私鑰。<br/><br/>
+            就像銀行保險箱：<br/>
+            公鑰 = 投錢口，人人可以把資料放進去（加密），但無法拿出來。<br/>
+            私鑰 = 開箱子的鑰匙，只有擁有者能開啟（解密）。
+          </h4>
+        </div>
+      </div>
+
+      <!-- 右欄 -->
+      <div class="text-left self-center">
+        <div class="mb-8">
+
+          <!-- 優缺點 -->
+          <div class="grid grid-cols-2 gap-6 text-lg md:text-xl leading-relaxed mb-10">
+            <div>
+              <h3 class="text-2xl font-semibold mb-4">優點：</h3>
+              <ul class="list-disc pl-6 space-y-1">
+                <li>解決金鑰分配問題（無需傳遞私鑰）</li>
+                <li>可用於數位簽章與身分驗證</li>
+                <li>公鑰公開也不影響安全性</li>
+              </ul>
+            </div>
+            <div>
+              <h3 class="text-2xl font-semibold mb-4">缺點：</h3>
+              <ul class="list-disc pl-6 space-y-1">
+                <li>速度慢、效率低</li>
+                <li>不適合大量資料加密</li>
+              </ul>
             </div>
           </div>
+
+          <!-- 運作原理 -->
+          <div class="mb-10">
+            <h3 class="text-2xl font-semibold mb-4">運作原理：</h3>
+            <ul class="list-disc pl-6 space-y-1 text-lg md:text-xl italic">
+              <li>接收方 (B) 產生「公鑰 + 私鑰」。</li>
+              <li>B 將公鑰公開給任何人，但私鑰自己保存。</li>
+              <li>發送方 (A) 使用 B 的公鑰加密訊息 → 產生密文。</li>
+              <li>B 使用自己的私鑰解密 → 還原成明文。</li>
+            </ul>
+          </div>
+
+          <!-- 舉例應用 -->
+          <div class="mb-10">
+            <h3 class="text-2xl font-semibold mb-4">舉例應用：</h3>
+            <ul class="list-disc pl-6 space-y-1 text-lg md:text-xl italic">
+              <li class="font-bold">HTTPS / SSL 憑證：</li>
+              <p>瀏覽器取得網站的公鑰後，會用它加密一把隨機生成的「對稱密鑰」再傳送給伺服器。</p>
+              <li class="font-bold">數位簽章：</li>
+              <p>發送者用「私鑰」為訊息做簽章，接收者用「公鑰」驗證真偽與完整性。</p>
+            </ul>
+          </div>
+
+          <!-- 常見演算法 -->
           <div>
             <h3 class="text-2xl font-semibold mb-4">常見演算法：</h3>
             <div class="flex flex-wrap gap-x-6 gap-y-2 text-lg md:text-xl italic">
@@ -66,9 +88,11 @@
               <span>ElGamal</span>
             </div>
           </div>
+
         </div>
       </div>
     </div>
+  </div>
 
     <!-- 下半部 RSA Demo -->
     <div class="flex-1 flex items-center justify-center px-8">
@@ -206,7 +230,7 @@ export default {
           String.fromCharCode(...new Uint8Array(encryptedBuffer))
         );
       } catch (err) {
-        alert("Encryption Error: " + err.message);
+        alert("你沒有產生金鑰！！");
       }
     },
     async decrypt() {
@@ -223,7 +247,7 @@ export default {
         );
         this.decrypted = new TextDecoder().decode(decryptedBuffer);
       } catch (err) {
-        alert("Decryption Error: " + err.message);
+        alert("你的密文錯誤了！！");
       }
     },
   },
