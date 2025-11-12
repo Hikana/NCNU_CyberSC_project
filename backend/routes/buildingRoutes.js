@@ -12,6 +12,9 @@ router.get('/map', auth, buildingController.getMap);
 // 放置建築（需登入）
 router.post('/place', auth, buildingController.placeBuilding);
 
+// 架設防火牆（需登入）
+router.post('/firewall', auth, buildingController.placeFirewall);
+
 // 移除建築（需登入）
 router.delete('/remove/:x/:y', auth, buildingController.removeBuilding);
 

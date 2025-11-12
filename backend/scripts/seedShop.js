@@ -17,8 +17,11 @@ async function main() {
     { id: 17, name: 'Host 貓屋', techCost: 200, type: 'host' },
     { id: 18, name: 'Host 貓屋', techCost: 220, type: 'host' },
     { id: 19, name: 'Host 貓屋', techCost: 230, type: 'host' },
-    { id: 101, name: 'Router 郵局', techCost: 100, type: 'router' },
-    { id: 102, name: 'Switch 郵筒', techCost: 80, type: 'switch' }
+    { id: 101, name: 'Router 郵局', techCost: 200, type: 'router' },
+    { id: 102, name: 'Switch 郵筒', techCost: 150, type: 'switch' },
+    { id: 201, name: 'Web Application Firewall', techCost: 1000, type: 'firewall' },
+    { id: 202, name: 'Network Firewall', techCost: 800, type: 'firewall' },
+    { id: 203, name: 'Host Firewall', techCost: 600, type: 'firewall' }
   ];
 
   await shopData.setItems(defaultItems);

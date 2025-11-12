@@ -5,6 +5,9 @@ import { BUILDING_TYPES, createConnectionValidator, getConnectionColor } from '@
 import { audioService } from '@/services/audioService'; // 引入音頻服務
 import routerImg from '@/assets/router.png';
 import switchImg from '@/assets/switch.png';
+import wafImg from '@/assets/WAF.png';
+import nwfImg from '@/assets/NWF.png';
+import hfImg from '@/assets/HF.png';
 
 // 從 assets 引入圖片資源
 import buildingAImg from '@/assets/B1.png'
@@ -67,10 +70,16 @@ export const useBuildingStore = defineStore('buildings', {
       try {
         // 從後端 API 取得 shop 清單
         const items = await apiService.getBuildingShop();
-        // 加入 type 與對應圖片：host 使用原本 B 系列圖，router/switch 使用相應 icon
         const typeToImg = (item) => {
           if (item.type === 'router') return routerImg;
           if (item.type === 'switch') return switchImg;
+          if (item.type === 'firewall') {
+            const lower = (item.name || '').toLowerCase();
+            if (lower.includes('web') || lower.includes('waf')) return wafImg;
+            if (lower.includes('network') || lower.includes('nwf')) return nwfImg;
+            if (lower.includes('host') || lower.includes('hf')) return hfImg;
+            return wafImg;
+          }
           // host：依 id 匹配原本圖片
           const map = {
             1: buildingAImg,
@@ -146,6 +155,29 @@ export const useBuildingStore = defineStore('buildings', {
       }
     },
 
+    // 取得目前欲放置的商店項目
+    getSelectedShopItem() {
+      if (!this.selectedBuildingId) return null;
+      return (this.shopBuildings || []).find(i => i.id === this.selectedBuildingId) || null;
+    },
+
+    // 是否為防火牆放置模式
+    isPlacingFirewall() {
+      const item = this.getSelectedShopItem();
+      return !!item && item.type === 'firewall';
+    },
+
+    // 目前選取的防火牆子型別：'waf' | 'nwf' | 'hf' | null
+    getSelectedFirewallKind() {
+      const item = this.getSelectedShopItem();
+      if (!item || item.type !== 'firewall') return null;
+      const n = (item.name || '').toLowerCase();
+      if (n.includes('web') || n.includes('waf')) return 'waf';
+      if (n.includes('network') || n.includes('nwf')) return 'nwf';
+      if (n.includes('host') || n.includes('hf')) return 'hf';
+      return 'firewall';
+    },
+
     setPlacementMode(enabled, buildingId = null) {
       this.isPlacing = enabled;
       this.selectedBuildingId = buildingId;
@@ -195,16 +227,29 @@ export const useBuildingStore = defineStore('buildings', {
         console.warn('無法確認放置：未選擇瓦片或建築');
         return;
       }
-    
-      const isCastleTile = (row, col) => (row >= 0 && row <= 2) && (col >= 0 && col <= 2);
-      if (isCastleTile(this.selectedTile.y, this.selectedTile.x)) {
-        alert('此區域為城堡，無法放置建築');
-        this.isPlacing = false;
-        this.selectedTile = null;
-        this.selectedBuildingId = null;
-        return;
+
+      // 防火牆放置：呼叫後端 API，扣除科技點並持久化 firewall 類型
+      if (this.isPlacingFirewall()) {
+        const { x, y } = this.selectedTile;
+        try {
+          const updated = await apiService.placeFirewall(this.selectedBuildingId, { x, y });
+          if (Array.isArray(updated) && Array.isArray(updated[0])) {
+            this.map = updated;
+          }
+          // 重置 UI 狀態
+          this.isPlacing = false;
+          this.selectedTile = null;
+          this.selectedBuildingId = null;
+          this.showPlacementMessage('已架設防火牆');
+          return;
+        } catch (e) {
+          console.error('架設防火牆失敗:', e);
+          this.showPlacementMessage(e?.message || '架設防火牆失敗');
+          return;
+        }
       }
-    
+
+      // 一般建築放置流程
       try {
         // ✅ 確認前端呼叫方式
         const response = await apiService.placeBuilding(

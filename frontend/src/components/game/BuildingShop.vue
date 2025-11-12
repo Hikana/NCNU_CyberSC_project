@@ -13,9 +13,14 @@
       </div>
       <div class="shop-list">
       <div class="shop-item" v-for="item in filteredItems" :key="item.id">
-        <div class="item-image">
-          <img :src="item.img" :alt="item.name" class="building-img" />
+        <div :class="['item-image', { 'item-image--tall': isIconType(item), 'item-image--icon': isIconType(item) }]">
+          <img
+            :src="item.img"
+            :alt="item.name"
+            :class="['building-img', { 'building-img--fill': isIconType(item) }, imgClass(item)]"
+          />
         </div>
+        <div class="item-name" :title="item.name">{{ item.name }}</div>
         <div class="tech-cost">消耗科技點：{{ item.techCost }}</div>
         <button 
           class="buy-btn" 
@@ -43,8 +48,9 @@ const playerStore = usePlayerStore()
 // 類別資料及當前選擇（預設 host）
 const categoryTypes = ref([
   { value: 'host', label: '主機' },
-  { value: 'router', label: '路由器' },
   { value: 'switch', label: '交換器' },
+  { value: 'router', label: '路由器' },
+  { value: 'firewall', label: '防火牆' },
 ])
 const activeType = ref('host')
 
@@ -58,6 +64,25 @@ const filteredItems = computed(() => {
 onMounted(() => {
   buildingStore.loadShop()
 })
+
+function isIconType(item) {
+  const t = (item?.type) || 'host'
+  return t === 'router' || t === 'switch' || t === 'firewall'
+}
+
+function imgClass(item) {
+  const t = (item?.type) || 'host'
+  if (t === 'router') return 'building-img--router'
+  if (t === 'switch') return 'building-img--switch'
+  if (t === 'firewall') {
+    const n = (item?.name || '').toLowerCase()
+    if (n.includes('waf') || n.includes('web')) return 'building-img--waf'
+    if (n.includes('nwf') || n.includes('network')) return 'building-img--nwf'
+    if (n.includes('hf') || n.includes('host')) return 'building-img--hf'
+    return 'building-img--firewall'
+  }
+  return ''
+}
 
 function canAfford(item) {
   return playerStore.techPoints >= item.techCost
@@ -146,7 +171,7 @@ const emit = defineEmits(['purchaseSuccess'])
   align-items: center;
   box-shadow: 0 2px 8px #0001;
   justify-content: space-between;
-  height: 220px;
+  height: 320px;
   pointer-events: auto;
 }
 
@@ -161,12 +186,46 @@ const emit = defineEmits(['purchaseSuccess'])
   overflow: hidden;
 }
 
+.item-image--tall {
+  height: 220px;
+}
+
 .building-img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
   pointer-events: none;
 }
+
+.building-img--fill {
+  width: auto;
+  height: 100%;
+  max-height: 100%;
+}
+
+.item-name {
+  margin: 6px 0 2px 0;
+  padding: 0 8px;
+  width: 100%;
+  text-align: center;
+  font-weight: 700;
+  color: #3498db;
+  font-size: 1rem;
+  line-height: 1.2;
+  height: 2.4em; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  word-break: break-word;
+}
+
+/* 針對不同類型調整大小與位置 */
+.building-img--router { transform: translate(-20px, 20px) scale(2.8); transform-origin: center; }
+.building-img--switch { transform: scale(2.2); transform-origin: center; }
+.building-img--waf    { transform: scale(2.8); transform-origin: center; }
+.building-img--nwf    { transform: scale(3.8); transform-origin: center; }
+.building-img--hf     { transform: translate(75px, 15px) scale(6.8) rotate(-1.5deg); transform-origin: center; }
+.building-img--firewall { transform: scale(2.8); transform-origin: center; }
 
 .buy-btn {
   background: #a5e887;

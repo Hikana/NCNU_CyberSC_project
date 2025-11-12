@@ -46,6 +46,20 @@ class BuildingController {
     res.status(200).json({ success: true, data: result });
   });
 
+  // 架設防火牆
+  placeFirewall = asyncHandler(async (req, res) => {
+    const userId = req.user.uid;
+    const { itemId, position } = req.body;
+    if (!itemId || !position || position.x === undefined || position.y === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少必要參數：itemId 與 position'
+      });
+    }
+    const result = await buildingService.placeFirewall(userId, Number(itemId), position);
+    res.status(200).json({ success: true, data: result });
+  });
+
   // 取得建築商店列表
   getBuildingShop = asyncHandler(async (req, res) => {
     const shopItems = await buildingService.getBuildingShop();

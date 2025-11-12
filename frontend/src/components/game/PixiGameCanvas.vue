@@ -13,11 +13,13 @@
   
   <div v-if="buildingStore.isPlacing" class="placement-ui">
     <div class="placement-info">
-      <p>選擇位置放置建築</p>
+      <p>{{ buildingStore.isPlacingFirewall() ? '選擇建築架設防火牆' : '選擇位置放置建築' }}</p>
       <p v-if="buildingStore.selectedTile">
         選擇位置: ({{ buildingStore.selectedTile.x }}, {{ buildingStore.selectedTile.y }})
       </p>
-      <p style="color: orange;">請點擊地圖上的可建造土地</p>
+      <p style="color: orange;">
+        {{ buildingStore.isPlacingFirewall() ? '請點擊目標建築或城堡' : '請點擊地圖上的可建造土地' }}
+      </p>
     </div>
     <div class="placement-controls">
       <button 
@@ -25,7 +27,7 @@
         @click="confirmPlacement"
         class="confirm-btn"
       >
-        確認建造
+        {{ buildingStore.isPlacingFirewall() ? '確認架設' : '確認建造' }}
       </button>
       <button @click="cancelPlacement" class="cancel-btn">
         取消
@@ -50,7 +52,6 @@
   <!-- 放置限制訊息（取代 alert） -->
   <div v-if="buildingStore.placementMessage" class="toast tile-developed">
     <div class="message-content">
-      <div class="message-icon">🚫</div>
       <div class="message-text">{{ buildingStore.placementMessage }}</div>
     </div>
   </div>
@@ -133,7 +134,7 @@
       type="button"
       tabindex="-1"
     >
-      {{ buildingStore.showConnections ? '隱藏連線' : '顯示連線' }}
+      {{ buildingStore.showConnections ? '隱藏連線、防火牆' : '顯示連線、防火牆' }}
     </button>
   </div>
 
@@ -385,7 +386,7 @@ function cancelConnection() {
 
 .placement-ui {
   position: absolute;
-  top: 10px;
+  top: 90px;
   left: 10px;
   background: rgba(255, 255, 255, 0.95);
   padding: 15px;
@@ -742,8 +743,8 @@ function cancelConnection() {
   width: 100%;
   height: 100%;
   background: 
-    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%);
-  backdrop-filter: blur(0.5px); /* 減少模糊效果 */
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.35) 100%);
+  backdrop-filter: blur(0.5px); 
   z-index: 50; /* 在遊戲畫面上方，但在連線和UI元素下方 */
   pointer-events: none; /* 不攔截滑鼠事件，允許點擊後面的元素 */
   animation: fadeIn 0.3s ease-out;

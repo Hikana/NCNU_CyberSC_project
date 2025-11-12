@@ -33,6 +33,7 @@ class BuildingService {
               type: 'castle',
               baseType: 'castle',
               buildingId: null,
+              firewall: (playerTileData && playerTileData.firewall) ? playerTileData.firewall : null,
               x,
               y
             };
@@ -44,6 +45,7 @@ class BuildingService {
               type: playerTileData.type || 'empty',
               baseType: playerTileData.baseType || playerTileData.type || 'empty',
               buildingId: playerTileData.buildingId ?? null,
+              firewall: playerTileData.firewall ?? null,
               x,
               y
             };
@@ -142,6 +144,94 @@ class BuildingService {
     
     // 返回更新後的地圖
     return await this.getMapState(userId);
+  }
+
+  // 架設防火牆（依商店 item 判斷種類並扣點）
+  async placeFirewall(userId, itemId, position) {
+    const { x, y } = position;
+    // 取得商店項目（含 techCost 與名稱）
+    const shopItem = await shopData.getById(Number(itemId));
+    if (!shopItem || shopItem.type !== 'firewall') {
+      throw new Error('無效的防火牆項目');
+    }
+    // 解析種類
+    const nameLower = (shopItem.name || '').toLowerCase();
+    let kind = null;
+    if (nameLower.includes('web') || nameLower.includes('waf')) kind = 'waf';
+    else if (nameLower.includes('network') || nameLower.includes('nwf')) kind = 'nwf';
+    else if (nameLower.includes('host') || nameLower.includes('hf')) kind = 'hf';
+    if (!kind) throw new Error('未知的防火牆種類');
+
+    // 取得玩家與地圖狀態
+    const player = await playerData.getPlayer(userId);
+    if (player.techPoints < (shopItem.techCost ?? 0)) throw new Error('科技點不足');
+    const mapData = await this.getMapState(userId);
+    const targetTile = mapData[y]?.[x];
+    if (!targetTile) throw new Error('無效的位置');
+
+    // 規則檢查
+    // 允許依 tile.type 或 buildingId (由 shop 資料比對) 判斷類型，避免舊資料未寫入 type 的情況
+    let placedType = targetTile.type || null;
+    if (!placedType && targetTile.buildingId) {
+      const placedInfo = await shopData.getById(Number(targetTile.buildingId));
+      placedType = placedInfo?.type || null;
+    }
+
+    if (kind === 'hf') {
+      if (!(targetTile.status === 'placed' && (placedType === 'host'))) {
+        throw new Error('Host Firewall 只能架在主機 (Host) 上');
+      }
+    } else if (kind === 'nwf') {
+      if (!(targetTile.status === 'placed' && (placedType === 'router'))) {
+        throw new Error('Network Firewall 只能架在路由器 (Router) 上');
+      }
+    } else if (kind === 'waf') {
+      if (!(targetTile.type === 'castle')) {
+        throw new Error('WAF 只能架在城堡 (Internet Server)');
+      }
+    }
+
+    // 扣除科技點
+    await playerData.updatePlayer(userId, { techPoints: player.techPoints - (shopItem.techCost ?? 0) });
+
+    // 寫入地塊 firewall 類型（持久化）
+    // 特例：WAF → 同步整個城堡 3x3 狀態，且禁止重複架設
+    if (kind === 'waf') {
+      // 若任一城堡格已有 waf，禁止重複
+      let castleHasWaf = false;
+      for (let ry = 0; ry < 20; ry++) {
+        for (let rx = 0; rx < 20; rx++) {
+          if (this.isCastleTile(ry, rx)) {
+            const cell = mapData[ry]?.[rx];
+            if (String(cell?.firewall || '').toLowerCase() === 'waf') {
+              castleHasWaf = true;
+              break;
+            }
+          }
+        }
+        if (castleHasWaf) break;
+      }
+      if (castleHasWaf) {
+        throw new Error('此建築已架設防火牆，不能重複架設');
+      }
+      // 同步九格
+      const updates = [];
+      for (let ry = 0; ry < 20; ry++) {
+        for (let rx = 0; rx < 20; rx++) {
+          if (this.isCastleTile(ry, rx)) {
+            updates.push(playerData.updateTile(userId, rx, ry, { firewall: 'waf', updatedAt: Date.now() }));
+          }
+        }
+      }
+      await Promise.all(updates);
+    } else {
+      // 其他種類：僅更新目標格
+      await playerData.updateTile(userId, x, y, { firewall: kind, updatedAt: Date.now() });
+    }
+
+    // 回傳最新地圖
+    const updatedMap = await this.getMapState(userId);
+    return updatedMap;
   }
 
   // --- 連線相關方法 ---

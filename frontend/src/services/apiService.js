@@ -167,6 +167,14 @@ export const apiService = {
     return requestInventory(url, { method: 'POST', body: { buildingId, position, userId: uid } });
   },
 
+  // 架設防火牆
+  placeFirewall: async (itemId, position, userId) => {
+    const uid = userId || getCurrentUid();
+    if (!uid) throw new Error('尚未登入，無法架設防火牆');
+    const url = `${BUILDING_BASE_URL}/firewall`;
+    return requestInventory(url, { method: 'POST', body: { itemId, position, userId: uid } });
+  },
+
   // 移除建築
   removeBuilding: async (x, y, userId) => {
     const uid = userId || getCurrentUid();

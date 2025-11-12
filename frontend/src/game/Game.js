@@ -416,9 +416,10 @@ export class Game {
     const cell = this.buildingStore.map?.[row]?.[col];
     if (!cell) return;
     
-    // 城堡區域不能互動
+    // 城堡區域不能互動（除非正在放置 WAF）
     if (cell.type === 'castle') {
-      return;
+      const allowWafPlacement = this.buildingStore?.isPlacing && this.buildingStore.isPlacingFirewall?.() && this.buildingStore.getSelectedFirewallKind?.() === 'waf';
+      if (!allowWafPlacement) return;
     }
 
     // 連線模式處理
@@ -435,7 +436,62 @@ export class Game {
 
     // 只有在放置建築模式時才允許滑鼠點擊
     if (this.buildingStore.isPlacing) {
-      if (cell.status === 'developed') {
+      // 防火牆放置：依類型檢查目標（放寬為可用 buildingId 判型）
+      if (this.buildingStore.isPlacingFirewall?.()) {
+        const kind = this.buildingStore.getSelectedFirewallKind?.();
+        let valid = false;
+        let reason = '';
+
+          // 通用防重複檢查：若該格已架設任何防火牆，拒絕重複架設
+          if (cell && String(cell.firewall || '').length > 0) {
+            this.buildingStore.showPlacementMessage('此建築已架設防火牆，不能重複架設');
+            this.buildingStore.selectTile(null);
+            return;
+          }
+
+        // 追加規則：城堡 3x3 若已任一格安裝 WAF，禁止再次架設
+        if (kind === 'waf') {
+          let castleHasWaf = false;
+          try {
+            const map = this.buildingStore.map || [];
+            for (let r = 0; r < map.length; r++) {
+              for (let c = 0; c < (map[r]?.length || 0); c++) {
+                const cell2 = map[r][c];
+                if (cell2 && cell2.type === 'castle' && String(cell2.firewall || '').toLowerCase() === 'waf') {
+                  castleHasWaf = true;
+                  break;
+                }
+              }
+              if (castleHasWaf) break;
+            }
+          } catch (_) {}
+          if (castleHasWaf) {
+            this.buildingStore.showPlacementMessage('此建築已架設防火牆，不能重複架設');
+            this.buildingStore.selectTile(null);
+            return;
+          }
+        }
+        if (kind === 'hf') {
+          const isHostByTile = (cell.status === 'placed' && cell.type === 'host');
+          const isHostById = !!cell.buildingId && (this.buildingStore.getBuildingType?.(cell.buildingId)?.type === 'host');
+          valid = isHostByTile || isHostById;
+          if (!valid) reason = 'Host Firewall 只能架在主機 (Host) 上';
+        } else if (kind === 'nwf') {
+          const isRouterByTile = (cell.status === 'placed' && cell.type === 'router');
+          const isRouterById = !!cell.buildingId && (this.buildingStore.getBuildingType?.(cell.buildingId)?.type === 'router');
+          valid = isRouterByTile || isRouterById;
+          if (!valid) reason = 'Network Firewall 只能架在路由器 (Router) 上';
+        } else if (kind === 'waf') {
+          valid = (cell.type === 'castle');
+          if (!valid) reason = 'WAF 只能架在城堡 (Internet Server)';
+        }
+        if (valid) {
+          this.buildingStore.selectTile({ x: col, y: row });
+        } else {
+          this.buildingStore.showPlacementMessage(reason || '無效的目標');
+          this.buildingStore.selectTile(null);
+        }
+      } else if (cell.status === 'developed') {
         this.buildingStore.selectTile({ x: col, y: row });
       } else {
         this.buildingStore.showPlacementMessage('只能選擇已開發的土地！');
@@ -501,7 +557,8 @@ export class Game {
     // 監聽連線顯示狀態變化
     watch(() => this.buildingStore.showConnections, async (showConnections) => {
       if (this.grid) {
-        this.grid.drawConnections();
+        // 重繪整張地圖，讓防火牆徽章與連線同步顯示/隱藏
+        this.grid.drawGrid();
       }
       // 當顯示連線時，如果連線應用還未創建，則創建它
       if (showConnections && this.connectionContainer && !this.connectionApp) {
@@ -510,7 +567,7 @@ export class Game {
         if (this.grid) {
           this.grid.connectionApp = this.connectionApp;
           this.grid.connectionWorld = this.connectionWorld;
-          this.grid.drawConnections(); // 重新繪製連線到新應用
+          this.grid.drawGrid(); 
         }
       }
     });

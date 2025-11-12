@@ -9,6 +9,9 @@ import can1Img from '@/assets/can1.png'
 import { audioService } from '@/services/audioService'
 import routerImg from '@/assets/router.png'
 import switchImg from '@/assets/switch.png'
+import wafIconImg from '@/assets/WAF.png'
+import nwfIconImg from '@/assets/NWF.png'
+import hfIconImg from '@/assets/HF.png'
 
 const CASTLE_TILES = new Set([
   '0,0','0,1','0,2',
@@ -82,6 +85,8 @@ export class IsoGrid {
     this.connectionGlowLayers = [] // 儲存發光層引用，用於動畫
     this.connectionAnimations = [] // 儲存動畫時間參數
     this.connectionGlowTicker = null // 儲存ticker引用
+    // 防火牆徽章發光（不使用混合模式，以 alpha 脈衝實現）
+    this.firewallBadgeAnimations = []
     
     this.app.stage.addChild(this.gridContainer)
     this.gridContainer.addChild(this.groundContainer)
@@ -110,15 +115,95 @@ export class IsoGrid {
     return new PIXI.Texture(renderTexture)
   }
 
+  // 建立防火牆盾牌徽章（以向量繪圖呈現，不使用圖片資源）
+  createFirewallBadge(kind) {
+    const badge = new PIXI.Container()
+
+    const colorMap = {
+      hf: 0x22c55e,   // 綠色：Host Firewall
+      nwf: 0x3b82f6,  // 藍色：Network Firewall
+      waf: 0xf97316,  // 橘色：WAF
+    }
+    const baseColor = colorMap[kind] || 0x64748b // 預設灰藍
+
+    const w = this.tileSize * 0.22
+    const h = this.tileSize * 0.22
+
+    const drawShield = (g, width, height, fillColor, strokeWidth = 3, strokeColor = 0xffffff, strokeAlpha = 0.9) => {
+      g
+        .moveTo(0, -height * 0.62)
+        .lineTo(width * 0.52, -height * 0.18)
+        .lineTo(width * 0.38, height * 0.48)
+        .lineTo(0, height * 0.75)
+        .lineTo(-width * 0.38, height * 0.48)
+        .lineTo(-width * 0.52, -height * 0.18)
+        .closePath()
+        .fill({ color: fillColor })
+        .stroke({ width: strokeWidth, color: strokeColor, alpha: strokeAlpha })
+    }
+
+    // 外層盾牌
+    const outer = new PIXI.Graphics()
+    drawShield(outer, w, h, baseColor, 4)
+
+    // 內層盾徽（較小，白色，營造徽章層次）
+    const inner = new PIXI.Graphics()
+    drawShield(inner, w * 0.58, h * 0.58, 0xffffff, 0)
+    inner.alpha = 0.9
+
+    // 核心小徽（與底色同色，置中，強化辨識）
+    const core = new PIXI.Graphics()
+    drawShield(core, w * 0.28, h * 0.28, baseColor, 0)
+    core.alpha = 0.95
+
+    // 連線式發光：兩層較大、較淡的盾形作為光暈（以 alpha 脈衝呈現）
+    const glowOuter = new PIXI.Graphics()
+    drawShield(glowOuter, w * 1.28, h * 1.28, baseColor, 0)
+    glowOuter.alpha = 0.5
+    glowOuter.zIndex = 997
+
+    // 內層改為「白色描邊光圈」，避免被本體覆蓋
+    const glowInner = new PIXI.Graphics()
+    glowInner
+      .moveTo(0, -h * 0.62)
+      .lineTo(w * 0.52, -h * 0.18)
+      .lineTo(w * 0.38, h * 0.48)
+      .lineTo(0, h * 0.75)
+      .lineTo(-w * 0.38, h * 0.48)
+      .lineTo(-w * 0.52, -h * 0.18)
+      .closePath()
+      .stroke({ width: Math.max(6, this.tileSize * 0.04), color: 0xffffff, alpha: 0.95 })
+    glowInner.zIndex = 1000
+
+    // 先光暈再本體，確保層級正確
+    badge.addChild(glowOuter)
+    badge.addChild(outer)
+    badge.addChild(inner)
+    badge.addChild(core)
+    badge.addChild(glowInner)
+    badge.zIndex = 999
+
+    // 保存動畫引用
+    badge.glowOuter = glowOuter
+    badge.glowInner = glowInner
+    return badge
+  }
+
   // 預載入建築圖片
   async loadBuildingTextures() {
+    // 確保先初始化容器，避免其他異步載入先觸發 drawGrid 時為 undefined
+    if (!this.buildingTextures) this.buildingTextures = {}
+
+    // 預先為常見的字串路徑建立別名並載入，避免外部用字串 id 取用時找不到快取
+    await this._ensureFirewallIconAliases()
+
     // 如果已經有紋理緩存，直接返回（重新進入時使用緩存）
     if (this.buildingTextures && Object.keys(this.buildingTextures).length > 0) {
       console.log('✅ 使用建築紋理緩存');
       return;
     }
     
-    this.buildingTextures = {}
+    this.buildingTextures = this.buildingTextures || {}
 
     // 從當前地圖建立 id -> type 的對照（用於在商店資料未就緒時推斷類型）
     const idToType = {}
@@ -146,6 +231,9 @@ export class IsoGrid {
           imageUrl = routerImg
         } else if (type === 'switch') {
           imageUrl = switchImg
+        } else if (type === 'firewall') {
+          // 防火牆不作為地圖建築紋理（只作為疊加 ICON），這裡給一張小圖避免報錯
+          imageUrl = hfIconImg
         } else {
           if (!HOST_IMAGE_IDS.has(id)) {
             throw new Error(`Unknown host image id: ${id}`)
@@ -171,7 +259,10 @@ export class IsoGrid {
     
     // 動態載入建築圖片：合併商店定義與當前地圖上已放置的建築 ID
     const buildingStore = useBuildingStore()
-    const idsFromShop = (buildingStore.shopBuildings || []).map(b => b.id)
+    // 只預載入 host/router/switch，忽略 firewall（201/202/203）
+    const idsFromShop = (buildingStore.shopBuildings || [])
+      .filter(b => b.type !== 'firewall')
+      .map(b => b.id)
     const idsFromMap = []
     if (this.mapData) {
       for (let r = 0; r < this.rows; r++) {
@@ -200,6 +291,31 @@ export class IsoGrid {
     // 載入完成後重繪地圖
     if (this.mapData) {
       this.drawGrid();
+    }
+  }
+
+  // 確保防火牆 ICON 以字串 id 也能在快取中命中（處理 /src/assets/*.png 類型的取用）
+  async _ensureFirewallIconAliases() {
+    const registrations = [
+      { id: '/src/assets/HF.png', src: hfIconImg },
+      { id: '/src/assets/WAF.png', src: wafIconImg },
+      { id: '/src/assets/NWF.png', src: nwfIconImg },
+    ]
+    for (const { id, src } of registrations) {
+      try {
+        // 嘗試註冊別名
+        // 在 Pixi v8：Assets.add({ alias, src })
+        // 在 Pixi v7：Assets.add(alias, src) 也可，被 try/catch 掉不影響
+        if (PIXI?.Assets?.add) {
+          PIXI.Assets.add({ alias: id, src })
+        }
+        // 預載入，確保之後 Assets.get(id) 能命中
+        if (PIXI?.Assets?.load) {
+          await PIXI.Assets.load(id)
+        }
+      } catch (_) {
+        // 忽略重複註冊或載入錯誤（不影響後續流程）
+      }
     }
   }
 
@@ -422,6 +538,9 @@ export class IsoGrid {
     this.objectContainer.removeChildren()
     this.connectionContainer.removeChildren()
 
+    // 重置徽章動畫列表（避免保留已被移除的引用）
+    this.firewallBadgeAnimations = []
+
     const halfW = this.tileSize / 2
     const halfH = this.tileSize / 4
 
@@ -491,8 +610,10 @@ export class IsoGrid {
           }
         }
 
-        // 只為非城堡格子創建可互動區域
-        if (cell.type !== 'castle') {
+        // 互動區域：預設不包含城堡；若為放置 WAF，則允許點擊城堡格
+        const isCastle = cell.type === 'castle';
+        const enableCastleHit = isCastle && this.buildingStore?.isPlacing && this.buildingStore.isPlacingFirewall?.() && this.buildingStore.getSelectedFirewallKind?.() === 'waf';
+        if (!isCastle || enableCastleHit) {
           const tile = new PIXI.Graphics();
           tile
             .moveTo(0, -halfH)
@@ -567,6 +688,7 @@ export class IsoGrid {
       
       const castleContainer = new PIXI.Container()
       castleContainer.sortableChildren = true
+      castleContainer.zIndex = 10
       // 確保城堡不攔截點擊事件
       castleContainer.eventMode = 'none'
       
@@ -583,6 +705,7 @@ export class IsoGrid {
       castleContainer.x -= offsetX
 
       // 繪製城堡層級（從基礎層到當前等級）
+      let topCastleLayer = null
       for (let level = 0; level <= castleLevel; level++) {
         if (this.castleTextures[level]) {
           const castleLayer = new PIXI.Sprite(this.castleTextures[level])
@@ -599,17 +722,59 @@ export class IsoGrid {
             castleLayer.y = -level * 112
           }
           castleContainer.addChild(castleLayer)
+          topCastleLayer = castleLayer
         }
       }
       this.objectContainer.addChild(castleContainer)
+
+      // 若有顯示開關時才顯示城堡盾牌
+      if (this.buildingStore?.showConnections) {
+        // 改為掃描整張地圖的實際城堡區塊，而不是固定 0~2
+        let castleFwKind = null
+        if (this.mapData) {
+          for (let r = 0; r < this.rows; r++) {
+            for (let c = 0; c < this.cols; c++) {
+              const cell = this.mapData[r]?.[c]
+              if (cell && cell.type === 'castle') {
+                const kind = String(cell.firewall || '').toLowerCase()
+                if (kind) { castleFwKind = kind; break }
+              }
+            }
+            if (castleFwKind) break
+          }
+        }
+        if (castleFwKind) {
+          const badge = this.createFirewallBadge(castleFwKind);
+          if (this.connectionWorld) {
+            const worldX = castleContainer.x;
+            const worldY = castleContainer.y;
+            const offsetX = this.tileSize * 0.15;
+            const offsetY = -this.tileSize * 0.5;
+            badge.x = worldX + offsetX;
+            badge.y = worldY + offsetY;
+            badge.zIndex = 999;
+            this.connectionWorld.addChild(badge);
+          } else {
+            badge.x = this.tileSize * 0.15;
+            badge.y = this.tileSize * 2;
+            castleContainer.addChild(badge);
+          }
+          // 加入徽章動畫池（alpha 脈衝）
+          this.firewallBadgeAnimations.push({
+            time: Math.random() * 1.5,
+            glowInner: badge.glowInner,
+            glowOuter: badge.glowOuter
+          })
+        }
+      }
     }
 
     // 第三階段：繪製其他建築
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
-        const cell = this.mapData[row][col]
+        const cell = this.mapData[row]?.[col]
         
-        if (cell.status === 'placed' && cell.buildingId) {
+        if (cell && cell.status === 'placed' && cell.buildingId) {
           const x = (col - row) * halfW
           const y = (col + row) * halfH
 
@@ -651,6 +816,30 @@ export class IsoGrid {
             }
             
             buildingContainer.addChild(buildingSprite)
+
+            // 疊加防火牆徽章（向量盾牌，不使用照片），需開啟顯示開關
+            if (this.buildingStore?.showConnections && cell.firewall) {
+              const kind = String(cell.firewall || '').toLowerCase();
+              const fwBadge = this.createFirewallBadge(kind);
+              // 若有連線世界，將徽章畫在連線層（高於蒙版）
+              if (this.connectionWorld) {
+                fwBadge.x = x + this.tileSize * 0.05;
+                fwBadge.y = y - this.tileSize * 0.35;
+                fwBadge.zIndex = 999;
+                this.connectionWorld.addChild(fwBadge);
+              } else {
+                // 否則就貼在建築容器上
+                fwBadge.x = this.tileSize * 0.05;
+                fwBadge.y = -this.tileSize * 0.35;
+                buildingContainer.addChild(fwBadge);
+              }
+              // 加入徽章動畫池（alpha 脈衝）
+              this.firewallBadgeAnimations.push({
+                time: Math.random() * 1.5,
+                glowInner: fwBadge.glowInner,
+                glowOuter: fwBadge.glowOuter
+              })
+            }
             this.objectContainer.addChild(buildingContainer)
           }
         }
@@ -851,9 +1040,9 @@ export class IsoGrid {
    * 類似successGlow動畫：1.5秒循環，發光強度從0.3到0.8
    */
   updateConnectionGlow() {
-    if (!this.connectionAnimations || this.connectionAnimations.length === 0) {
-      return;
-    }
+    const hasConn = this.connectionAnimations && this.connectionAnimations.length > 0
+    const hasBadges = this.firewallBadgeAnimations && this.firewallBadgeAnimations.length > 0
+    if (!hasConn && !hasBadges) return
     
     // 選擇使用主應用或連線應用的ticker
     const appToUse = this.connectionApp || this.app;
@@ -873,10 +1062,6 @@ export class IsoGrid {
       // 計算動畫進度（0到1）
       const progress = anim.time / animationDuration;
       
-      // 使用正弦波創建平滑的脈衝效果（增強版，更明顯）
-      // 內層發光：alpha從0.5到1.0（更強）
-      // 中層發光：alpha從0.4到0.7（中等）
-      // 外層發光：alpha從0.2到0.4（較弱）
       const pulseValue = (Math.sin(progress * Math.PI * 2) + 1) / 2; // 0 到 1
       
       // 更新內層發光（最明顯）
@@ -897,6 +1082,21 @@ export class IsoGrid {
         anim.glowOuter.alpha = outerAlpha;
       }
     });
+
+    // 更新防火牆徽章光暈（使用 alpha 脈衝）
+    this.firewallBadgeAnimations.forEach(anim => {
+      anim.time += deltaTime;
+      if (anim.time >= animationDuration) anim.time -= animationDuration;
+      const progress = anim.time / animationDuration;
+      const pulseValue = (Math.sin(progress * Math.PI * 2) + 1) / 2;
+
+      if (anim.glowInner) {
+        anim.glowInner.alpha = 0.88 + (1.00 - 0.88) * pulseValue;
+      }
+      if (anim.glowOuter) {
+        anim.glowOuter.alpha = 0.40 + (0.85 - 0.40) * pulseValue;
+      }
+    })
   }
 
   /**
