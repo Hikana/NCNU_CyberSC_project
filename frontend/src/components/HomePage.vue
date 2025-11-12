@@ -13,7 +13,7 @@
           <h2 class="text-4xl md:text-5xl font-bold">第一章：信件為什麼會寄丟？</h2>
         </div>
       </header>
-      <ChapterIntroduction />
+      <ChapterIntroduction1 />
       <header class="w-screen bg-bgg py-10"></header>
       <SevenStage />
     </div>
@@ -24,6 +24,7 @@
           <h2 class="text-4xl md:text-5xl font-bold">第二章：三封被偷看的信（CIA 三元組）</h2>
         </div>
       </header>
+      <ChapterIntroduction2 />
       <header class="w-screen bg-bgg py-10"></header>
       <CIABar />
     </div>
@@ -35,6 +36,7 @@
           <h2 class="text-4xl md:text-5xl font-bold">第三章：誰是假郵差？（AAA 模型）</h2>
         </div>
       </header>
+      <ChapterIntroduction3 />
       <header class="w-screen bg-bgg py-10"></header>
       <AAA />
     </div>
@@ -53,6 +55,7 @@
             <h2 class="text-4xl md:text-5xl font-bold">第四章：BugBug 郵件風暴！（OWASP Top 10）</h2>
           </div>
         </header>
+        <ChapterIntroduction4 />
         <NewTOP10 />
     </div>
 
@@ -70,6 +73,7 @@
             <h2 class="text-4xl md:text-5xl font-bold">第五章：祕密信封的魔法（密碼學）</h2>
           </div>
         </header>
+        <ChapterIntroduction5 />
         <WhyCrypto />
         <header class="w-screen bg-bgg py-32"></header>
 
@@ -118,7 +122,11 @@ import DH from "@/components/Home/DH.vue"
 import SevenStage from "@/components/Home/SevenStage.vue"
 import SectionAnimation from "@/components/Home/SectionAnimation.vue"
 import IntroductionSection from "@/components/Home/IntroductionSection.vue"
-import ChapterIntroduction from "@/components/Home/ChapterIntroduction.vue"
+import ChapterIntroduction1 from "@/components/Home/ChapterIntroduction1.vue"
+import ChapterIntroduction2 from "@/components/Home/ChapterIntroduction2.vue"
+import ChapterIntroduction3 from "@/components/Home/ChapterIntroduction3.vue"
+import ChapterIntroduction4 from "@/components/Home/ChapterIntroduction4.vue"
+import ChapterIntroduction5 from "@/components/Home/ChapterIntroduction5.vue"
 import AAA from "@/components/Home/3A.vue"
 import Concept from "@/components/Home/Concept.vue"
 import WhyCrypto from "@/components/Home/WhyCrypto.vue"
