@@ -2,7 +2,9 @@
   <div class="top-bar status-bar">
 
     <div class="wall-bar"  @click="uiStore.toggleWallMenu()">
-      <div class="arrow-label">城牆防禦 🛡️</div>
+      <div class="arrow-label">城牆防禦
+        <span class="material-symbols-outlined">security</span>
+      </div>
       <div class="wall-info">
         <span 
           ref="defenseValue"
@@ -29,7 +31,9 @@
     </div>
 
     <div class="tech-bar">
-      <div class="arrow-label">科技點 💰</div>
+      <div class="arrow-label">科技點
+        <span class="material-symbols-outlined">currency_bitcoin</span>
+      </div>
       <div class="tech-info">
         <span 
           ref="techValue"
@@ -171,7 +175,17 @@ function triggerDefenseAnimation(change) {
   font-weight: bold;
   margin-right: 12px;
   text-align: left;
-  line-height: 1.1;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.arrow-label .material-symbols-outlined {
+  font-size: 20px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
 }
 
 .tech-info span,

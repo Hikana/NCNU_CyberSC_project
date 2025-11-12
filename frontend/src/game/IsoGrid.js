@@ -421,15 +421,15 @@ export class IsoGrid {
   async loadCastleTextures() {
     this.castleTextures = {}
     
-    // 載入城堡基礎圖片（castle0.png）
+    // 載入伺服器基礎圖片（castle0.png）
     try {
       this.castleTextures[0] = await PIXI.Assets.load(castleImg)
     } catch (e) {
-      console.warn('⚠️ 城堡基礎圖片載入失敗，使用後備方案:', e)
+      console.warn('⚠️ 伺服器基礎圖片載入失敗，使用後備方案:', e)
       this.castleTextures[0] = PIXI.Texture.from(castleImg)
     }
     
-    // 載入 can1.png 作為城堡被碰到的替換圖片
+    // 載入 can1.png 作為伺服器被碰到的替換圖片
     try {
       this.castleTextures['can1'] = await PIXI.Assets.load(can1Img)
     } catch (e) {
@@ -437,7 +437,7 @@ export class IsoGrid {
       this.castleTextures['can1'] = PIXI.Texture.from(can1Img)
     }
     
-  // 動態載入城堡升級層級圖片（castle1.png 到 castle10.png）
+  // 動態載入伺服器升級層級圖片（castle1.png 到 castle10.png）
   const loadCastleLevel = async (level) => {
     try {
       const module = await import(`@/assets/castle${level}.png`)
@@ -456,12 +456,12 @@ export class IsoGrid {
         img.src = imageUrl
       })
     } catch (error) {
-      console.warn(`⚠️ 城堡圖片 castle${level}.png 載入失敗:`, error)
+      console.warn(`⚠️ 伺服器圖片 castle${level}.png 載入失敗:`, error)
       return null
     }
   }
     
-    // 載入所有城堡等級圖片
+    // 載入所有伺服器等級圖片
     const loadPromises = []
     for (let level = 1; level <= 10; level++) {
       loadPromises.push(loadCastleLevel(level))
@@ -469,9 +469,9 @@ export class IsoGrid {
     
     try {
       await Promise.all(loadPromises)
-      console.log('✅ 城堡圖片載入完成')
+      console.log('✅ 伺服器圖片載入完成')
     } catch (e) {
-      console.warn('⚠️ 部分城堡圖片載入失敗:', e)
+      console.warn('⚠️ 部分伺服器圖片載入失敗:', e)
     }
     
     // 載入完成後重繪
@@ -490,7 +490,7 @@ export class IsoGrid {
       for (let col = 0; col < this.cols; col++) {
         const distanceFromCenter = Math.max(Math.abs(row - center), Math.abs(col - center))
 
-        // 初始化：依 CASTLE_TILES 清單標記城堡，其餘鋪草地
+        // 初始化：依 CASTLE_TILES 清單標記伺服器，其餘鋪草地
         map[row][col] = {
           type: isCastleTile(row, col) ? 'castle' : 'grass',
           explored: distanceFromCenter <= 6

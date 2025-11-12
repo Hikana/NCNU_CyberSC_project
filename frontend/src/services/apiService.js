@@ -258,10 +258,10 @@ export const apiService = {
     return requestInventory(url, { method: 'PUT', body: { defense } });
   },
 
-  // 更新玩家城堡等級
+  // 更新玩家伺服器等級
   updatePlayerCastleLevel: async (_userId, castleLevel) => {
     const uid = getCurrentUid();
-    if (!uid) throw new Error('尚未登入，無法更新城堡等級');
+    if (!uid) throw new Error('尚未登入，無法更新伺服器等級');
     const url = `${PLAYER_BASE_URL}/me/castleLevel`;
     return requestInventory(url, { method: 'PUT', body: { castleLevel } });
   },

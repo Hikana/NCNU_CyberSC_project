@@ -18,7 +18,7 @@
         選擇位置: ({{ buildingStore.selectedTile.x }}, {{ buildingStore.selectedTile.y }})
       </p>
       <p style="color: orange;">
-        {{ buildingStore.isPlacingFirewall() ? '請點擊目標建築或城堡' : '請點擊地圖上的可建造土地' }}
+        {{ buildingStore.isPlacingFirewall() ? '請點擊目標建築' : '請點擊地圖上的可建造土地' }}
       </p>
     </div>
     <div class="placement-controls">

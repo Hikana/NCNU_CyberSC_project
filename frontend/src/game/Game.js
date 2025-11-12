@@ -39,8 +39,8 @@ export class Game {
   /**
    * 初始化遊戲世界
    */
-  async init() {
-    this.app = new PIXI.Application();
+  async init() {
+    this.app = new PIXI.Application();
     await this.app.init({
       width: this.container.clientWidth,
       height: this.container.clientHeight,
@@ -49,10 +49,10 @@ export class Game {
       antialias: true,
       resizeTo: this.container,
     });
-    this.container.appendChild(this.app.canvas); 
-    this.world = new PIXI.Container();
+    this.container.appendChild(this.app.canvas); 
+    this.world = new PIXI.Container();
     this.world.sortableChildren = true; // 啟用 Z-Index 排序
-    this.app.stage.addChild(this.world);
+    this.app.stage.addChild(this.world);
 
     // 關鍵步驟：在建立地圖前，先從後端載入玩家的最新地圖資料
     await this.buildingStore.loadMap();
@@ -198,15 +198,15 @@ export class Game {
     if (hasMoved) {
         this.playerStore.updatePosition({ x, y });
         
-        // 檢查城堡碰撞和離開
+        // 檢查伺服器碰撞和離開
         if (this.grid) {
           const isInCastle = this.grid.checkCastleCollision(x, y);
           
-          // 如果現在在城堡內，且之前不在城堡內
+      // 如果現在在伺服器區內，且之前不在
           if (isInCastle && !this.wasInCastle) {
             this.grid.replaceCastleWithCan1();
           }
-          // 如果現在不在城堡內，且之前在城堡內
+      // 如果現在不在伺服器區內，且之前在
           else if (!isInCastle && this.wasInCastle) {
             this.grid.resetCastleImage();
           }
@@ -364,9 +364,6 @@ export class Game {
     this.connectionWorld.scale.copyFrom(this.world.scale);
   }
 
-  /**
-   * 建立地圖
-   */
   _createMap() {
     this.grid = new IsoGrid(
       this.app, 
@@ -382,7 +379,6 @@ export class Game {
     this.world.addChild(this.grid.gridContainer);
   }
 
-  /*建立玩家 */
   _createPlayer() {
     this.player = new Player(this.playerStore);
     this.player.create(this.world);
@@ -390,7 +386,7 @@ export class Game {
         this.player.sprite.zIndex = 1; // 玩家層級低於建築 
     }
     
-    // 設置玩家初始位置在城堡區域（網格座標 1,1）
+    // 設置玩家初始位置
     const initialRow = 1;
     const initialCol = 1;
     const halfW = this.TILE_SIZE / 2;
@@ -401,7 +397,6 @@ export class Game {
     const isoY = (initialCol + initialRow) * halfH;
     
     this.playerStore.updatePosition({ x: isoX, y: isoY });
-    console.log(`🎮 玩家初始位置設置為網格 (${initialRow}, ${initialCol})，等角座標 (${isoX}, ${isoY})`);
     
     // 設置玩家初始位置的高亮顯示
     if (this.grid) {
@@ -416,7 +411,7 @@ export class Game {
     const cell = this.buildingStore.map?.[row]?.[col];
     if (!cell) return;
     
-    // 城堡區域不能互動（除非正在放置 WAF）
+    // 伺服器區域不能互動（除非正在放置 WAF）
     if (cell.type === 'castle') {
       const allowWafPlacement = this.buildingStore?.isPlacing && this.buildingStore.isPlacingFirewall?.() && this.buildingStore.getSelectedFirewallKind?.() === 'waf';
       if (!allowWafPlacement) return;
@@ -449,7 +444,7 @@ export class Game {
             return;
           }
 
-        // 追加規則：城堡 3x3 若已任一格安裝 WAF，禁止再次架設
+        // 追加規則：伺服器 3x3 若已任一格安裝 WAF，禁止再次架設
         if (kind === 'waf') {
           let castleHasWaf = false;
           try {
@@ -483,7 +478,7 @@ export class Game {
           if (!valid) reason = 'Network Firewall 只能架在路由器 (Router) 上';
         } else if (kind === 'waf') {
           valid = (cell.type === 'castle');
-          if (!valid) reason = 'WAF 只能架在城堡 (Internet Server)';
+          if (!valid) reason = 'WAF 只能架在網路伺服器(Internet Server)';
         }
         if (valid) {
           this.buildingStore.selectTile({ x: col, y: row });
@@ -532,10 +527,10 @@ export class Game {
       }
     });
 
-    // 監聽城堡等級變化，自動重繪地圖
+    // 監聽伺服器等級變化，自動重繪地圖
     watch(() => this.wallStore.castleLevel, (newLevel, oldLevel) => {
       if (oldLevel !== undefined && newLevel !== oldLevel && this.grid) {        
-        this.grid.drawGrid(); // 重繪地圖以顯示新的城堡等級
+        this.grid.drawGrid(); // 重繪地圖以顯示新的伺服器等級
       }
     });
 
@@ -681,7 +676,6 @@ export class Game {
     if (row >= 0 && row < this.grid.rows && col >= 0 && col < this.grid.cols) {
       const cell = this.buildingStore.map?.[row]?.[col];
       if (cell) {
-        // 城堡區域：顯示進入練功坊確認
         if (cell.type === 'castle') {
           this._showCastleInteraction();
           return;
@@ -704,12 +698,10 @@ export class Game {
     const cell = this.buildingStore.map?.[row]?.[col];
     if (!cell) return;
     
-    // 城堡區域不能互動
     if (cell.type === 'castle') {
       return;
     }
 
-    // 依狀態執行對應行為
     switch (cell.status) {
       case 'locked':
         this.gameStore.startUnlockProcess({ x: col, y: row });
@@ -728,9 +720,7 @@ export class Game {
     }
   }
 
-  /*顯示城堡互動確認UI*/
   _showCastleInteraction() {
-    // 顯示城堡互動確認面板
     this.buildingStore.showCastleInteraction();
   }
 }  

@@ -74,17 +74,17 @@ export const usePlayerStore = defineStore('player', () => {
     try {
       const uid = userId.value || auth.currentUser?.uid || null;
       if (!uid) {
-        console.warn('⚠️ 無法載入玩家資料：尚未登入（無 uid）');
+        console.warn('無法載入玩家資料：尚未登入（無 uid）');
         return;
       }
       const playerData = await apiService.getPlayer(uid);
       
       // 更新本地狀態
       techPoints.value = playerData.techPoints || 0;
-      defense.value = playerData.defense || 120;
+      defense.value = playerData.defense || 0;
       correctlyAnsweredCount.value = playerData.answeredCount || 0;
       
-      console.log('✅ 玩家資料已從後端載入:', { techPoints: techPoints.value, defense: defense.value, answeredCount: correctlyAnsweredCount.value });
+      console.log('玩家資料已從後端載入:', { techPoints: techPoints.value, defense: defense.value, answeredCount: correctlyAnsweredCount.value });
     } catch (error) {
       console.error('載入玩家資料失敗:', error);   
     }
@@ -133,7 +133,7 @@ export const usePlayerStore = defineStore('player', () => {
       if (!uid) throw new Error('尚未登入，無法更新科技點');
       await apiService.updatePlayerTechPoints(uid, newTechPoints);
       techPoints.value = newTechPoints;
-      console.log('✅ 科技點已更新到資料庫:', newTechPoints);
+      console.log('科技點已更新到資料庫:', newTechPoints);
     } catch (error) {
       console.error('更新科技點失敗:', error);
     }
@@ -165,15 +165,15 @@ export const usePlayerStore = defineStore('player', () => {
       if (!uid) throw new Error('尚未登入，無法更新防禦值');
       await apiService.updatePlayerDefense(uid, newDefense);
       defense.value = newDefense;
-      console.log('✅ 防禦值已更新到資料庫:', newDefense);
+      console.log('防禦值已更新到資料庫:', newDefense);
       
-      // 同步城堡等級
+      // 同步伺服器等級
       try {
         const { useWallStore } = await import('./wall');
         const wallStore = useWallStore();
         await wallStore.syncCastleLevel();
       } catch (error) {
-        console.warn('同步城堡等級失敗:', error);
+        console.warn('同步伺服器等級失敗:', error);
       }
     } catch (error) {
       console.error('更新防禦值失敗:', error);

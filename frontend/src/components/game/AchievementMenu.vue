@@ -42,7 +42,24 @@
           </div>
           <div class="achievement-actions">
             <div class="achievement-reward">
-              <span class="reward-text"> {{ rewardText(achievement) }}</span>
+              <span 
+                v-if="(achievement.reward?.techPoints || 0) !== 0" 
+                class="reward-item"
+              >
+                <span class="material-symbols-outlined icon tech">currency_bitcoin</span>
+                <span class="reward-value">+{{ achievement.reward?.techPoints || 0 }}</span>
+              </span>、
+              <span 
+                v-if="(achievement.reward?.wallDefense || 0) !== 0" 
+                class="reward-item"
+              >
+                <span class="material-symbols-outlined icon defense">security</span>
+                <span class="reward-value">+{{ achievement.reward?.wallDefense || 0 }}</span>
+              </span>
+              <span 
+                v-if="((achievement.reward?.techPoints || 0) === 0) && ((achievement.reward?.wallDefense || 0) === 0)" 
+                class="reward-text"
+              >—</span>
             </div>
             <button v-if="achievement.status === 'unlocked'" class="claim-btn" @click="claimReward(achievement.id)">領取</button>
             <div v-else-if="achievement.status === 'finish'" class="unlocked-text">已領取</div>
@@ -120,13 +137,6 @@ const claimReward = (achievementId) => {
   achievementStore.claim(achievementId)
 }
 
-// 獎勵顯示文字
-const rewardText = (a) => {
-  const tech = a?.reward?.techPoints || 0
-  const wall = a?.reward?.wallDefense || 0
-  if (tech >= 0 && wall >= 0) return `+${tech} 💰、+${wall} 🛡️`
-  return '—'
-}
 </script>
 
 <style scoped>
@@ -263,12 +273,31 @@ const rewardText = (a) => {
   border-radius: 6px;
   min-width: 80px;
   text-align: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .reward-text { 
   font-size: 14px; 
   color: #856404;
   font-weight: 500;
+}
+
+.reward-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #856404;
+  font-weight: 600;
+}
+
+.reward-item .icon {
+  font-size: 18px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
 }
 
 .unlocked-text {

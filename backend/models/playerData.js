@@ -20,19 +20,10 @@ class PlayerData {
 
     if (!doc.exists) {
       const newPlayerData = {
-        // 遊戲資料
         castleLevel: 1,
-        defense: 120,
-        techPoints: 500,
-        
-        // 座標
-        x: 18,
-        y: 5,
-        position: {
-          x: 0,
-          y: 0
-        },
-        
+        defense: 0,
+        techPoints: 0,
+
         // 進度統計
         answeredCount: 0,
         developedCount: 0,
@@ -130,7 +121,7 @@ class PlayerData {
   
   // 初始化新玩家的地圖瓦片資料
   async initializePlayerLand(userId) {
-    console.log(`🗺️ 開始為新玩家 ${userId} 初始化地圖瓦片資料...`);
+    console.log(`開始為新玩家 ${userId} 初始化地圖瓦片資料...`);
     
     const batch = db.batch();
     const tilesCollection = this.land.doc(userId).collection('tiles');
@@ -161,9 +152,9 @@ class PlayerData {
     
     try {
       await batch.commit();
-      console.log(`✅ 成功為玩家 ${userId} 初始化了 400 個地圖瓦片`);
+      console.log(`成功為玩家 ${userId} 初始化了 400 個地圖瓦片`);
     } catch (error) {
-      console.error(`❌ 初始化玩家 ${userId} 地圖瓦片失敗:`, error);
+      console.error(`初始化玩家 ${userId} 地圖瓦片失敗:`, error);
       throw error;
     }
   }
@@ -208,8 +199,8 @@ class PlayerData {
 
   // 更新玩家成就狀態
   async updatePlayerAchievement(userId, achievementId, updateData) {
-    console.log(`📝 準備更新 Firestore: players/${userId}/achievements/${achievementId}`);
-    console.log(`📝 更新資料:`, updateData);
+    console.log(`準備更新 Firestore: players/${userId}/achievements/${achievementId}`);
+    console.log(`更新資料:`, updateData);
     
     const docRef = this.players.doc(userId).collection('achievements').doc(achievementId);
     const updatePayload = {
@@ -220,14 +211,12 @@ class PlayerData {
     // 如果是領取獎勵，記錄領取時間
     if (updateData.status === 'finish') {
       updatePayload.claimedAt = Date.now();
-      console.log(`🏆 成就已完成，記錄領取時間: ${updatePayload.claimedAt}`);
+      console.log(`成就已完成，記錄領取時間: ${updatePayload.claimedAt}`);
     }
     
-    console.log(`📝 最終更新資料:`, updatePayload);
     await docRef.set(updatePayload, { merge: true });
     
     const result = { id: achievementId, ...updatePayload };
-    console.log(`✅ Firestore 更新完成:`, result);
     return result;
   }
 

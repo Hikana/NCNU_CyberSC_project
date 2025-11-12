@@ -73,7 +73,7 @@ class BuildingService {
   async placeBuilding(userId, buildingId, position) {
     try {
       const { x, y } = position;
-      console.log('🔹 放置建築請求:', { userId, buildingId, position });
+      console.log('放置建築請求:', { userId, buildingId, position });
   
       // 1. 檢查建築是否存在（改從 Firestore 讀取）
       const buildingInfo = await shopData.getById(buildingId);
@@ -81,21 +81,21 @@ class BuildingService {
   
       // 2. 取得玩家資料
       const player = await playerData.getPlayer(userId);
-      console.log('🔹 玩家科技點:', player.techPoints, '建築需求:', buildingInfo.techCost);
+      console.log('玩家科技點:', player.techPoints, '建築需求:', buildingInfo.techCost);
   
       if (player.techPoints < buildingInfo.techCost) throw new Error('科技點不足');
   
       // 3. 取得地圖資料
       const mapData = await this.getMapState(userId);
       const targetTile = mapData[y]?.[x];
-      console.log('🔹 目標 tile 狀態:', targetTile);
+      console.log('目標 tile 狀態:', targetTile);
   
       if (!targetTile) throw new Error('無效的位置');
       if (targetTile.status !== 'developed') throw new Error('該位置無法放置建築');
   
-      // 4. 城堡限制
-      if (this.isCastleTile(y, x)) throw new Error('此區域為城堡，無法放置建築');
-      console.log('🔹 城堡檢查通過');
+      // 4. 伺服器區域限制
+      if (this.isCastleTile(y, x)) throw new Error('此區域為網路伺服器(Internet Server)，無法放置建築');
+      console.log('伺服器檢查通過');
   
       // 5. 扣除科技點
       await playerData.updatePlayer(userId, { techPoints: player.techPoints - buildingInfo.techCost });
@@ -187,7 +187,7 @@ class BuildingService {
       }
     } else if (kind === 'waf') {
       if (!(targetTile.type === 'castle')) {
-        throw new Error('WAF 只能架在城堡 (Internet Server)');
+        throw new Error('WAF 只能架在網路伺服器(Internet Server)');
       }
     }
 
