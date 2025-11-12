@@ -4,24 +4,59 @@
     <header class="w-screen bg-bgg py-12"></header>
 
     <!-- 開頭 -->
-    <SectionAnimation
-      :lines="[
-        '歡迎來到我們的資安教育網站，',
-        '首先，讓我們一起認識駭客的種類吧！(應該要改)',
-      ]"
-    />
+    <IntroductionSection />
 
     <!-- 網路七層 -->
-    <header class="relative w-screen bg-bgg py-32">
-      <div class="absolute top-14 left-8 text-wordcolor px-8">
-        <h2 class="text-4xl md:text-5xl font-bold">網路七層</h2>
-      </div>
-    </header>
     <div ref="ss">
-        <header class="w-screen bg-bgg py-10"></header>
-        <SevenStage />
+      <header class="relative w-screen bg-bgg py-32">
+        <div class="absolute top-14 left-8 text-wordcolor px-8">
+          <h2 class="text-4xl md:text-5xl font-bold">第一章：信件為什麼會寄丟？</h2>
+        </div>
+      </header>
+      <ChapterIntroduction />
+      <header class="w-screen bg-bgg py-10"></header>
+      <SevenStage />
     </div>
-    <!-- 密碼學 -->
+    <!-- 第二章：CIA 三元組 -->
+    <div ref="ciaSection">
+      <header class="relative w-screen bg-bgg py-32">
+        <div class="absolute top-14 left-8 text-wordcolor px-8">
+          <h2 class="text-4xl md:text-5xl font-bold">第二章：三封被偷看的信（CIA 三元組）</h2>
+        </div>
+      </header>
+      <header class="w-screen bg-bgg py-10"></header>
+      <CIABar />
+    </div>
+
+    <!-- 第三章：AAA 模型 -->
+    <div ref="aaaSection">
+      <header class="relative w-screen bg-bgg py-32">
+        <div class="absolute top-14 left-8 text-wordcolor px-8">
+          <h2 class="text-4xl md:text-5xl font-bold">第三章：誰是假郵差？（AAA 模型）</h2>
+        </div>
+      </header>
+      <header class="w-screen bg-bgg py-10"></header>
+      <AAA />
+    </div>
+
+    <!-- 第四章：OWASP -->
+    <SectionAnimation
+      :lines="[
+        '當我們建立網站或應用程式時，',
+        '了解常見漏洞就是防禦的第一步！',
+      ]"
+    />
+    <div ref="top10Section">
+        <header class="w-screen bg-bgg py-10"></header>
+        <header class="relative w-screen bg-bgg py-32">
+          <div class="absolute top-14 left-8 text-wordcolor px-8">
+            <h2 class="text-4xl md:text-5xl font-bold">第四章：BugBug 郵件風暴！（OWASP Top 10）</h2>
+          </div>
+        </header>
+        <NewTOP10 />
+    </div>
+
+    <!-- 第五章：密碼學 -->
     <SectionAnimation
       :lines="[
         '想守護資訊安全，',
@@ -30,13 +65,16 @@
     />
     <div ref="crypto">
         <header class="w-screen bg-bgg py-10"></header>
+        <header class="relative w-screen bg-bgg py-32">
+          <div class="absolute top-14 left-8 text-wordcolor px-8">
+            <h2 class="text-4xl md:text-5xl font-bold">第五章：祕密信封的魔法（密碼學）</h2>
+          </div>
+        </header>
         <WhyCrypto />
         <header class="w-screen bg-bgg py-32"></header>
 
         <Concept />
         <Key />
-        <CIABar />
-        <AAA />
 
         <header class="w-screen bg-bgg py-16"></header>
         <SymmetricEncryptionAndAES />
@@ -53,22 +91,6 @@
         <header class="w-screen bg-bgg py-16"></header>
     </div>
 
-    <!-- OWASP -->
-    <SectionAnimation
-      :lines="[
-        '當我們建立網站或應用程式時，',
-        '了解常見漏洞就是防禦的第一步！',
-      ]"
-    />
-    <div ref="top10Section">
-        <header class="w-screen bg-bgg py-10"></header>
-        <header class="relative w-screen bg-bgg py-32">
-          <div class="absolute top-14 left-8 text-wordcolor px-8">
-            <h2 class="text-4xl md:text-5xl font-bold">OWASP TOP10</h2>
-          </div>
-        </header>
-        <NewTOP10 />
-    </div>
 
     <!-- 結尾提示 -->
     <SectionAnimation
@@ -95,6 +117,8 @@ import AsymmetricEncryptionAndRSA from "@/components/Home/AsymmetricEncryptionAn
 import DH from "@/components/Home/DH.vue"
 import SevenStage from "@/components/Home/SevenStage.vue"
 import SectionAnimation from "@/components/Home/SectionAnimation.vue"
+import IntroductionSection from "@/components/Home/IntroductionSection.vue"
+import ChapterIntroduction from "@/components/Home/ChapterIntroduction.vue"
 import AAA from "@/components/Home/3A.vue"
 import Concept from "@/components/Home/Concept.vue"
 import WhyCrypto from "@/components/Home/WhyCrypto.vue"

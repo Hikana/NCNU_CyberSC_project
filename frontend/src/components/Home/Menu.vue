@@ -1,15 +1,14 @@
 <template>
   <!-- ✅ 固定導覽列 -->
-  <div class="fixed top-0 left-0 w-full z-[9999] bg-wordcolor bg-opacity-80 backdrop-blur-md flex justify-between items-center px-10 py-4">
+  <div class="fixed top-0 left-0 w-full z-[99999] bg-wordcolor bg-opacity-80 backdrop-blur-md flex justify-between items-center px-10 py-4 h-20">
 
     <!-- 🔹 左側 logo + 選單 -->
     <div class="flex items-center space-x-9">
       <!-- ✅ menu.gif / menu2.gif  -->
       <img
         :src="isScrolling ? '/src/assets/image/Menu/menu2.gif' : '/src/assets/image/Menu/menu.gif'"
-        class="w-14 h-14 cursor-pointer transition-transform "
+        class="w-20 h-20 cursor-pointer transition-transform "
       />
-
 
       <!-- ✅ 動態選單按鈕 -->
       <div class="flex space-x-7">
@@ -27,6 +26,12 @@
           {{ item.label }}
         </button>
       </div>
+    </div>
+
+    <!-- ✅ 中間網站標題 -->
+    <div class="absolute left-1/2 transform -translate-x-1/2 flex flex-col text-white items-center">
+      <div class="text-sm font-medium">資安教育網站</div>
+      <div class="text-base font-bold">Code Fortress：資安築城記</div>
     </div>
 
     <!-- 🔹 右側功能按鈕 -->
@@ -103,9 +108,11 @@ export default {
 
       /* ✅ 導覽列選項，ref 必須與父層 section 對應 */
       menuItems: [
-        { label: "OSI7", ref: "ss" },
-        { label: "密碼學", ref: "crypto" },
-        { label: "OWASP", ref: "top10Section" },
+        { label: "第一章", ref: "ss" },
+        { label: "第二章", ref: "ciaSection" },
+        { label: "第三章", ref: "aaaSection" },
+        { label: "第四章", ref: "top10Section" },
+        { label: "第五章", ref: "crypto" },
       ],
 
       /* ✅ 原本你寫的內容流程 */
@@ -228,7 +235,16 @@ export default {
     /* ✅ 點選導覽列 → 滾至對應區塊 */
     handleClick(item) {
       const target = this.$parent.$refs[item.ref]?.$el || this.$parent.$refs[item.ref];
-      if (target) target.scrollIntoView({ behavior: "smooth" });
+      if (target) {
+        const offset = 80; // 向上偏移 80px（導覽列高度）
+        const elementPosition = target.getBoundingClientRect().top + window.pageYOffset;
+        const offsetPosition = elementPosition - offset;
+        
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth"
+        });
+      }
     },
 
     /* ✅ 顯示 AES/RSA 內容 */

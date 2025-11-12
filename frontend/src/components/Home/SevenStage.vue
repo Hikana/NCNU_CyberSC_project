@@ -1,6 +1,5 @@
 <template>
   <div
-    ref="containerRef"
     class="bg-bgg relative w-full h-screen overflow-hidden flex justify-center items-center font-sans"
   >
     <div
@@ -30,7 +29,7 @@
         class="absolute left-[20px] top-0 w-1.5 h-full rounded-full transition-all duration-300 ease-out"
         :style="{
           backgroundColor: '#D5CFE1',
-          height: `${(layerSteps.length - 1) * 61}px`,
+          height: `${(layerSteps.length - 1) * 80}px`,
           transform: 'translateY(10px)',
         }"
       ></div>
@@ -40,7 +39,7 @@
         class="bg-can bg-cover bg-center absolute w-16 h-16 transition-transform duration-300 ease-out"
         :style="{
           left: '-16px',
-          transform: `translate(0, ${activeLayerIndex * 56}px)`,
+          transform: `translate(0, ${activeLayerIndex * 80}px)`,
         }"
       ></div>
 
@@ -50,7 +49,7 @@
         <div
           v-for="(layer, index) in layerSteps"
           :key="index"
-          class="flex items-center transition-all duration-500 ease-out h-14"
+          class="flex items-center transition-all duration-500 ease-out h-20"
         >
           <div
             class="w-5 h-5 rounded-full transition-all duration-300"
@@ -87,62 +86,10 @@
     </div>
 
     <div
-      class="content-container absolute left-[22%] top-[58%] -translate-y-[55%] w-[1200px] flex flex-col transition-opacity duration-300 opacity-100"
+      class="content-container absolute left-[22%] top-[50%] -translate-y-[50%] w-[1200px] flex flex-col transition-opacity duration-300 opacity-100"
     >
-      <transition-group
-        name="fade-in"
-        tag="div"
-        class="grid grid-cols-2 gap-x-2 gap-y-6 content-wrapper text-wordcolor"
-      >
-        <div
-          v-for="(step, index) in paginatedSteps"
-          :key="step.base"
-          class="px-4 py-3 rounded-xl shadow-lg text-left transition-all duration-300 ease-out w-[520px] relative overflow-hidden"
-          :style="{
-            backgroundColor: step.color.bg,
-            transform: `translateY(${index * 5}px)`,
-          }"
-        >
-          <div
-            class="flex justify-between items-center cursor-pointer"
-            @click="toggleExpand(index)"
-          >
-            <h3 class="font-bold text-[18px]" v-html="step.base"></h3>
-            <svg
-              class="w-6 h-6 transition-transform duration-300 transform"
-              :style="{
-                transform: expandedIndices.has(index)
-                  ? 'rotate(180deg)'
-                  : 'rotate(0deg)',
-                color: currentColor.dot,
-              }"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </div>
-
-          <transition name="expand">
-            <div
-              v-if="expandedIndices.has(index)"
-              class="mt-2 text-base leading-normal"
-              v-html="step.detail"
-            ></div>
-          </transition>
-        </div>
-      </transition-group>
-    </div>
-
-    <div class="absolute bottom-10 left-[22%] w-[1200px]">
-      <div class="flex justify-center items-center space-x-4">
+      <!-- 換頁功能 - 移到內容框上方 -->
+      <div class="flex justify-center items-center space-x-4 mb-1">
         <button
           class="px-3 py-1 rounded-lg font-bold shadow"
           :style="{ backgroundColor: currentColor.dot, color: 'white' }"
@@ -165,13 +112,78 @@
           &gt;
         </button>
       </div>
+
+      <transition-group
+        name="fade-in"
+        tag="div"
+        class="grid grid-cols-2 gap-x-2 gap-y-2 content-wrapper text-wordcolor"
+      >
+        <div
+          v-for="(step, index) in paginatedSteps"
+          :key="step.base"
+          class="px-4 py-3 rounded-xl shadow-lg text-left transition-all duration-300 ease-out w-[520px] h-[120px] relative overflow-hidden cursor-pointer hover:scale-105"
+          :style="{
+            backgroundColor: step.color.bg,
+            transform: `translateY(${index * 5}px)`,
+          }"
+          @click="showDetail(step)"
+        >
+          <div class="flex justify-between items-center h-full">
+            <h3 class="font-bold text-[18px] line-clamp-3" v-html="step.base"></h3>
+            <svg
+              class="w-6 h-6 flex-shrink-0 ml-2"
+              :style="{
+                color: currentColor.dot,
+              }"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </div>
+        </div>
+      </transition-group>
+    </div>
+
+    <!-- ✅ 詳細說明 Overlay 彈出視窗 -->
+    <div
+      v-if="selectedStep"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+      @click.self="closeDetail"
+    >
+      <div class="relative bg-lightGray rounded-xl p-8 flex flex-col w-[73vw] h-[75vh] overflow-hidden">
+        <h2 class="text-3xl font-bold text-wordcolor text-center mb-4">
+          {{ selectedStep.base }}
+        </h2>
+
+        <button
+          class="absolute top-2 right-2 p-2 text-xl bg-lightGray font-bold text-gray-800 hover:text-black rounded-full w-10 h-10 flex items-center justify-center"
+          @click="closeDetail"
+        >
+          ✕
+        </button>
+
+        <div class="flex-grow overflow-y-auto mt-4">
+          <div
+            class="bg-wordcolor rounded-2xl p-6 shadow-lg text-white text-lg"
+            v-html="selectedStep.detail"
+          ></div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 // ... (script setup 保持不變，因為邏輯與數據沒有調整)
-import { ref, onMounted, onBeforeUnmount, computed } from "vue";
+import { ref, computed } from "vue";
 
 const normalTextColor = ref('#464655')
 const colorGroups = {
@@ -264,73 +276,7 @@ const currentLayerSteps = computed(() => {
 });
 
 
-const isFullyVisible = ref(false);
-const containerRef = ref(null);
-let scrollTimeout = null;
-
-function handleScroll(e) {
-  // 只有當組件完全可見時才處理滾動鎖定
-  if (!isFullyVisible.value) return;
-
-  // 向下滾且還沒到最後一層時
-  if (e.deltaY > 0 && activeLayerIndex.value < layerSteps.length - 1) {
-    e.preventDefault();
-
-    if (scrollTimeout) {
-      clearTimeout(scrollTimeout);
-    }
-
-    scrollTimeout = setTimeout(() => {
-      activeLayerIndex.value++;
-      scrollTimeout = null;
-    }, 100);
-  }
-  // 向上滾且不在第一層時
-  else if (e.deltaY < 0 && activeLayerIndex.value > 0) {
-    e.preventDefault();
-
-    if (scrollTimeout) {
-      clearTimeout(scrollTimeout);
-    }
-
-    scrollTimeout = setTimeout(() => {
-      activeLayerIndex.value--;
-      scrollTimeout = null;
-    }, 100);
-  }
-}
-
-let observer = null;
-
-onMounted(() => {
-  // 注意：由於罐子是獨立定位的，我們需要調整左側層次點的間隔 (h-14, 60px) 來與罐子移動距離 (60px) 保持一致
-  window.addEventListener("wheel", handleScroll, { passive: false });
-
-  // 使用 Intersection Observer 監測組件是否完全填滿螢幕
-  observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          // 當組件完全可見時(intersectionRatio >= 0.8)
-          isFullyVisible.value = entry.intersectionRatio >= 0.8;
-          // console.log('可見度:', entry.intersectionRatio, '是否鎖定:', isFullyVisible.value);
-        });
-      },
-      {
-        threshold: Array.from({ length: 101 }, (_, i) => i / 100), // 0 到 1 的所有百分比
-      }
-  );
-
-  if (containerRef.value) {
-    observer.observe(containerRef.value);
-  }
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener("wheel", handleScroll);
-  if (observer && containerRef.value) {
-    observer.unobserve(containerRef.value);
-  }
-});
+// 移除滾輪控制功能，只能使用左側按鈕點擊切換層級
 // ✅ 新增分頁邏輯
 const currentPage = ref(1);
 const pageSize = 4;
@@ -352,14 +298,15 @@ function prevPage() {
   if (currentPage.value > 1) currentPage.value--;
 }
 
-// 展開收合
-const expandedIndices = ref(new Set());
-function toggleExpand(index) {
-  if (expandedIndices.value.has(index)) {
-    expandedIndices.value.delete(index);
-  } else {
-    expandedIndices.value.add(index);
-  }
+// 詳細說明 Overlay
+const selectedStep = ref(null);
+
+function showDetail(step) {
+  selectedStep.value = step;
+}
+
+function closeDetail() {
+  selectedStep.value = null;
 }
 
 </script>
@@ -386,19 +333,11 @@ function toggleExpand(index) {
   transition: transform 0.5s;
 }
 
-/* 展開動畫 */
-.expand-enter-active,
-.expand-leave-active {
-  transition: all 0.3s ease;
-}
-.expand-enter-from,
-.expand-leave-to {
-  opacity: 0;
-  max-height: 0;
-}
-.expand-enter-to,
-.expand-leave-from {
-  opacity: 1;
-  max-height: 300px;
+/* 文字截斷 */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>
