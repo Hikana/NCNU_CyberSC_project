@@ -437,15 +437,31 @@ export class Game {
         let valid = false;
         let reason = '';
 
-          // 通用防重複檢查：若該格已架設任何防火牆，拒絕重複架設
-          if (cell && String(cell.firewall || '').length > 0) {
-            this.buildingStore.showPlacementMessage('此建築已架設防火牆，不能重複架設');
-            this.buildingStore.selectTile(null);
-            return;
-          }
+        // 先做類型檢查（優先於「已架設」提示）
+        if (kind === 'hf') {
+          const isHostByTile = (cell.status === 'placed' && cell.type === 'host');
+          const isHostById = !!cell.buildingId && (this.buildingStore.getBuildingType?.(cell.buildingId)?.type === 'host');
+          valid = isHostByTile || isHostById;
+          if (!valid) reason = 'Host Firewall 只能架在主機 (Host) 上';
+        } else if (kind === 'nwf') {
+          const isRouterByTile = (cell.status === 'placed' && cell.type === 'router');
+          const isRouterById = !!cell.buildingId && (this.buildingStore.getBuildingType?.(cell.buildingId)?.type === 'router');
+          valid = isRouterByTile || isRouterById;
+          if (!valid) reason = 'Network Firewall 只能架在路由器 (Router) 上';
+        } else if (kind === 'waf') {
+          valid = (cell.type === 'castle');
+          if (!valid) reason = 'WAF 只能架在網路伺服器(Internet Server)';
+        }
 
-        // 追加規則：伺服器 3x3 若已任一格安裝 WAF，禁止再次架設
+        if (!valid) {
+          this.buildingStore.showPlacementMessage(reason || '無效的目標');
+          this.buildingStore.selectTile(null);
+          return;
+        }
+
+        // 類型正確之後再檢查重複架設
         if (kind === 'waf') {
+          // 伺服器 3x3 若任一格已有 WAF，禁止再次架設
           let castleHasWaf = false;
           try {
             const map = this.buildingStore.map || [];
@@ -465,27 +481,17 @@ export class Game {
             this.buildingStore.selectTile(null);
             return;
           }
-        }
-        if (kind === 'hf') {
-          const isHostByTile = (cell.status === 'placed' && cell.type === 'host');
-          const isHostById = !!cell.buildingId && (this.buildingStore.getBuildingType?.(cell.buildingId)?.type === 'host');
-          valid = isHostByTile || isHostById;
-          if (!valid) reason = 'Host Firewall 只能架在主機 (Host) 上';
-        } else if (kind === 'nwf') {
-          const isRouterByTile = (cell.status === 'placed' && cell.type === 'router');
-          const isRouterById = !!cell.buildingId && (this.buildingStore.getBuildingType?.(cell.buildingId)?.type === 'router');
-          valid = isRouterByTile || isRouterById;
-          if (!valid) reason = 'Network Firewall 只能架在路由器 (Router) 上';
-        } else if (kind === 'waf') {
-          valid = (cell.type === 'castle');
-          if (!valid) reason = 'WAF 只能架在網路伺服器(Internet Server)';
-        }
-        if (valid) {
-          this.buildingStore.selectTile({ x: col, y: row });
         } else {
-          this.buildingStore.showPlacementMessage(reason || '無效的目標');
-          this.buildingStore.selectTile(null);
+          // 一般格重複檢查
+          if (cell && String(cell.firewall || '').length > 0) {
+            this.buildingStore.showPlacementMessage('此建築已架設防火牆，不能重複架設');
+            this.buildingStore.selectTile(null);
+            return;
+          }
         }
+
+        // 通過所有檢查，允許選取
+        this.buildingStore.selectTile({ x: col, y: row });
       } else if (cell.status === 'developed') {
         this.buildingStore.selectTile({ x: col, y: row });
       } else {

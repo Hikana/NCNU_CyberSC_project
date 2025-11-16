@@ -36,15 +36,33 @@
   </div>
 
   <!-- 建築操作選擇 UI -->
-  <div v-if="buildingStore.deleteTarget" class="building-operation-ui">
-    <div class="operation-panel">
-      <div class="title">選擇你想要對建築做的操作</div>
-      <div class="desc">位置 ({{ buildingStore.deleteTarget.x }}, {{ buildingStore.deleteTarget.y }})</div>
+  <div v-if="buildingStore.deleteTarget" class="building-operation-ui" @click="cancelDelete">
+    <div class="operation-panel" @click.stop>
+      <div class="operation-header">
+        <span class="material-symbols-outlined op-icon">apartment</span>
+        <div class="op-texts">
+          <div class="title">建築操作</div>
+          <div class="desc">位置 ({{ buildingStore.deleteTarget.x }}, {{ buildingStore.deleteTarget.y }})</div>
+        </div>
+      </div>
+
       <div class="actions">
-        <button class="danger" @click="confirmDelete">拆除</button>
-        <button class="connect" @click="connectBuilding">連線</button>
-        <button class="disconnect" @click="deleteConnection">刪除連線</button>
-        <button class="ghost" @click="cancelDelete">取消</button>
+        <button class="btn connect" @click="connectBuilding">
+          <span class="material-symbols-outlined">hub</span>
+          <span>連線</span>
+        </button>
+        <button class="btn disconnect" @click="deleteConnection">
+          <span class="material-symbols-outlined">link_off</span>
+          <span>刪除連線</span>
+        </button>
+        <button class="btn danger" @click="confirmDelete">
+          <span class="material-symbols-outlined">delete</span>
+          <span>拆除</span>
+        </button>
+        <button class="btn ghost" @click="cancelDelete">
+          <span class="material-symbols-outlined">close</span>
+          <span>取消</span>
+        </button>
       </div>
     </div>
   </div>
@@ -64,13 +82,24 @@
   </div>
 
   <!-- 城堡互動確認 -->
-  <div v-if="buildingStore.castleInteraction" class="castle-interaction-ui">
-    <div class="castle-panel">
-      <div class="castle-title">練功坊</div>
-      <div class="castle-desc">確定進入練功坊嗎？</div>
+  <div v-if="buildingStore.castleInteraction" class="castle-interaction-ui" @click="cancelCastleInteraction">
+    <div class="castle-panel" @click.stop>
+      <div class="castle-header">
+        <span class="material-symbols-outlined op-icon">fitness_center</span>
+        <div class="op-texts">
+          <div class="title">練功坊</div>
+          <div class="desc">確定進入練功坊嗎？</div>
+        </div>
+      </div>
       <div class="castle-actions">
-        <button class="confirm-btn" @click="enterTrainingRoom">確認</button>
-        <button class="cancel-btn" @click="cancelCastleInteraction">取消</button>
+        <button class="btn connect" @click="enterTrainingRoom">
+          <span class="material-symbols-outlined">play_arrow</span>
+          <span>確認</span>
+        </button>
+        <button class="btn ghost" @click="cancelCastleInteraction">
+          <span class="material-symbols-outlined">close</span>
+          <span>取消</span>
+        </button>
       </div>
     </div>
   </div>
@@ -143,7 +172,6 @@
     v-if="buildingStore.showConnections" 
     class="connection-overlay"
   >
-    <!-- 蒙版内容为空，只是作为遮罩层，不响应点击事件 -->
   </div>
 </template>
 
@@ -316,84 +344,129 @@ function cancelConnection() {
 }
 
 .building-operation-ui {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 200;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(0, 255, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.08) 0%, transparent 50%),
+    linear-gradient(135deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 10, 20, 0.75) 100%);
+  backdrop-filter: blur(2px);
 }
 
 .operation-panel {
-  background: #a9b39ef3;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 16px;
-  min-width: 400px;
+  position: relative;
+  background: linear-gradient(135deg, rgba(8, 20, 36, 0.95) 0%, rgba(10, 32, 56, 0.92) 50%, rgba(8, 18, 32, 0.96) 100%);
+  border-radius: 16px;
+  border: 2px solid rgba(0, 255, 255, 0.25);
+  padding: 20px;
+  min-width: 460px;
+  box-shadow:
+    0 0 30px rgba(0, 255, 255, 0.2),
+    inset 0 0 20px rgba(0, 255, 255, 0.06);
 }
-.operation-panel .title {
-  font-weight: 700;
-  margin-bottom: 8px;
+
+.operation-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+  margin-bottom: 14px;
 }
-.operation-panel .desc {
-  color: #4b5563;
-  margin-bottom: 12px;
+.operation-header .op-icon {
+  font-size: 28px;
+  color: #22d3ee;
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.6));
 }
+.operation-header .title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #e6fbff;
+  letter-spacing: 1px;
+}
+.operation-header .desc {
+  color: #9bd8ff;
+  font-size: 13px;
+}
+.operation-header .op-texts { display: flex; flex-direction: column; gap: 2px; }
+
 .operation-panel .actions { 
   display: grid; 
   grid-template-columns: 1fr 1fr;
-  gap: 10px; 
+  gap: 12px; 
+}
+.operation-panel .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+}
+.operation-panel .btn .material-symbols-outlined {
+  font-size: 20px;
+  line-height: 1;
+}
+.operation-panel .connect {
+  background: linear-gradient(135deg, rgba(34,197,94,.95), rgba(16,185,129,.85));
+  border-color: rgba(16,185,129,.6);
+  box-shadow: 0 6px 18px rgba(16,185,129,.25);
+}
+.operation-panel .connect:hover { 
+  transform: translateY(-2px); 
+  box-shadow: 0 10px 24px rgba(16,185,129,.35);
+}
+.operation-panel .disconnect {
+  background: linear-gradient(135deg, rgba(59,130,246,.95), rgba(37,99,235,.85));
+  border-color: rgba(37,99,235,.6);
+  box-shadow: 0 6px 18px rgba(37,99,235,.25);
+}
+.operation-panel .disconnect:hover { 
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(37,99,235,.35);
 }
 .operation-panel .danger {
-  background: #dc2626;
-  color: #fff;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  flex: 1;
+  background: linear-gradient(135deg, rgba(239,68,68,.95), rgba(220,38,38,.9));
+  border-color: rgba(239,68,68,.6);
+  box-shadow: 0 6px 18px rgba(239,68,68,.25);
 }
-.operation-panel .danger:hover { background: #b91c1c; }
-.operation-panel .connect {
-  background: #3b82f6;
-  color: #fff;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  flex: 1;
+.operation-panel .danger:hover { 
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(239,68,68,.35);
 }
-.operation-panel .connect:hover { background: #2563eb; }
-.operation-panel .disconnect {
-  background: #ff6b35;
-  color: #fff;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  flex: 1;
-}
-.operation-panel .disconnect:hover { background: #e55a2b; }
 .operation-panel .ghost {
-  background: #d3f1d7;
-  color: #111827;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  flex: 1;
+  background: linear-gradient(135deg, rgba(148,163,184,.3), rgba(148,163,184,.15));
+  color: #e2e8f0;
+  border-color: rgba(148,163,184,.35);
 }
-.operation-panel .ghost:hover { background: #e5e7eb; }
+.operation-panel .ghost:hover { 
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(148,163,184,.45), rgba(148,163,184,.25));
+}
 
 .placement-ui {
-  position: absolute;
-  top: 90px;
-  left: 10px;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  z-index: 150; 
-  min-width: 250px;
+  position: fixed;
+  top: 120px;
+  left: 28px;
+  background: linear-gradient(135deg, rgba(12, 26, 46, 0.96), rgba(20, 54, 92, 0.92));
+  padding: 16px;
+  border-radius: 14px;
+  border: 2px solid rgba(59, 130, 246, 0.45);
+  box-shadow:
+    0 8px 24px rgba(59, 130, 246, 0.25),
+    inset 0 0 14px rgba(59, 130, 246, 0.15);
+  z-index: 160; 
+  min-width: 280px;
   pointer-events: auto;
 }
 
@@ -402,9 +475,11 @@ function cancelConnection() {
 }
 
 .placement-info p {
-  margin: 5px 0;
-  color: #333;
-  font-size: 14px;
+  margin: 6px 0;
+  color: #cfe7ff;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: .2px;
 }
 
 .placement-controls {
@@ -413,33 +488,38 @@ function cancelConnection() {
 }
 
 .confirm-btn {
-  background: #4CAF50;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(34,197,94,.95), rgba(16,185,129,.85));
+  color: #fff;
+  border: 1px solid rgba(16,185,129,.6);
+  padding: 10px 18px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 16px;
+  font-weight: 800;
+  box-shadow: 0 6px 18px rgba(16,185,129,.25);
+  transition: transform .15s ease, box-shadow .2s ease;
 }
 
 .confirm-btn:hover {
-  background: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(16,185,129,.35);
 }
 
 .cancel-btn {
-  background: #f44336;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(148,163,184,.3), rgba(148,163,184,.15));
+  color: #e2e8f0;
+  border: 1px solid rgba(148,163,184,.35);
+  padding: 10px 18px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 16px;
+  font-weight: 800;
+  transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
 }
 
 .cancel-btn:hover {
-  background: #da190b;
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(148,163,184,.45), rgba(148,163,184,.25));
 }
 
 .toast {
@@ -502,75 +582,96 @@ function cancelConnection() {
 }
 
 .castle-interaction-ui {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 400;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(0, 255, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.08) 0%, transparent 50%),
+    linear-gradient(135deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 10, 20, 0.75) 100%);
+  backdrop-filter: blur(2px);
 }
 
 .castle-panel {
-  background:rgba(255, 255, 255, 0.95);
-  border: 0 20px 60px rgba(0, 0, 0, 0.3);
+  position: relative;
+  background: linear-gradient(135deg, rgba(8, 20, 36, 0.95) 0%, rgba(10, 32, 56, 0.92) 50%, rgba(8, 18, 32, 0.96) 100%);
   border-radius: 16px;
-  padding: 24px;
-  min-width: 320px;
-  text-align: center;
-  animation: slideDownOnly 0.3s ease-out;
+  border: 2px solid rgba(0, 255, 255, 0.25);
+  padding: 20px;
+  min-width: 420px;
+  box-shadow:
+    0 0 30px rgba(0, 255, 255, 0.2),
+    inset 0 0 20px rgba(0, 255, 255, 0.06);
 }
 
-.castle-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: rgb(0, 0, 0);
-  margin-bottom: 12px;
-} 
-
-.castle-desc {
+.castle-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+  margin-bottom: 14px;
+}
+.castle-header .op-icon {
+  font-size: 28px;
+  color: #22d3ee;
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.6));
+}
+.castle-header .title {
   font-size: 18px;
-  color: rgb(0, 0, 0);
-  margin-bottom: 20px;
-  line-height: 1.4;
+  font-weight: 800;
+  color: #e6fbff;
+  letter-spacing: 1px;
 }
+.castle-header .desc {
+  color: #9bd8ff;
+  font-size: 13px;
+}
+.castle-header .op-texts { display: flex; flex-direction: column; gap: 2px; }
 
 .castle-actions {
-  display: flex;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.castle-actions .btn {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-}
-
-.castle-actions .confirm-btn {
-  background:  #667eea;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
 }
-
-.castle-actions .confirm-btn:hover {
-  background: #526ce1;
+.castle-actions .btn .material-symbols-outlined {
+  font-size: 20px;
+  line-height: 1;
+}
+.castle-actions .connect {
+  background: linear-gradient(135deg, rgba(34,197,94,.95), rgba(16,185,129,.85));
+  border-color: rgba(16,185,129,.6);
+  box-shadow: 0 6px 18px rgba(16,185,129,.25);
+}
+.castle-actions .connect:hover { 
+  transform: translateY(-2px); 
+  box-shadow: 0 10px 24px rgba(16,185,129,.35);
+}
+.castle-actions .ghost {
+  background: linear-gradient(135deg, rgba(148,163,184,.3), rgba(148,163,184,.15));
+  color: #e2e8f0;
+  border-color: rgba(148,163,184,.35);
+}
+.castle-actions .ghost:hover { 
   transform: translateY(-2px);
-}
-
-.castle-actions .cancel-btn {
-  background: #eab35c;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.castle-actions .cancel-btn:hover {
-  background: #daa249;
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(148,163,184,.45), rgba(148,163,184,.25));
 }
 
 .connection-toggle-ui {
@@ -610,15 +711,18 @@ function cancelConnection() {
 }
 
 .connection-ui {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: rgba(59, 130, 246, 0.95);
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  z-index: 150; 
-  min-width: 250px;
+  position: fixed;
+  top: 120px;
+  left: 28px;
+  background: linear-gradient(135deg, rgba(12, 26, 46, 0.96), rgba(20, 54, 92, 0.92));
+  padding: 16px;
+  border-radius: 14px;
+  border: 2px solid rgba(59, 130, 246, 0.45);
+  box-shadow:
+    0 8px 24px rgba(59, 130, 246, 0.25),
+    inset 0 0 14px rgba(59, 130, 246, 0.15);
+  z-index: 160; 
+  min-width: 280px;
   pointer-events: auto;
 }
 
@@ -627,9 +731,11 @@ function cancelConnection() {
 }
 
 .connection-info p {
-  margin: 5px 0;
-  color: white;
-  font-size: 14px;
+  margin: 6px 0;
+  color: #cfe7ff;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: .2px;
 }
 
 .connection-controls {
@@ -638,31 +744,37 @@ function cancelConnection() {
 }
 
 .connection-controls .cancel-btn {
-  background: #f44336;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(239,68,68,.95), rgba(220,38,38,.9));
+  color: #fff;
+  border: 1px solid rgba(239,68,68,.6);
+  padding: 10px 18px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 16px;
+  font-weight: 800;
+  box-shadow: 0 6px 18px rgba(239,68,68,.25);
+  transition: transform .15s ease, box-shadow .2s ease;
 }
 
 .connection-controls .cancel-btn:hover {
-  background: #da190b;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(239,68,68,.35);
 }
 
 .delete-connection-ui {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: rgba(220, 38, 38, 0.95);
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  z-index: 150; 
-  min-width: 300px;
-  max-width: 400px;
+  position: fixed;
+  top: 120px;
+  left: 28px;
+  background: linear-gradient(135deg, rgba(12, 26, 46, 0.96), rgba(20, 54, 92, 0.92));
+  padding: 16px;
+  border-radius: 14px;
+  border: 2px solid rgba(59, 130, 246, 0.45);
+  box-shadow:
+    0 8px 24px rgba(59, 130, 246, 0.25),
+    inset 0 0 14px rgba(59, 130, 246, 0.15);
+  z-index: 160; 
+  min-width: 320px;
+  max-width: 420px;
   pointer-events: auto;
 }
 
@@ -671,9 +783,11 @@ function cancelConnection() {
 }
 
 .delete-connection-info p {
-  margin: 5px 0;
-  color: white;
-  font-size: 14px;
+  margin: 6px 0;
+  color: #cfe7ff;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: .2px;
 }
 
 .connection-list {
@@ -686,33 +800,35 @@ function cancelConnection() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 8px 12px;
-  border-radius: 6px;
-  margin-bottom: 6px;
+  background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255,255,255,.2);
 }
 
 .connection-item span {
   color: white;
-  font-size: 13px;
+  font-size: 15px;
   flex: 1;
 }
 
 .delete-connection-btn {
-  background: #fff;
-  color: #dc2626;
-  border: none;
-  padding: 4px 12px;
-  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(239,68,68,.95), rgba(220,38,38,.9));
+  color: #fff;
+  border: 1px solid rgba(239,68,68,.6);
+  padding: 8px 14px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 12px;
-  font-weight: bold;
-  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 0 6px 18px rgba(239,68,68,.25);
+  transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
 }
 
 .delete-connection-btn:hover {
-  background: #fca5a5;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(239,68,68,.35);
 }
 
 .delete-connection-controls {
@@ -727,13 +843,10 @@ function cancelConnection() {
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
 }
 
-.delete-connection-controls .cancel-btn:hover {
-  background: #fca5a5;
-}
 
 /* 連線顯示時的蒙版 */
 .connection-overlay {
@@ -758,7 +871,5 @@ function cancelConnection() {
     opacity: 1;
   }
 }
-
-/* 蒙版已經設置為 z-index: 50，其他UI元素的 z-index 都高於此值，所以會正常顯示在蒙版上方 */
 
 </style>

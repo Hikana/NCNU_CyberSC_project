@@ -121,14 +121,9 @@ export const useGameStore = defineStore('game', () => {
         console.warn('同步城堡等級失敗:', error);
       }
       
-      // 播放答題音效
       try {
         const { audioService } = await import('@/services/audioService');
-        if (result.isCorrect) {
-          await audioService.playCorrectAnswerSound();
-          // 顯示 bingo 動畫
-          showBingoAnimation.value = true;
-        } else {
+        if (!result.isCorrect) {
           await audioService.playWrongAnswerSound();
         }
       } catch (error) {

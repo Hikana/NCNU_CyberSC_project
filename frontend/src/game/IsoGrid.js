@@ -659,7 +659,7 @@ export class IsoGrid {
           groundTileContainer.addChild(highlight);
         }
         
-        // 如果是玩家所在的瓦片，添加綠色邊框（與建築放置一樣的樣式）
+        // 如果是玩家所在的瓦片，添加藍色描邊（與建築放置的綠色相同風格，單層）
         if (isPlayerTile) {
           const playerHighlight = new PIXI.Graphics();
           playerHighlight
@@ -668,8 +668,7 @@ export class IsoGrid {
             .lineTo(0, halfH)
             .lineTo(-halfW, 0)
             .closePath()
-            .stroke({ width: 3, color: 0x00ff00, alpha: 1 });
-          
+            .stroke({ width: 3, color: 0x60a5fa, alpha: 1 });
           playerHighlight.zIndex = 10;
           groundTileContainer.addChild(playerHighlight);
         }

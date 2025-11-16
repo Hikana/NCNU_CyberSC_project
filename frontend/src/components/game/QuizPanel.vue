@@ -30,26 +30,30 @@
       <div class="card-face card-back">
         <div class="result-panel">
           <div :class="['badge', result?.isCorrect ? 'ok' : 'ng']">
-            {{ result?.isCorrect ? '✅ 答對了！' : '❌ 答錯了' }}
+            <template v-if="result?.isCorrect">
+              <span class="material-symbols-outlined">check_circle</span> 
+              答對了！<span v-if="hasUnlockedTile">土地已解鎖</span>
+            </template>
+            <template v-else>
+              <span class="material-symbols-outlined">cancel</span> 
+              答錯了
+            </template>
           </div>
           
           <!-- 答對時的獎勵信息 -->
           <div v-if="result?.isCorrect" class="reward-section">
-            <div class="reward-title">🎁 獲得獎勵：</div>
+            <div class="reward-title">獲得獎勵：</div>
             <div class="reward-items">
-              <div class="reward-item positive">+15 科技點</div>
-              <div class="reward-item positive">+10 防禦值</div>
-              <div v-if="hasUnlockedTile" class="reward-item positive">土地已解鎖</div>
-              <div v-if="result?.defenseTool?.success" class="reward-item positive">獲得防禦工具：{{ result.defenseTool.tool.name }}</div>
+              <div class="reward-item positive inline"><span class="material-symbols-outlined">currency_bitcoin</span> +15 科技點、<span class="material-symbols-outlined">security</span> +10 防禦值</div>
+              <div v-if="result?.defenseTool?.success" class="reward-item positive">獲得防禦工具：<br>{{ result.defenseTool.tool.name }}</div>
             </div>
           </div>
           
           <!-- 答錯時的懲罰信息 -->
           <div v-else class="penalty-section">
-            <div class="penalty-title">⚠️ 答錯懲罰：</div>
+            <div class="penalty-title">答錯懲罰：</div>
             <div class="penalty-items">
-              <div class="penalty-item">-5 科技點</div>
-              <div class="penalty-item">-5 防禦值</div>
+              <div class="penalty-item"><span class="material-symbols-outlined">currency_bitcoin</span> -5 科技點、<span class="material-symbols-outlined">security</span> -5 防禦值</div>
             </div>
             <div class="answer-text">正確答案：{{ result?.correctAnswer || '未知' }}</div>
           </div>
@@ -66,9 +70,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue"
+import { ref, computed, watch } from "vue"
 import { useGameStore } from '@/stores/game'
+import { useEventStore } from '@/stores/eventStore'
 const gameStore = useGameStore()
+const eventStore = useEventStore()
 const selectedAnswer = ref(null)
 const flipped = ref(false)
 const result = ref(null)
@@ -90,7 +96,30 @@ function submitChoice() {
   if (selectedAnswer.value === null) return
   gameStore.submitAnswer(selectedAnswer.value).then(r => {
     result.value = r
-    flipped.value = true
+    // 若有資安事件彈窗，等其關閉後再翻轉與放彩帶
+    if (r?.isCorrect && eventStore.isModalOpen) {
+      const stop = watch(
+        () => eventStore.isModalOpen,
+        (open) => {
+          if (!open) {
+            stop()
+            flipped.value = true
+            gameStore.showBingoAnimation = true
+            import('@/services/audioService')
+              .then(({ audioService }) => audioService.playCorrectAnswerSound())
+              .catch(() => {})
+          }
+        }
+      )
+    } else {
+      flipped.value = true
+      if (r?.isCorrect) {
+        gameStore.showBingoAnimation = true
+        import('@/services/audioService')
+          .then(({ audioService }) => audioService.playCorrectAnswerSound())
+          .catch(() => {})
+      }
+    }
   }).catch(() => {}).finally(() => {
     selectedAnswer.value = null
   })
@@ -275,13 +304,21 @@ function finish() {
 }
 
 .badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 16px; 
   border-radius: 999px;
   font-weight: 700;
   font-size: 16px; 
   margin-top: -6px; 
   margin-bottom: 8px; 
+}
+
+.badge .material-symbols-outlined {
+  font-size: 18px;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 .badge.ok {
@@ -313,12 +350,31 @@ function finish() {
 }
 
 .reward-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
   border: 1px solid #22c55e;
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 18px;
   font-weight: 500; 
   color: #22c55e;
+  text-align: center;
+}
+
+.reward-item.inline { 
+  white-space: nowrap; 
+}
+
+.reward-item .material-symbols-outlined {
+  font-size: 20px;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 .reward-item.positive {
@@ -344,12 +400,24 @@ function finish() {
 }
 
 .penalty-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
   border: 1px solid #ef4444;
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 18px;
   font-weight: 500;
   color: #ef4444;
+  text-align: center;
+}
+
+.penalty-item .material-symbols-outlined {
+  font-size: 20px;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 .wrong-info {
