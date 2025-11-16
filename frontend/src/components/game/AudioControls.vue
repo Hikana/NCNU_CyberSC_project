@@ -165,8 +165,8 @@ onMounted(() => {
 <style scoped>
 .audio-controls {
   position: fixed;
-  bottom: 220px; /* NPC 在 bottom: 20px，貓的高度約 180-200px，左上角在貓的上方 */
-  left: 10px; /* NPC 在 left: 30px，聲音控制放在貓的左側（左上角位置） */
+  bottom: 175px; 
+  left: 15px; 
   z-index: 10000;
   pointer-events: auto;
 }

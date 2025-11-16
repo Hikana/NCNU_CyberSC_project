@@ -385,9 +385,14 @@ export const useBuildingStore = defineStore('buildings', {
         console.log('本地連線列表已更新');
         
         // 顯示連線成功提示
-        const fromType = this.getBuildingType(this.map[this.connectionSource.y][this.connectionSource.x].buildingId);
-        const toType = this.getBuildingType(this.map[targetPosition.y][targetPosition.x].buildingId);
-        this.showConnectionSuccess(fromType, toType);
+        const fromCell = this.map[this.connectionSource.y][this.connectionSource.x];
+        const toCell = this.map[targetPosition.y][targetPosition.x];
+        const fromType = this.getBuildingType(fromCell.buildingId);
+        const toType = this.getBuildingType(toCell.buildingId);
+        // 從地圖中獲取建築類型（host、switch、router）
+        const fromBuildingType = fromCell.type || (fromType?.type || 'host');
+        const toBuildingType = toCell.type || (toType?.type || 'host');
+        this.showConnectionSuccess(fromType, toType, fromBuildingType, toBuildingType);
         
         // 刷新玩家資料以更新連線計數
         try {
@@ -504,11 +509,28 @@ export const useBuildingStore = defineStore('buildings', {
       this.connectionModal.isVisible = false;
     },
 
-    async showConnectionSuccess(fromType, toType) {
+    async showConnectionSuccess(fromType, toType, fromBuildingType = null, toBuildingType = null) {
+      // 獲取建築類型顯示名稱
+      const getTypeDisplayName = (type) => {
+        const typeMap = {
+          'host': 'Host',
+          'switch': 'Switch',
+          'router': 'Router',
+          'castle': 'Internet Server',
+          'firewall': 'Firewall'
+        };
+        return typeMap[type] || type;
+      };
+      
+      const fromTypeName = fromType?.name || '未知建築';
+      const toTypeName = toType?.name || '未知建築';
+      const fromTypeLabel = fromBuildingType ? ` (${getTypeDisplayName(fromBuildingType)})` : '';
+      const toTypeLabel = toBuildingType ? ` (${getTypeDisplayName(toBuildingType)})` : '';
+      
       this.showConnectionModal(
         'success',
         '連線成功！',
-        `✅ 成功建立連線：${fromType?.name} → ${toType?.name}`,
+        `✅ 成功建立連線：${fromTypeName}${fromTypeLabel} → ${toTypeName}${toTypeLabel}`,
         false
       );
       

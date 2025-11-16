@@ -359,9 +359,11 @@ export class Game {
     this.connectionWorld.sortableChildren = true;
     this.connectionApp.stage.addChild(this.connectionWorld);
     
-    // 同步主應用的位置和縮放
-    this.connectionWorld.position.copyFrom(this.world.position);
-    this.connectionWorld.scale.copyFrom(this.world.scale);
+    // 同步主應用的位置和縮放（確保 world 已初始化）
+    if (this.world) {
+      this.connectionWorld.position.copyFrom(this.world.position);
+      this.connectionWorld.scale.copyFrom(this.world.scale);
+    }
   }
 
   _createMap() {
@@ -411,10 +413,16 @@ export class Game {
     const cell = this.buildingStore.map?.[row]?.[col];
     if (!cell) return;
     
-    // 伺服器區域不能互動（除非正在放置 WAF）
+    // 伺服器區域的點擊處理
     if (cell.type === 'castle') {
       const allowWafPlacement = this.buildingStore?.isPlacing && this.buildingStore.isPlacingFirewall?.() && this.buildingStore.getSelectedFirewallKind?.() === 'waf';
-      if (!allowWafPlacement) return;
+      if (!allowWafPlacement) {
+        // 如果正在放置模式但不是 WAF，提示用戶
+        if (this.buildingStore?.isPlacing) {
+          this.buildingStore.showPlacementMessage('伺服器區域只能架設 WAF 防火牆');
+        }
+        return;
+      }
     }
 
     // 連線模式處理

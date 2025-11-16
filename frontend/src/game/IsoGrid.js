@@ -610,39 +610,35 @@ export class IsoGrid {
           }
         }
 
-        // 互動區域：預設不包含城堡；若為放置 WAF，則允許點擊城堡格
-        const isCastle = cell.type === 'castle';
-        const enableCastleHit = isCastle && this.buildingStore?.isPlacing && this.buildingStore.isPlacingFirewall?.() && this.buildingStore.getSelectedFirewallKind?.() === 'waf';
-        if (!isCastle || enableCastleHit) {
-          const tile = new PIXI.Graphics();
-          tile
-            .moveTo(0, -halfH)
-            .lineTo(halfW, 0)
-            .lineTo(0, halfH)
-            .lineTo(-halfW, 0)
-            .closePath()
-            .stroke({ width: 1, color: 0xcccccc, alpha: 0.3})
-            .fill({ color: 0xffffff, alpha: 0 });
-          tile.zIndex = 2;
-          groundTileContainer.addChild(tile);
+        // 互動區域：所有格子都允許點擊（包括城堡格），具體操作由點擊處理邏輯決定
+        const tile = new PIXI.Graphics();
+        tile
+          .moveTo(0, -halfH)
+          .lineTo(halfW, 0)
+          .lineTo(0, halfH)
+          .lineTo(-halfW, 0)
+          .closePath()
+          .stroke({ width: 1, color: 0xcccccc, alpha: 0.3})
+          .fill({ color: 0xffffff, alpha: 0 });
+        tile.zIndex = 2;
+        groundTileContainer.addChild(tile);
 
-          // 設置點擊區域和事件
-          groundTileContainer.hitArea = new PIXI.Rectangle(-halfW, -halfH, this.tileSize, this.tileSize);
-          groundTileContainer.eventMode = 'static';
-          groundTileContainer.interactive = true;
-          groundTileContainer.cursor = 'pointer';
+        // 設置點擊區域和事件
+        groundTileContainer.hitArea = new PIXI.Rectangle(-halfW, -halfH, this.tileSize, this.tileSize);
+        groundTileContainer.eventMode = 'static';
+        groundTileContainer.interactive = true;
+        groundTileContainer.cursor = 'pointer';
 
-          // 綁定點擊事件
-          groundTileContainer.on('pointertap', () => {
-            if (this.onTileClick) {
-              this.onTileClick(row, col);
-            }
-          });
+        // 綁定點擊事件
+        groundTileContainer.on('pointertap', () => {
+          if (this.onTileClick) {
+            this.onTileClick(row, col);
+          }
+        });
 
-          // hover 效果
-          groundTileContainer.on('pointerover', () => { tile.tint = 0xdddddd; });
-          groundTileContainer.on('pointerout', () => { tile.tint = 0xffffff; });
-        }
+        // hover 效果
+        groundTileContainer.on('pointerover', () => { tile.tint = 0xdddddd; });
+        groundTileContainer.on('pointerout', () => { tile.tint = 0xffffff; });
 
         // 如果是選中的瓦片（建築放置），添加綠色邊框
         if (isSelected) {
