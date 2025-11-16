@@ -51,21 +51,35 @@ export const useAchievementStore = defineStore('achievement', {
       const answeredCount = playerStore.correctlyAnsweredCount || 0;
 
       let itemCount = 0;
-      let developedCount = 0;
       if (Array.isArray(buildingStore.map) && buildingStore.map.length) {
         buildingStore.map.forEach(row => {
           row.forEach(cell => {
             if (!cell) return;
             if (cell.status === 'placed') itemCount++;
-            if (cell.status === 'developed') developedCount++;
           });
         });
       }
 
-      // TODO: 若有事件計數，從事件 store 注入；暫置 0
-      const eventCount = 0;
+      const eventCount = playerStore.eventResolvedCount || 0;
+      const connectToSwitchCount = playerStore.connectToSwitchCount || 0;
+      const connectToRouterCount = playerStore.connectToRouterCount || 0;
+      const connectToInternetServerCount = playerStore.connectToInternetServerCount || 0;
+      const castleLevel = playerStore.castleLevel || 0;
 
-      const gameStats = { answeredCount, itemCount, developedCount, eventCount };
+      // 統計已放置的 switch 和 router 數量
+      let switchCount = 0;
+      let routerCount = 0;
+      if (Array.isArray(buildingStore.map) && buildingStore.map.length) {
+        buildingStore.map.forEach(row => {
+          row.forEach(cell => {
+            if (!cell || cell.status !== 'placed') return;
+            if (cell.type === 'switch') switchCount++;
+            else if (cell.type === 'router') routerCount++;
+          });
+        });
+      }
+
+      const gameStats = { answeredCount, itemCount, eventCount, connectToSwitchCount, connectToRouterCount, connectToInternetServerCount, switchCount, routerCount, castleLevel };
       
       try {
         const uid = playerStore.userId || playerStore.initFromAuth();
@@ -81,14 +95,30 @@ export const useAchievementStore = defineStore('achievement', {
         // 如果 API 失敗，仍使用本地計算作為備用
         this.achievements = this.achievements.map(a => {
           const { field, value } = a.condition || { field: 'answeredCount', value: a.maxProgress || 1 };
+          
+          
           const target = value || a.maxProgress || 1;
           const current = field === 'answeredCount' ? answeredCount
                         : field === 'itemCount' ? itemCount
-                        : field === 'developedCount' ? developedCount
                         : field === 'eventCount' ? eventCount
+                        : field === 'connectToSwitchCount' ? connectToSwitchCount
+                        : field === 'connectToRouterCount' ? connectToRouterCount
+                        : field === 'connectToInternetServerCount' ? connectToInternetServerCount
+                        : field === 'switchCount' ? switchCount
+                        : field === 'routerCount' ? routerCount
+                        : field === 'castleLevel' ? castleLevel
                         : 0;
           const progress = Math.min(current, a.maxProgress || target);
           const willUnlock = current >= target;
+          
+          // 等級類型成就：如果曾經達到過（unlocked 或 finish），就保持狀態不變（里程碑式成就）
+          if (field === 'castleLevel') {
+            if (a.status === 'finish' || a.status === 'unlocked') {
+              // 曾經達到過，保持原狀態（里程碑式成就，不會因為等級下降而失去）
+              return { ...a, progress: Math.max(progress, a.progress || 0), status: a.status };
+            }
+          }
+          
           const nextStatus = a.status === 'finish' ? 'finish' : (willUnlock ? 'unlocked' : 'locked');
           return { ...a, progress, status: nextStatus };
         });

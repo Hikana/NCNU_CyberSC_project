@@ -104,7 +104,13 @@ class EventData {
       // 解決後直接刪除該事件文件（不再顯示於清單）
       await docRef.delete();
       console.log('✅ 資安事件已解決並從資料庫刪除:', eventData.eventName);
-      return { success: true, message: '事件已成功解決並刪除', eventName: eventData.eventName };
+
+      // 累積玩家已解決事件次數
+      await this.players.doc(userId).set({ eventResolvedCount: FieldValue.increment(1) }, { merge: true });
+      const snap = await this.players.doc(userId).get();
+      const count = (snap.data()?.eventResolvedCount) || 0;
+
+      return { success: true, message: '事件已成功解決並刪除', eventName: eventData.eventName, eventResolvedCount: count };
     } else {
       return { success: false, message: '使用的道具無法解決此事件' };
     }

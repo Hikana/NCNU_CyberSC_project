@@ -48,7 +48,7 @@
               >
                 <span class="material-symbols-outlined icon tech">currency_bitcoin</span>
                 <span class="reward-value">+{{ achievement.reward?.techPoints || 0 }}</span>
-              </span>、
+              </span>
               <span 
                 v-if="(achievement.reward?.wallDefense || 0) !== 0" 
                 class="reward-item"
@@ -88,14 +88,13 @@ const emit = defineEmits(['close'])
 // 使用成就 store
 const achievementStore = useAchievementStore()
 
-// 檢查成就進度（成就已在 GamePage 初始化時載入）
 onMounted(async () => {
-  // 如果成就已經載入，只檢查是否有新的成就可以解鎖
+  // 總是從資料庫重新載入成就，確保狀態與資料庫同步
+  await achievementStore.loadAchievements()
+  
+  // 載入完成後，再檢查是否有新的成就可以解鎖（所有成就都是計數型）
   if (achievementStore.achievements.length > 0) {
     await achievementStore.checkAllAchievements()
-  } else {
-    // 如果成就還沒載入（備用方案），則載入成就
-    await achievementStore.loadAchievements()
   }
 })
 

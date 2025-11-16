@@ -106,6 +106,21 @@ export const useWallStore = defineStore('wall', {
         await apiService.updatePlayerCastleLevel(currentUserId, newLevel);
         this.castleLevel = newLevel;
         
+        // 同步到 playerStore
+        playerStore.castleLevel = newLevel;
+        
+        // 刷新玩家資料以確保資料同步
+        await playerStore.loadPlayerData();
+        
+        // 檢查成就（基於最新的 castleLevel）
+        try {
+          const { useAchievementStore } = await import('./achievement');
+          const achievementStore = useAchievementStore();
+          await achievementStore.checkAllAchievements();
+        } catch (e) {
+          console.warn('檢查成就失敗（忽略）:', e);
+        }
+        
         console.log('伺服器等級已更新到資料庫:', newLevel);
       } catch (error) {
         console.error('更新伺服器等級失敗:', error);

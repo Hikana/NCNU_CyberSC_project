@@ -230,8 +230,8 @@ function triggerDefenseAnimation(change) {
 }
 
 .tech-change {
-  color: #4ade80; /* 綠色 */
-  text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);
+  color: #60a5fa;
+  text-shadow: 0 0 10px rgba(96, 165, 250, 0.8);
 }
 
 .defense-change {

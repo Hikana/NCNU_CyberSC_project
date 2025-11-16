@@ -265,6 +265,14 @@ export const useBuildingStore = defineStore('buildings', {
           this.selectedTile = null;
           this.selectedBuildingId = null;
           console.log('建築放置成功，更新地圖');
+          // 嘗試刷新成就（例如首次建造 Switch/Router）
+          try {
+            const { useAchievementStore } = await import('./achievement');
+            const achievementStore = useAchievementStore();
+            achievementStore.loadAchievements();
+          } catch (e) {
+            console.warn('刷新成就失敗（忽略）:', e);
+          }
         } else {
           console.error('建築放置失敗:', response.message || '未知錯誤');
           alert('建築放置失敗，請稍後再試');
@@ -380,6 +388,24 @@ export const useBuildingStore = defineStore('buildings', {
         const fromType = this.getBuildingType(this.map[this.connectionSource.y][this.connectionSource.x].buildingId);
         const toType = this.getBuildingType(this.map[targetPosition.y][targetPosition.x].buildingId);
         this.showConnectionSuccess(fromType, toType);
+        
+        // 刷新玩家資料以更新連線計數
+        try {
+          const { usePlayerStore } = await import('./player');
+          const playerStore = usePlayerStore();
+          await playerStore.loadPlayerData();
+        } catch (e) {
+          console.warn('刷新玩家資料失敗（忽略）:', e);
+        }
+        
+        // 嘗試刷新成就
+        try {
+          const { useAchievementStore } = await import('./achievement');
+          const achievementStore = useAchievementStore();
+          achievementStore.loadAchievements();
+        } catch (e) {
+          console.warn('刷新成就失敗（忽略）:', e);
+        }
         
       } catch (error) {
         console.error('保存連線失敗:', error);

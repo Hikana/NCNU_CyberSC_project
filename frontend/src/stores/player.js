@@ -8,6 +8,7 @@ export const usePlayerStore = defineStore('player', () => {
   const userId = ref(null);
   const techPoints = ref(0);
   const defense = ref(0);
+  const eventResolvedCount = ref(0);
 
   /**
    * 玩家在遊戲世界中的邏輯座標
@@ -20,6 +21,10 @@ export const usePlayerStore = defineStore('player', () => {
   });
   
   const correctlyAnsweredCount = ref(0); // 記錄答對總題數
+  const connectToSwitchCount = ref(0); // 記錄連線到 Switch 的次數
+  const connectToRouterCount = ref(0); // 記錄連線到 Router 的次數
+  const connectToInternetServerCount = ref(0); // 記錄連線到網路伺服器的次數
+  const castleLevel = ref(0); // 記錄伺服器等級
 
   // --- Actions (方法) ---
   
@@ -83,6 +88,11 @@ export const usePlayerStore = defineStore('player', () => {
       techPoints.value = playerData.techPoints || 0;
       defense.value = playerData.defense || 0;
       correctlyAnsweredCount.value = playerData.answeredCount || 0;
+      eventResolvedCount.value = playerData.eventResolvedCount || 0;
+      connectToSwitchCount.value = playerData.connectToSwitchCount || 0;
+      connectToRouterCount.value = playerData.connectToRouterCount || 0;
+      connectToInternetServerCount.value = playerData.connectToInternetServerCount || 0;
+      castleLevel.value = playerData.castleLevel || 0;
       
       console.log('玩家資料已從後端載入:', { techPoints: techPoints.value, defense: defense.value, answeredCount: correctlyAnsweredCount.value });
     } catch (error) {
@@ -209,8 +219,13 @@ export const usePlayerStore = defineStore('player', () => {
     userId,
     techPoints,
     defense,
+    eventResolvedCount,
     position,
     correctlyAnsweredCount,
+    connectToSwitchCount,
+    connectToRouterCount,
+    connectToInternetServerCount,
+    castleLevel,
     setUserId,
     initFromAuth,
     incrementCorrectlyAnsweredCount,

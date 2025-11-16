@@ -14,7 +14,8 @@ class EventService {
 
   // 解決資安事件
   async resolveSecurityEvent(userId, eventId, usedItemId) {
-    return eventData.resolveSecurityEvent(userId, eventId, usedItemId);
+    const result = await eventData.resolveSecurityEvent(userId, eventId, usedItemId);
+    return result;
   }
 
   // 更新玩家資料

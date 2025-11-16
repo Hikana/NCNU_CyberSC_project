@@ -31,7 +31,6 @@ class BuildingService {
             return {
               status: 'developed',
               type: 'castle',
-              baseType: 'castle',
               buildingId: null,
               firewall: (playerTileData && playerTileData.firewall) ? playerTileData.firewall : null,
               x,
@@ -43,7 +42,6 @@ class BuildingService {
             return {
               status: playerTileData.status,
               type: playerTileData.type || 'empty',
-              baseType: playerTileData.baseType || playerTileData.type || 'empty',
               buildingId: playerTileData.buildingId ?? null,
               firewall: playerTileData.firewall ?? null,
               x,
@@ -54,7 +52,6 @@ class BuildingService {
           return {
             status: 'locked',
             type: 'empty',
-            baseType: 'empty',
             buildingId: null,
             x,
             y
@@ -109,9 +106,7 @@ class BuildingService {
       });
   
       // 7. 返回更新後地圖
-      const updatedMap = await this.getMapState(userId);
-      console.log('✅ 建築放置成功');
-      return updatedMap;
+      return await this.getMapState(userId);
   
     } catch (error) {
       console.error('❌ placeBuilding 錯誤:', error.message);
@@ -242,7 +237,42 @@ class BuildingService {
 
   // 添加連線
   async addConnection(userId, connection) {
-    return await playerData.addConnection(userId, connection);
+    // 新增連線
+    const saved = await playerData.addConnection(userId, connection);
+
+    try {
+      const shopData = require('../models/shopData');
+      const map = await this.getMapState(userId);
+      const endpoints = [connection.from, connection.to];
+
+      // 為兩端解析「連線對象類型」，帶有多重保險：type -> shop buildingId -> 空
+      const types = await Promise.all(endpoints.map(async (p) => {
+        const cell = map?.[p.y]?.[p.x];
+        let t = cell?.type || null;
+        if (!t && cell?.buildingId != null) {
+          try {
+            const info = await shopData.getById(Number(cell.buildingId));
+            t = info?.type || null;
+          } catch (_) {}
+        }
+        return t || 'empty';
+      }));
+
+      // 增加對應的計數（如果連線中任一端是目標類型就計數）
+      if (types.includes('switch')) {
+        await playerData.incrementConnectToSwitchCount(userId);
+      }
+      if (types.includes('router')) {
+        await playerData.incrementConnectToRouterCount(userId);
+      }
+      if (types.includes('castle')) {
+        await playerData.incrementConnectToInternetServerCount(userId);
+      }
+    } catch (e) {
+      console.warn('增加連線計數時發生錯誤（略過不中斷）:', e.message);
+    }
+
+    return saved;
   }
 
   // 刪除連線

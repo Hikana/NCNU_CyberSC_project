@@ -151,12 +151,27 @@ export const useEventLogStore = defineStore('eventLog', {
         // 從本地列表中移除已解決的事件
         this.unresolvedEvents = this.unresolvedEvents.filter(event => event.id !== eventId);
         
-        console.log('✅ 解決資安事件:', eventId, '使用工具:', usedItemId);
-        console.log('📜 剩餘未處理事件數量:', this.unresolvedEvents.length);
-        
         // 如果沒有未處理的事件了，停止持續懲罰計時器
         if (this.unresolvedEvents.length === 0) {
           this.stopPenaltyTimer();
+        }
+        
+        // 刷新玩家資料以更新 eventResolvedCount
+        try {
+          const { usePlayerStore } = await import('./player');
+          const playerStore = usePlayerStore();
+          await playerStore.loadPlayerData();
+        } catch (e) {
+          console.warn('刷新玩家資料失敗（忽略）:', e);
+        }
+        
+        // 檢查成就（基於最新的 eventResolvedCount）
+        try {
+          const { useAchievementStore } = await import('./achievement');
+          const achievementStore = useAchievementStore();
+          await achievementStore.checkAllAchievements();
+        } catch (e) {
+          console.warn('檢查成就失敗（忽略）:', e);
         }
         
         return result;

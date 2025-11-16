@@ -12,6 +12,16 @@
           :title="item.name"
         >
           <span class="icon">{{ item.icon }}</span>
+          <span 
+            v-if="item.id === 'achievement' && hasUnclaimedAchievements" 
+            class="badge-dot"
+            aria-label="有未領取成就"
+          ></span>
+          <span 
+            v-if="item.id === 'logs' && hasUnresolvedEvents" 
+            class="badge-dot"
+            aria-label="有未解決的資安事件"
+          ></span>
         </button>
       </div>
 
@@ -253,6 +263,7 @@ import AchievementMenu from '@/components/game/AchievementMenu.vue'
 import HistoryPanel from '@/components/game/HistoryPanel.vue'
 import SuccessMessage from '@/components/game/SuccessMessage.vue'
 import { useUiStore } from '@/stores/ui';
+import { useAchievementStore } from '@/stores/achievement'
 import { useInventoryStore } from '@/stores/inventory.js';
 import { useAuthStore } from '@/stores/authStore';
 import { useEventLogStore } from '@/stores/eventLogStore';
@@ -265,6 +276,7 @@ const inv = useInventoryStore()
 const authStore = useAuthStore(); 
 const eventLogStore = useEventLogStore();
 const buildingStore = useBuildingStore();
+const achievementStore = useAchievementStore()
 
 // 動態載入說明頁面
 const HelpPanel = defineAsyncComponent(() => import('@/components/game/HelpPanel.vue'))
@@ -482,6 +494,15 @@ const menuItems = ref([
 
 const currentView = ref('inventory');
 
+// 是否有未領取的成就
+const hasUnclaimedAchievements = computed(() => {
+  return (achievementStore.achievements || []).some(a => a.status === 'unlocked')
+})
+// 是否有未解決的資安事件
+const hasUnresolvedEvents = computed(() => {
+  return (eventLogStore.unresolvedEvents || []).length > 0
+})
+
 
 // 監聽頁面切換，當切換到資安事件紀錄時重新載入
 watch(currentView, async (newView) => {
@@ -584,7 +605,7 @@ async function deleteConnection(connectionId) {
 
 <style scoped>
 .npc-menu {
-  position: fixed; /* 改为 fixed 以确保在正确的堆叠上下文中 */
+  position: fixed; 
   bottom: 20px;
   left: 220px; /* 從 170px 增加到 220px，往右移動 50px */
   width: calc(100% - 250px); /* 調整寬度以保持合適的右邊距 */
@@ -629,13 +650,13 @@ async function deleteConnection(connectionId) {
   gap: 15px;
   padding-right: 20px;
   border-right: 2px solid rgba(0,0,0,0.1);
-  min-width: 80px; /* 确保有足够宽度 */
-  flex-shrink: 0; /* 防止被压缩 */
+  min-width: 80px; 
+  flex-shrink: 0; 
 }
 .menu-button {
   width: 60px;
   height: 60px;
-  min-width: 60px; /* 防止被压缩 */
+  min-width: 60px; 
   border: 3px solid transparent;
   border-radius: 15px;
   background-color: rgba(255, 255, 255, 0.5);
@@ -644,10 +665,21 @@ async function deleteConnection(connectionId) {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden; /* 防止内容溢出 */
-  position: relative; /* 用于定位 */
-  padding: 0; /* 确保没有内边距 */
-  box-sizing: border-box; /* 包含边框在尺寸内 */
+  overflow: visible; 
+  position: relative; 
+  padding: 0; 
+  box-sizing: border-box; 
+}
+.menu-button .badge-dot {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 12px;
+  height: 12px;
+  z-index: 10; 
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.9); 
 }
 .menu-button:hover {
   background-color: rgba(255, 255, 255, 0.9);
@@ -722,7 +754,7 @@ async function deleteConnection(connectionId) {
 .menu-button .icon {
   font-size: 28px;
   transition: transform 0.2s;
-  display: flex; /* 使用flex确保正确对齐 */
+  display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1; /* 防止行高影响 */
@@ -734,8 +766,8 @@ async function deleteConnection(connectionId) {
 }
 .menu-button.active .icon {
     transform: scale(1.2);
-    max-width: 100%; /* 限制放大后的最大宽度 */
-    max-height: 100%; /* 限制放大后的最大高度 */
+    max-width: 100%; 
+    max-height: 100%; 
 }
 .menu-right {
   flex-grow: 1;
@@ -747,7 +779,6 @@ async function deleteConnection(connectionId) {
     color: #2c3e50;
 }
 
-/* 將標題統一成成就系統風格 */
 .page-title {
   margin: 0px 0px 10px 0px;
   font-size: 24px;
@@ -1315,10 +1346,10 @@ async function deleteConnection(connectionId) {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 0; /* 防止 flex 項目超出容器 */
-  max-width: 100%; /* 確保不會超出容器寬度 */
-  overflow: visible; /* 改為 visible，讓狀態標籤可以顯示 */
-  box-sizing: border-box; /* 確保邊框和內邊距包含在寬度內 */
+  min-width: 0; 
+  max-width: 100%; 
+  overflow: visible; 
+  box-sizing: border-box; 
 }
 
 .event-item:hover {

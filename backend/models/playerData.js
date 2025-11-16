@@ -26,8 +26,12 @@ class PlayerData {
 
         // 進度統計
         answeredCount: 0,
+        eventResolvedCount: 0,
         developedCount: 0,
         itemCount: 0,
+        connectToSwitchCount: 0,
+        connectToRouterCount: 0,
+        connectToInternetServerCount: 0,
         
         // 答題記錄（只存這個，count 用這個計算）
         correctlyAnsweredIds: [],
@@ -258,6 +262,25 @@ class PlayerData {
     for (const doc of snapshot2.docs) {
       await doc.ref.delete();
     }
+  }
+
+  // 增加連線計數
+  async incrementConnectToSwitchCount(userId) {
+    return this.players.doc(userId).update({
+      connectToSwitchCount: FieldValue.increment(1)
+    });
+  }
+
+  async incrementConnectToRouterCount(userId) {
+    return this.players.doc(userId).update({
+      connectToRouterCount: FieldValue.increment(1)
+    });
+  }
+
+  async incrementConnectToInternetServerCount(userId) {
+    return this.players.doc(userId).update({
+      connectToInternetServerCount: FieldValue.increment(1)
+    });
   }
 }
 

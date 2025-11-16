@@ -64,7 +64,7 @@ class PlayerService {
 
   // 檢查並更新成就進度
   async checkAchievements(userId, gameStats) {
-    const { answeredCount, itemCount, developedCount, eventCount } = gameStats;
+    const { answeredCount, itemCount, developedCount, eventCount, connectToSwitchCount, connectToRouterCount, connectToInternetServerCount, switchCount, routerCount, castleLevel } = gameStats;
     
     // 1. 取得玩家當前成就進度
     const playerAchievements = await this.getPlayerAchievements(userId);
@@ -75,14 +75,29 @@ class PlayerService {
       const { field, value } = achievement.condition || { field: 'answeredCount', value: achievement.maxProgress || 1 };
       const target = value || achievement.maxProgress || 1;
       
+      
       const current = field === 'answeredCount' ? answeredCount
                     : field === 'itemCount' ? itemCount
                     : field === 'developedCount' ? developedCount
                     : field === 'eventCount' ? eventCount
+                    : field === 'connectToSwitchCount' ? (connectToSwitchCount || 0)
+                    : field === 'connectToRouterCount' ? (connectToRouterCount || 0)
+                    : field === 'connectToInternetServerCount' ? (connectToInternetServerCount || 0)
+                    : field === 'switchCount' ? (gameStats.switchCount || 0)
+                    : field === 'routerCount' ? (gameStats.routerCount || 0)
+                    : field === 'castleLevel' ? (castleLevel || 0)
                     : 0;
       
       const progress = Math.min(current, achievement.maxProgress || target);
       const willUnlock = current >= target;
+      
+      // 等級類型成就：如果曾經達到過（unlocked 或 finish），就保持狀態不變（里程碑式成就）
+      if (field === 'castleLevel') {
+        if (originalStatus === 'finish' || originalStatus === 'unlocked') {
+          // 曾經達到過，保持原狀態（里程碑式成就，不會因為等級下降而失去）
+          return { ...achievement, progress: Math.max(progress, achievement.progress || 0), status: originalStatus, _originalStatus: originalStatus };
+        }
+      }
       
       // 若已 finished，保持 finished；未達成 -> locked；達成 -> unlocked（等待手動領取）
       const nextStatus = originalStatus === 'finish' ? 'finish' : (willUnlock ? 'unlocked' : 'locked');
@@ -107,6 +122,7 @@ class PlayerService {
       return cleanAchievement;
     });
   }
+
 }
 
 module.exports = new PlayerService();
