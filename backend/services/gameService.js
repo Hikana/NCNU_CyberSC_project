@@ -246,15 +246,15 @@ class GameService {
         return null;
       }
       
-      // 🎲 根據位置決定觸發機率
-      const triggerChance = this.calculateEventTriggerChance(x, y);
+      // 🎲 固定觸發機率（每一格都是相同的機率）
+      const triggerChance = 0.3; // 30% 固定機率
       const randomValue = Math.random();
       
       console.log(`位置 (${x}, ${y}) 觸發機率: ${(triggerChance * 100).toFixed(1)}%, 隨機值: ${(randomValue * 100).toFixed(1)}%`);
       
       if (randomValue < triggerChance) {
-        // 觸發事件
-        const eventType = this.selectRandomEventType(x, y);
+        // 觸發事件 - 完全隨機選擇事件類型
+        const eventType = this.selectRandomEventType();
         const eventId = Date.now(); // 使用時間戳作為唯一ID
         
         console.log(`🎲 在位置 (${x}, ${y}) 觸發事件: ${eventType}`);
@@ -275,49 +275,14 @@ class GameService {
   }
 
   /**
-   * 計算事件觸發機率
-   * @param {number} x - X 座標
-   * @param {number} y - Y 座標
-   * @returns {number} - 觸發機率 (0-1)
-   */
-  calculateEventTriggerChance(x, y) {
-    // 基礎機率
-    let baseChance = 0.3; // 30% 基礎機率
-    
-    // 根據距離城堡中心的距離調整機率
-    const castleCenterX = 1; // 城堡中心 X
-    const castleCenterY = 1; // 城堡中心 Y
-    const distance = Math.sqrt(Math.pow(x - castleCenterX, 2) + Math.pow(y - castleCenterY, 2));
-    
-    // 距離越遠，機率越高
-    const distanceBonus = Math.min(distance * 0.05, 0.4); // 最多增加 40%
-    
-    // 邊界區域機率更高
-    const isEdge = x === 0 || x === 19 || y === 0 || y === 19;
-    const edgeBonus = isEdge ? 0.2 : 0; // 邊界增加 20%
-    
-    const finalChance = Math.min(baseChance + distanceBonus + edgeBonus, 0.8); // 最高 80%
-    
-    return finalChance;
-  }
-
-  /**
-   * 根據位置選擇事件類型
-   * @param {number} x - X 座標
-   * @param {number} y - Y 座標
+   * 隨機選擇事件類型
    * @returns {string} - 事件類型
    */
-  selectRandomEventType(x, y) {
-    // 根據位置區域選擇不同的事件類型
-    const eventTypes = ['ddos', 'sql_injection', 'xss', 'csrf', 'brute_force'];
+  selectRandomEventType() {
+    // 所有可用的事件類型
+    const eventTypes = ['ddos', 'sql_injection', 'xss', 'brute_force', 'supply_chain'];
     
-    // 邊界區域更容易觸發 DDoS
-    const isEdge = x === 0 || x === 19 || y === 0 || y === 19;
-    if (isEdge) {
-      return Math.random() < 0.6 ? 'ddos' : eventTypes[Math.floor(Math.random() * eventTypes.length)];
-    }
-    
-    // 其他區域隨機選擇
+    // 完全隨機選擇
     return eventTypes[Math.floor(Math.random() * eventTypes.length)];
   }
   
