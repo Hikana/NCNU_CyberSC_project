@@ -7,18 +7,12 @@ import { useAuthStore } from '@/stores/authStore';
 
 // 防禦工具定義
 const DEFENSE_TOOLS = {
-  waf: { name: 'WAF 應用程式防火牆' },
+  cdn: { name: 'CDN 分流雲網' },
   prepared_statements: { name: 'Prepared Statements（參數化查詢）' },
   output_encoding: { name: 'Output Encoding（輸出編碼）' },
-  csrf: { name: 'CSRF Token（隨機驗證碼）' },
   mfa: { name: 'MFA（多因素驗證）' },
-  security_awareness: { name: 'Security Awareness Training（資安意識訓練）' },
-  tls_https: { name: 'TLS/HTTPS 加密' },
-  backup: { name: '定期備份（3-2-1 備份原則）' },
-  least_privilege: { name: 'Least Privilege（最小權限原則）' },
-  http_cookie: { name: 'HttpOnly & Secure Cookie 屬性' },
-  dnssec: { name: 'DNSSEC（Domain Name System Security Extensions）' },
-  code_signing: { name: 'Code Signing（軟體簽章驗證）' }
+  code_signing: { name: 'Code Signing（軟體簽章驗證）' },
+  port_blocking: { name: 'Port Blocking（封鎖未用埠口）' },
 };
 
 export const useInventoryStore = defineStore('inventory', {
@@ -65,7 +59,6 @@ export const useInventoryStore = defineStore('inventory', {
           
           this.isLoaded = true;
           this.loading = false;
-          console.log('📦 防禦工具資料已同步:', this.items.length, '種工具');
         }, (err) => {
           console.error('防禦工具同步失敗', err);
           this.loading = false;
@@ -81,7 +74,6 @@ export const useInventoryStore = defineStore('inventory', {
         }
         
         this.isLoaded = true;
-        console.log('✅ 防禦工具初始化完成', this.items.length, '種工具');
       } catch (err) {
         console.error('❌ 初始化防禦工具失敗', err);
       } finally {
@@ -108,7 +100,6 @@ export const useInventoryStore = defineStore('inventory', {
         }
       });
       
-      console.log('📦 更新防禦工具列表:', this.items.map(item => `${item.name} x${item.qty}`));
     },
     
     async refreshInventory() {
@@ -122,7 +113,6 @@ export const useInventoryStore = defineStore('inventory', {
     // 使用防禦工具
     async useItem(toolId) {
       try {
-        console.log(`🛡️ 嘗試使用防禦工具: ${toolId}`);
         
         // 檢查是否擁有該工具
         const item = this.getByTemplate(toolId);
@@ -135,7 +125,6 @@ export const useInventoryStore = defineStore('inventory', {
         const result = await apiService.useDefenseTool(toolId);
         
         if (result.success) {
-          console.log(`✅ 成功使用防禦工具 ${toolId}`);
           // Firestore 即時監聽會自動更新本地狀態
           return result.data;
         } else {

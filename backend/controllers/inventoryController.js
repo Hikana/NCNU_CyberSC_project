@@ -104,7 +104,6 @@ exports.useDefenseTool = async (req, res) => {
       });
     }
 
-    console.log(`🛡️ 收到使用防禦工具請求: 玩家=${userId}, 工具=${toolId}`);
 
     const inventoryService = require('../services/inventoryService');
     const result = await inventoryService.useDefenseTool(userId, toolId);

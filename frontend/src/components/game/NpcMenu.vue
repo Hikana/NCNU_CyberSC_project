@@ -315,18 +315,15 @@ function closeToolNotification() {
 // 點擊物品顯示詳細資訊
 function selectItem(item) {
   selectedItem.value = item
-  console.log('選中物品:', item)
 }
 
 // 點擊事件顯示詳細資訊
 function selectEvent(event) {
   selectedEvent.value = event
-  console.log('選中事件:', event)
 }
 
 // 處理事件 - 顯示工具選擇介面
 function resolveEvent(event) {
-  console.log('🛡️ 準備處理事件:', event.eventName)
   // 如果已經顯示同一個事件的工具選擇，則關閉；否則顯示
   if (showToolSelection.value && selectedEventForTool.value?.id === event.id) {
     showToolSelection.value = false
@@ -352,7 +349,6 @@ async function useToolForEvent(tool) {
       return
     }
     
-    console.log(`🛡️ 使用工具 ${tool.name} 處理事件:`, selectedEventForTool.value.eventName)
     
     // 檢查工具是否為正確的防禦
     const isCorrectTool = selectedEventForTool.value.correctDefenses.includes(tool.id)
@@ -435,8 +431,6 @@ function getRequiredTools(event) {
 // 使用物品
 async function useItem(item) {
   try {
-    console.log('🛡️ 嘗試使用物品:', item.name)
-    
     // 檢查是否擁有該物品
     if (!item || item.qty <= 0) {
       showToolNotification(
@@ -483,8 +477,6 @@ async function useItem(item) {
     // 如果沒有需要該工具的事件，或玩家選擇不處理，則正常使用物品
     await inventoryStore.useItem(item.id)
     
-    console.log(`✅ 成功使用物品 ${item.name}`)
-    
     // 顯示使用結果
     showToolNotification(
       'success',
@@ -517,14 +509,10 @@ onMounted(async () => {
   // 初始化背包，即時監聽 Firestore
   const uid = authStore.user?.uid;
 
-  console.log('🚀 初始化背包，玩家ID:', uid)
   await inventoryStore.init(uid)
-  console.log('✅ 背包初始化完成，物品數量:', inventoryStore.items.length)
   
   // 載入資安事件
-  console.log('🚀 載入資安事件，玩家ID:', uid)
   await eventLogStore.loadSecurityEvents()
-  console.log('✅ 資安事件載入完成，未處理事件數量:', eventLogStore.unresolvedEvents.length)
 })
 
 
@@ -555,9 +543,7 @@ const hasUnresolvedEvents = computed(() => {
 // 監聽頁面切換，當切換到資安事件紀錄時重新載入
 watch(currentView, async (newView) => {
   if (newView === 'logs') {
-    console.log('🔄 切換到資安事件紀錄頁面，重新載入事件...');
     await eventLogStore.loadSecurityEvents();
-    console.log('✅ 資安事件重新載入完成，未處理事件數量:', eventLogStore.unresolvedEvents.length);
   }
 });
 

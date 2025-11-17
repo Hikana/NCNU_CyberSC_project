@@ -21,18 +21,12 @@ export const useEventStore = defineStore('event', () => {
 
   // 防禦建材目錄（全清單）- 與 inventory store 的 DEFENSE_TOOLS 保持一致
   const allDefenseCatalog = [
-    { key: 'waf', name: 'WAF 應用程式防火牆', description: '像一堵超強水壩，把敵人洪流分散、導流，不會一次壓垮城門' },
-    { key: 'prepared_statements', name: 'Prepared Statements（參數化查詢）', description: '守門官只認「合法口令」，奇怪的字句會被擋下' },
-    { key: 'output_encoding', name: 'Output Encoding（輸出編碼）', description: '所有怪異符號透過水晶窗時會自動被「過濾」，變成無害的圖案' },
-    { key: 'csrf', name: 'CSRF Token（隨機驗證碼）', description: '每次國王下令，必須附上「獨特石板碎片」，外人無法輕易偽造' },
-    { key: 'mfa', name: 'MFA（多因素驗證）', description: '就算有人帶上千鑰匙，也還需要「魔法咒語」或「指紋」才能打開' },
-    { key: 'security_awareness', name: 'Security Awareness Training（資安意識訓練）', description: '城內掛上一道魔眼布條，能讓士兵一眼看穿假印章、假字跡' },
-    { key: 'tls_https', name: 'TLS/HTTPS 加密', description: '信鴿必須經過密語管道，內容被加密，敵人就算偷到也看不懂' },
-    { key: 'backup', name: '定期備份（3-2-1 備份原則）', description: '就算糧倉被上鎖，地下密室還存有乾糧，百姓不至於餓死' },
-    { key: 'least_privilege', name: 'Least Privilege（最小權限原則）', description: '清潔工只能拿掃帚，無論穿上誰的盔甲，都無法下達軍令' },
-    { key: 'http_cookie', name: 'HttpOnly & Secure Cookie 屬性', description: '令牌一旦過時，就會自動燃燒，敵人偷到也無用' },
-    { key: 'dnssec', name: 'DNSSEC（Domain Name System Security Extensions）', description: '城門外立了一塊魔法石碑，所有路牌都必須對應石碑，否則視為假路' },
-    { key: 'code_signing', name: 'Code Signing（軟體簽章驗證）', description: '每袋糧食出廠封袋時都要打上獨特的蠟印，若印章破損就不能進城' },
+    { key: 'cdn', name: 'CDN 分流雲網', description: '把爆量流量分散到各地鏟鏟節點，守住伺服器入口' },
+    { key: 'prepared_statements', name: 'Prepared Statements（參數化查詢）', description: '資料庫守門官只認合法口令，奇怪語句一個字都進不來' },
+    { key: 'output_encoding', name: 'Output Encoding（輸出編碼）', description: '可疑符號會被轉成無害文字魚骨，咒語啟動不了' },
+    { key: 'mfa', name: 'MFA（多因素驗證）', description: '除了鑰匙還要肉球驗證' },
+    { key: 'code_signing', name: 'Code Signing（軟體簽章驗證）', description: '安裝前先檢查官方爪印簽章，假貨立刻冒煙' },
+    { key: 'port_blocking', name: 'Port Blocking（封鎖未用埠口）', description: '把沒用的通訊小洞全部封上，流氓貓找不到入口' },
   ];
 
   const availableDefenses = computed(() => {
@@ -66,15 +60,8 @@ export const useEventStore = defineStore('event', () => {
     if (!success && activeEventId.value) {
       const event = EVENTS[activeEventId.value];
       if (event) {
-        console.log('🔴 事件失敗，準備記錄到資安事件:', event.name);
-        
-        // 立即扣除科技點50和防禦值10
         const newTechPoints = Math.max(0, playerStore.techPoints - 50);
         const newDefense = Math.max(0, playerStore.defense - 10);
-        
-        console.log('💰 扣除懲罰: 科技點 -50, 防禦值 -10');
-        console.log(`   科技點: ${playerStore.techPoints} → ${newTechPoints}`);
-        console.log(`   防禦值: ${playerStore.defense} → ${newDefense}`);
         
         // 更新玩家資料
         await playerStore.updateTechPoints(newTechPoints);
@@ -90,15 +77,9 @@ export const useEventStore = defineStore('event', () => {
           timestamp: new Date().toISOString() // 使用 ISO 字串格式
         };
         
-        console.log('📝 準備發送的事件資料:', eventData);
-        
         eventLogStore.addSecurityEvent(eventData)
           .then(result => {
-            console.log('✅ 資安事件記錄成功:', result);
-            // 確認事件已正確添加到 store
-            if (result && result.id) {
-              console.log('📜 事件已成功添加到 eventLogStore，ID:', result.id);
-            } else {
+            if (!result || !result.id) {
               console.warn('⚠️ 事件記錄回應格式異常:', result);
             }
           })

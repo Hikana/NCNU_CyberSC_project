@@ -186,7 +186,6 @@ async function onDefenseClick(key) {
       return // 沒有就不能用
     }
 
-    console.log(`🛡️ 嘗試使用防禦工具: ${key}`)
     
     // 先告訴事件系統「我選了這個防禦」
     eventStore.chooseDefense(key)
@@ -194,11 +193,6 @@ async function onDefenseClick(key) {
     // 無論成功或失敗，都扣除工具數量（因為已經使用了）
     await inventoryStore.useItem(key)
     
-    if (eventStore.status === 'success') {
-      console.log(`✅ 成功使用防禦工具 ${key}`)
-    } else {
-      console.log(`❌ 防禦工具 ${key} 無效，但已消耗`)
-    }
     
   } catch (error) {
     console.error('❌ 使用防禦工具失敗:', error)

@@ -159,32 +159,24 @@ class GameService {
     try {
       // 防禦工具清單
       const defenseTools = [
-        { id: 'waf', name: 'WAF 應用程式防火牆' },
+        { id: 'cdn', name: 'CDN 分流雲網' },
         { id: 'prepared_statements', name: 'Prepared Statements（參數化查詢）' },
         { id: 'output_encoding', name: 'Output Encoding（輸出編碼）' },
-        { id: 'csrf', name: 'CSRF Token（隨機驗證碼）' },
         { id: 'mfa', name: 'MFA（多因素驗證）' },
-        { id: 'security_awareness', name: 'Security Awareness Training（資安意識訓練）' },
-        { id: 'tls_https', name: 'TLS/HTTPS 加密' },
-        { id: 'backup', name: '定期備份（3-2-1 備份原則）' },
-        { id: 'least_privilege', name: 'Least Privilege（最小權限原則）' },
-        { id: 'http_cookie', name: 'HttpOnly & Secure Cookie 屬性' },
-        { id: 'dnssec', name: 'DNSSEC（Domain Name System Security Extensions）' },
-        { id: 'code_signing', name: 'Code Signing（軟體簽章驗證）' }
+        { id: 'code_signing', name: 'Code Signing（軟體簽章驗證）' },
+        { id: 'port_blocking', name: 'Port Blocking（封鎖未用埠口）' },
       ];
 
       // 隨機選擇一個防禦工具
       const randomIndex = Math.floor(Math.random() * defenseTools.length);
       const selectedTool = defenseTools[randomIndex];
       
-      console.log(`🛡️ 隨機選擇防禦工具: ${selectedTool.name} (${selectedTool.id})`);
 
       // 簡化：只存儲數量到玩家資料中
       await playerData.updatePlayer(userId, {
         [`defenseTools.${selectedTool.id}`]: FieldValue.increment(1)
       });
 
-      console.log(`✅ 防禦工具已加入背包: ${selectedTool.name}`);
       
       return {
         success: true,
@@ -242,7 +234,6 @@ class GameService {
       
       // 🚫 避免在 0-4*0-4 區域觸發事件
       if (x >= 0 && x <= 4 && y >= 0 && y <= 4) {
-        console.log(`位置 (${x}, ${y}) 在安全區域內，不觸發事件`);
         return null;
       }
       
@@ -250,14 +241,12 @@ class GameService {
       const triggerChance = 0.3; // 30% 固定機率
       const randomValue = Math.random();
       
-      console.log(`位置 (${x}, ${y}) 觸發機率: ${(triggerChance * 100).toFixed(1)}%, 隨機值: ${(randomValue * 100).toFixed(1)}%`);
       
       if (randomValue < triggerChance) {
         // 觸發事件 - 完全隨機選擇事件類型
         const eventType = this.selectRandomEventType();
         const eventId = Date.now(); // 使用時間戳作為唯一ID
         
-        console.log(`🎲 在位置 (${x}, ${y}) 觸發事件: ${eventType}`);
         
         return {
           id: eventId,
@@ -280,7 +269,7 @@ class GameService {
    */
   selectRandomEventType() {
     // 所有可用的事件類型
-    const eventTypes = ['ddos', 'sql_injection', 'xss', 'brute_force', 'supply_chain'];
+    const eventTypes = ['ddos', 'sql_injection', 'xss', 'brute_force', 'supply_chain', 'unauthorized_access'];
     
     // 完全隨機選擇
     return eventTypes[Math.floor(Math.random() * eventTypes.length)];

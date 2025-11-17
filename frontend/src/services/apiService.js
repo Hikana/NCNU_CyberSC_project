@@ -327,10 +327,7 @@ export const apiService = {
     const uid = userId || getCurrentUid();
     if (!uid) throw new Error('尚未登入，無法新增資安事件');
     const url = `http://localhost:3000/api/events/${encodeURIComponent(uid)}`;
-    console.log('📡 發送新增資安事件請求:', { url, eventData });
-    const result = await requestInventory(url, { method: 'POST', body: eventData });
-    console.log('📡 新增資安事件回應:', result);
-    return result;
+    return requestInventory(url, { method: 'POST', body: eventData });
   },
 
   // 解決資安事件

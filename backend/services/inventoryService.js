@@ -27,7 +27,6 @@ class InventoryService {
   // 使用防禦工具
   async useDefenseTool(userId, toolId) {
     try {
-      console.log(`🛡️ 玩家 ${userId} 嘗試使用防禦工具: ${toolId}`);
       
       // 獲取玩家資料
       const player = await playerData.getPlayer(userId);
@@ -52,7 +51,6 @@ class InventoryService {
       // 更新玩家資料
       await playerData.updatePlayer(userId, updateData);
       
-      console.log(`✅ 成功使用防禦工具 ${toolId}，剩餘數量: ${currentQty - 1}`);
       
       return {
         success: true,

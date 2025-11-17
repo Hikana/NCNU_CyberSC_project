@@ -175,7 +175,6 @@ export const usePlayerStore = defineStore('player', () => {
       if (!uid) throw new Error('尚未登入，無法更新防禦值');
       await apiService.updatePlayerDefense(uid, newDefense);
       defense.value = newDefense;
-      console.log('防禦值已更新到資料庫:', newDefense);
       
       // 同步伺服器等級
       try {

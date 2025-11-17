@@ -163,8 +163,6 @@ export const useGameStore = defineStore('game', () => {
             
             // 🎲 處理觸發的事件
             if (responseData.triggeredEvent) {
-              console.log('🎲 觸發隨機事件:', responseData.triggeredEvent);
-              
               // 導入事件store並觸發事件
               const { useEventStore } = await import('./eventStore');
               const eventStore = useEventStore();

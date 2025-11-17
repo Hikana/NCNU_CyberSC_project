@@ -72,18 +72,46 @@ export const useHistoryStore = defineStore('history', {
      */
     async addUserHistoryEntry(entryData) {
       if (!entryData) {
-        console.log('❌ addHistoryEntry 收到空資料');
+        console.log('❌ addUserHistoryEntry 收到空資料');
         return;
       }
 
-      // 👈 確保在添加記錄前，歷史記錄已經載入
+      // 確保在添加記錄前，歷史記錄已經載入
       await this.initialize();
 
-      console.log('🏪 historyStore 收到新記錄:', entryData);
+      console.log('📝 historyStore 收到新答題記錄:', entryData);
       this.history.unshift(entryData);
-      console.log('🏪 historyStore 目前記錄數:', this.history.length);
-      console.log('🏪 historyStore 最新記錄:', this.history[0]);
+      console.log('📝 historyStore 目前記錄數:', this.history.length);
+      console.log('📝 historyStore 最新記錄:', this.history[0]);
       console.log('📝 新增答題紀錄成功');
+    },
+
+    /**
+     * 添加事件記錄到歷史（用於未解決的資安事件）
+     * @param {object} eventData - 事件記錄物件
+     */
+    async addEventLogEntry(eventData) {
+      if (!eventData) {
+        console.log('❌ addEventLogEntry 收到空資料');
+        return;
+      }
+
+      try {
+        // 調用後端API保存事件記錄
+        await apiService.addEventLogEntry(eventData);
+        
+        // 確保在添加記錄前，歷史記錄已經載入
+        await this.initialize();
+
+        this.history.unshift(eventData);
+        console.log('📜 historyStore 目前記錄數:', this.history.length);
+        console.log('📜 historyStore 最新記錄:', this.history[0]);
+      } catch (error) {
+        console.error('❌ 添加事件記錄失敗:', error);
+        // 即使後端失敗，也添加到本地列表
+        await this.initialize();
+        this.history.unshift(eventData);
+      }
     },
 
     /**

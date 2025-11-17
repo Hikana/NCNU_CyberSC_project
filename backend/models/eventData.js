@@ -39,7 +39,6 @@ class EventData {
   async addSecurityEvent(userId, eventData) {
     if (!userId) throw new Error('缺少 userId');
     
-    console.log('📝 後端收到新增資安事件請求:', { userId, eventData });
     
     const eventlogRef = this.players.doc(userId).collection('eventlog');
     
@@ -60,11 +59,9 @@ class EventData {
       resolved: false
     };
     
-    console.log('📝 準備保存的事件文件:', eventDoc);
     
     // 使用指定的 ID 作為文件 ID
     await eventlogRef.doc(eventData.id.toString()).set(eventDoc);
-    console.log('✅ 資安事件已保存到資料庫:', eventData.eventName, '文件ID:', eventData.id);
     
     // 回傳完整的資料結構，確保與前端期望一致
     const savedEvent = {
@@ -77,7 +74,6 @@ class EventData {
       resolved: false
     };
     
-    console.log('📝 回傳給前端的事件資料:', savedEvent);
     return savedEvent;
   }
 
@@ -103,7 +99,6 @@ class EventData {
     if (isCorrectDefense) {
       // 解決後直接刪除該事件文件（不再顯示於清單）
       await docRef.delete();
-      console.log('✅ 資安事件已解決並從資料庫刪除:', eventData.eventName);
 
       // 累積玩家已解決事件次數
       await this.players.doc(userId).set({ eventResolvedCount: FieldValue.increment(1) }, { merge: true });

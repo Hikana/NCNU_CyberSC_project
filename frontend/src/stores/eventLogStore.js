@@ -8,8 +8,6 @@ export const useEventLogStore = defineStore('eventLog', {
   state: () => ({
     // 未處理的資安事件列表
     unresolvedEvents: [],
-    // 所有資安事件列表（包括已解決的）
-    allEvents: [],
     // 載入狀態
     loading: false,
     // 是否已完成初始化
@@ -33,16 +31,10 @@ export const useEventLogStore = defineStore('eventLog', {
     
     // 未處理事件總數
     unresolvedCount: (state) => state.unresolvedEvents.length,
-    
-    // 已解決事件列表
-    resolvedEvents: (state) => state.allEvents.filter(event => event.resolved),
-    
-    // 所有事件總數
-    allEventsCount: (state) => state.allEvents.length,
   },
   
   actions: {
-    // 載入資安事件（只載入未處理的）
+    // 載入資安事件
     async loadSecurityEvents() {
       const authStore = useAuthStore();
       if (!authStore.user?.uid) {
@@ -55,7 +47,6 @@ export const useEventLogStore = defineStore('eventLog', {
         const events = await apiService.getSecurityEvents(authStore.user.uid);
         this.unresolvedEvents = events.filter(event => !event.resolved);
         this.isLoaded = true;
-        console.log('📜 載入資安事件:', this.unresolvedEvents.length, '個未處理事件');
         
         // 如果有未處理的事件，啟動持續懲罰計時器
         if (this.unresolvedEvents.length > 0) {
@@ -72,28 +63,6 @@ export const useEventLogStore = defineStore('eventLog', {
       }
     },
     
-    // 載入所有資安事件（包括已解決的）
-    async loadAllSecurityEvents() {
-      const authStore = useAuthStore();
-      if (!authStore.user?.uid) {
-        console.warn('loadAllSecurityEvents: 缺少 userId');
-        return;
-      }
-      
-      this.loading = true;
-      try {
-        const events = await apiService.getSecurityEvents(authStore.user.uid);
-        this.allEvents = events;
-        this.unresolvedEvents = events.filter(event => !event.resolved);
-        console.log('📜 載入所有資安事件:', this.allEvents.length, '個事件（', this.unresolvedEvents.length, '個未處理）');
-      } catch (error) {
-        console.error('❌ 載入所有資安事件失敗:', error);
-        this.allEvents = [];
-      } finally {
-        this.loading = false;
-      }
-    },
-    
     // 新增資安事件
     async addSecurityEvent(eventData) {
       const authStore = useAuthStore();
@@ -103,9 +72,7 @@ export const useEventLogStore = defineStore('eventLog', {
       }
       
       try {
-        console.log('📜 eventLogStore 準備新增資安事件:', eventData);
         const newEvent = await apiService.addSecurityEvent(authStore.user.uid, eventData);
-        console.log('📜 eventLogStore 收到回應:', newEvent);
         
         // 確保 newEvent 有正確的資料結構
         if (newEvent && newEvent.id) {
@@ -113,15 +80,13 @@ export const useEventLogStore = defineStore('eventLog', {
           const existingEvent = this.unresolvedEvents.find(e => e.id === newEvent.id);
           if (!existingEvent) {
             this.unresolvedEvents.push(newEvent);
-            console.log('📜 新增資安事件成功:', newEvent.eventName || newEvent.id);
-            console.log('📜 當前未處理事件數量:', this.unresolvedEvents.length);
             
             // 如果這是第一個未處理事件，啟動持續懲罰計時器
             if (this.unresolvedEvents.length === 1) {
               this.startPenaltyTimer();
             }
           } else {
-            console.log('📜 事件已存在，跳過重複添加:', newEvent.id);
+            console.warn('⚠️ 事件已存在，跳過重複添加:', newEvent.id);
           }
         } else {
           console.warn('⚠️ 新增資安事件回應格式異常:', newEvent);
@@ -156,24 +121,6 @@ export const useEventLogStore = defineStore('eventLog', {
           this.stopPenaltyTimer();
         }
         
-        // 刷新玩家資料以更新 eventResolvedCount
-        try {
-          const { usePlayerStore } = await import('./player');
-          const playerStore = usePlayerStore();
-          await playerStore.loadPlayerData();
-        } catch (e) {
-          console.warn('刷新玩家資料失敗（忽略）:', e);
-        }
-        
-        // 檢查成就（基於最新的 eventResolvedCount）
-        try {
-          const { useAchievementStore } = await import('./achievement');
-          const achievementStore = useAchievementStore();
-          await achievementStore.checkAllAchievements();
-        } catch (e) {
-          console.warn('檢查成就失敗（忽略）:', e);
-        }
-        
         return result;
       } catch (error) {
         console.error('❌ 解決資安事件失敗:', error);
@@ -205,8 +152,6 @@ export const useEventLogStore = defineStore('eventLog', {
         return;
       }
       
-      console.log('⏰ 啟動資安事件持續懲罰計時器（每30秒檢查一次）');
-      
       this.penaltyInterval = setInterval(async () => {
         if (this.unresolvedEvents.length > 0) {
           const playerStore = usePlayerStore();
@@ -216,21 +161,13 @@ export const useEventLogStore = defineStore('eventLog', {
           const techPointsPenalty = totalPenalty * 50;
           const defensePenalty = totalPenalty * 10;
           
-          console.log(`⚠️ 持續懲罰觸發！未處理事件數: ${totalPenalty}`);
-          console.log(`   扣除科技點: -${techPointsPenalty}, 防禦值: -${defensePenalty}`);
-          
-          // 扣除科技點和防禦值（不會低於0）
           const newTechPoints = Math.max(0, playerStore.techPoints - techPointsPenalty);
           const newDefense = Math.max(0, playerStore.defense - defensePenalty);
-          
-          console.log(`   科技點: ${playerStore.techPoints} → ${newTechPoints}`);
-          console.log(`   防禦值: ${playerStore.defense} → ${newDefense}`);
           
           // 更新玩家資料
           try {
             await playerStore.updateTechPoints(newTechPoints);
             await playerStore.updateDefense(newDefense);
-            console.log('✅ 持續懲罰已套用');
           } catch (error) {
             console.error('❌ 套用持續懲罰失敗:', error);
           }
@@ -243,7 +180,6 @@ export const useEventLogStore = defineStore('eventLog', {
       if (this.penaltyInterval) {
         clearInterval(this.penaltyInterval);
         this.penaltyInterval = null;
-        console.log('⏰ 資安事件持續懲罰計時器已停止');
       }
     }
   }
