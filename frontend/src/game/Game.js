@@ -198,20 +198,20 @@ export class Game {
     if (hasMoved) {
         this.playerStore.updatePosition({ x, y });
         
-        // 檢查伺服器碰撞和離開
+        // 檢查公網塔碰撞和離開
         if (this.grid) {
           const isInCastle = this.grid.checkCastleCollision(x, y);
           
-      // 如果現在在伺服器區內，且之前不在
+      // 如果現在在公網塔內，且之前不在
           if (isInCastle && !this.wasInCastle) {
             this.grid.replaceCastleWithCan1();
           }
-      // 如果現在不在伺服器區內，且之前在
+      // 如果現在不在公網塔內，且之前在
           else if (!isInCastle && this.wasInCastle) {
             this.grid.resetCastleImage();
           }
           
-          // 更新城堡狀態
+          // 更新公網塔狀態
           this.wasInCastle = isInCastle;
         }
     }
@@ -426,13 +426,13 @@ export class Game {
       return;
     }
 
-    // 伺服器區域的點擊處理（非連線模式）
+    // 公網塔區域的點擊處理（非連線模式）
     if (cell.type === 'castle') {
       const allowWafPlacement = this.buildingStore?.isPlacing && this.buildingStore.isPlacingFirewall?.() && this.buildingStore.getSelectedFirewallKind?.() === 'waf';
       if (!allowWafPlacement) {
         // 如果正在放置模式但不是 WAF，提示用戶
         if (this.buildingStore?.isPlacing) {
-          this.buildingStore.showPlacementMessage('伺服器區域只能架設 WAF 防火牆');
+          this.buildingStore.showPlacementMessage('公網塔區域只能架設 WAF 防火牆');
         }
         return;
       }
@@ -459,7 +459,7 @@ export class Game {
           if (!valid) reason = 'Network Firewall 只能架在路由器 (Router) 上';
         } else if (kind === 'waf') {
           valid = (cell.type === 'castle');
-          if (!valid) reason = 'WAF 只能架在網路伺服器(Internet Server)';
+          if (!valid) reason = 'WAF 只能架在 Public Internet Tower';
         }
 
         if (!valid) {
@@ -470,7 +470,7 @@ export class Game {
 
         // 類型正確之後再檢查重複架設
         if (kind === 'waf') {
-          // 伺服器 3x3 若任一格已有 WAF，禁止再次架設
+          // 公網塔 3x3 若任一格已有 WAF，禁止再次架設
           let castleHasWaf = false;
           try {
             const map = this.buildingStore.map || [];
@@ -542,10 +542,10 @@ export class Game {
       }
     });
 
-    // 監聽伺服器等級變化，自動重繪地圖
+    // 監聽公網塔等級變化，自動重繪地圖
     watch(() => this.wallStore.castleLevel, (newLevel, oldLevel) => {
       if (oldLevel !== undefined && newLevel !== oldLevel && this.grid) {        
-        this.grid.drawGrid(); // 重繪地圖以顯示新的伺服器等級
+        this.grid.drawGrid(); // 重繪地圖以顯示新的公網塔等級
       }
     });
 

@@ -23,8 +23,8 @@ export const usePlayerStore = defineStore('player', () => {
   const correctlyAnsweredCount = ref(0); // 記錄答對總題數
   const connectToSwitchCount = ref(0); // 記錄連線到 Switch 的次數
   const connectToRouterCount = ref(0); // 記錄連線到 Router 的次數
-  const connectToInternetServerCount = ref(0); // 記錄連線到網路伺服器的次數
-  const castleLevel = ref(0); // 記錄伺服器等級
+  const connectToInternetTowerCount = ref(0); // 記錄連線到公網塔的次數
+  const castleLevel = ref(0); // 記錄公網塔等級
 
   // --- Actions (方法) ---
   
@@ -91,7 +91,7 @@ export const usePlayerStore = defineStore('player', () => {
       eventResolvedCount.value = playerData.eventResolvedCount || 0;
       connectToSwitchCount.value = playerData.connectToSwitchCount || 0;
       connectToRouterCount.value = playerData.connectToRouterCount || 0;
-      connectToInternetServerCount.value = playerData.connectToInternetServerCount || 0;
+      connectToInternetTowerCount.value = playerData.connectToInternetTowerCount || 0;
       castleLevel.value = playerData.castleLevel || 0;
       
       console.log('玩家資料已從後端載入:', { techPoints: techPoints.value, defense: defense.value, answeredCount: correctlyAnsweredCount.value });
@@ -177,13 +177,13 @@ export const usePlayerStore = defineStore('player', () => {
       defense.value = newDefense;
       console.log('防禦值已更新到資料庫:', newDefense);
       
-      // 同步伺服器等級
+      // 同步公網塔等級
       try {
         const { useWallStore } = await import('./wall');
         const wallStore = useWallStore();
         await wallStore.syncCastleLevel();
       } catch (error) {
-        console.warn('同步伺服器等級失敗:', error);
+        console.warn('同步公網塔等級失敗:', error);
       }
     } catch (error) {
       console.error('更新防禦值失敗:', error);
@@ -224,7 +224,7 @@ export const usePlayerStore = defineStore('player', () => {
     correctlyAnsweredCount,
     connectToSwitchCount,
     connectToRouterCount,
-    connectToInternetServerCount,
+    connectToInternetTowerCount,
     castleLevel,
     setUserId,
     initFromAuth,

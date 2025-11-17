@@ -31,7 +31,7 @@ class PlayerData {
         itemCount: 0,
         connectToSwitchCount: 0,
         connectToRouterCount: 0,
-        connectToInternetServerCount: 0,
+        connectToInternetTowerCount: 0,
         
         // 答題記錄（只存這個，count 用這個計算）
         correctlyAnsweredIds: [],
@@ -142,9 +142,9 @@ class PlayerData {
           buildingId: null,
         };
         
-        // 設置城堡區域 (0,0)-(2,2) 為已開發狀態
+        // 設置城堡區域 (0,0)-(2,2) 為已放置狀態
         if (y <= 2 && x <= 2) {
-          tileData.status = 'developed';
+          tileData.status = 'placed';
           tileData.type = 'castle';
           tileData.buildingId = null;
         }
@@ -277,9 +277,9 @@ class PlayerData {
     });
   }
 
-  async incrementConnectToInternetServerCount(userId) {
+  async incrementConnectToInternetTowerCount(userId) {
     return this.players.doc(userId).update({
-      connectToInternetServerCount: FieldValue.increment(1)
+      connectToInternetTowerCount: FieldValue.increment(1)
     });
   }
 }

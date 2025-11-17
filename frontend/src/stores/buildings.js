@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { usePlayerStore } from './player';
 import { apiService } from '@/services/apiService'; // 引入我們統一的 apiService
-import { BUILDING_TYPES, createConnectionValidator, getConnectionColor, INTERNET_SERVER_TYPE } from '@/game/connectionRules'; // 引入連線規則模組
+import { BUILDING_TYPES, createConnectionValidator, getConnectionColor, INTERNET_TOWER_TYPE } from '@/game/connectionRules'; // 引入連線規則模組
 import { audioService } from '@/services/audioService'; // 引入音頻服務
 import routerImg from '@/assets/router.png';
 import switchImg from '@/assets/switch.png';
@@ -232,6 +232,7 @@ export const useBuildingStore = defineStore('buildings', {
       if (this.isPlacingFirewall()) {
         const { x, y } = this.selectedTile;
         try {
+          const firewallKind = this.getSelectedFirewallKind?.();
           const updated = await apiService.placeFirewall(this.selectedBuildingId, { x, y });
           if (Array.isArray(updated) && Array.isArray(updated[0])) {
             this.map = updated;
@@ -240,11 +241,18 @@ export const useBuildingStore = defineStore('buildings', {
           this.isPlacing = false;
           this.selectedTile = null;
           this.selectedBuildingId = null;
-          this.showPlacementMessage('已架設防火牆');
+
+          const firewallMessages = {
+            waf: '已建立 Web Application Firewall，可降低 DDoS、SQL Injection、XSS 攻擊風險。',
+            nwf: '已建立 Network Firewall，可降低 Unauthorized Access 攻擊風險，強化網路邊界防護。',
+            hf: '已建立 Host Firewall，可降低 Brute Force 攻擊風險，保護單一主機安全。'
+          };
+          const message = firewallMessages[firewallKind] ;
+          this.showConnectionModal('success', '防火牆已建立', `${message}`, false);
           return;
         } catch (e) {
           console.error('架設防火牆失敗:', e);
-          this.showPlacementMessage(e?.message || '架設防火牆失敗');
+          this.showPlacementMessage(e?.message );
           return;
         }
       }
@@ -359,7 +367,7 @@ export const useBuildingStore = defineStore('buildings', {
         });
 
         if (alreadyConnectedToCastle) {
-          this.showConnectionError('此 Router 已連到 Internet Server，無法重複連線');
+          this.showConnectionError('此 Router 已連 Public Internet Tower，無法重複連線');
           this.cancelConnection();
           return;
         }
@@ -455,6 +463,15 @@ export const useBuildingStore = defineStore('buildings', {
           const { usePlayerStore } = await import('./player');
           const playerStore = usePlayerStore();
           await playerStore.loadPlayerData();
+          
+          // 檢查成就（連線成功後）
+          try {
+            const { useAchievementStore } = await import('./achievement');
+            const achievementStore = useAchievementStore();
+            await achievementStore.checkAllAchievements();
+          } catch (e) {
+            console.warn('檢查成就失敗（忽略）:', e);
+          }
         } catch (e) {
           console.warn('刷新玩家資料失敗（忽略）:', e);
         }
@@ -546,7 +563,7 @@ export const useBuildingStore = defineStore('buildings', {
         return this.getBuildingType(cell.buildingId);
       }
       if (cell.type === 'castle') {
-        return INTERNET_SERVER_TYPE;
+        return INTERNET_TOWER_TYPE;
       }
       return null;
     },
@@ -644,21 +661,27 @@ export const useBuildingStore = defineStore('buildings', {
           'host': 'Host',
           'switch': 'Switch',
           'router': 'Router',
-          'castle': 'Internet Server',
+          'castle': 'Public Internet Tower',
           'firewall': 'Firewall'
         };
         return typeMap[type] || type;
       };
       
-      const fromTypeName = fromType?.name || '未知建築';
-      const toTypeName = toType?.name || '未知建築';
+      const formatDisplayName = (type) => {
+        if (!type) return '未知建築';
+        if (type.type === 'castle') return '公網塔';
+        return type.name || '未知建築';
+      };
+
+      const fromTypeName = formatDisplayName(fromType);
+      const toTypeName = formatDisplayName(toType);
       const fromTypeLabel = fromBuildingType ? ` (${getTypeDisplayName(fromBuildingType)})` : '';
       const toTypeLabel = toBuildingType ? ` (${getTypeDisplayName(toBuildingType)})` : '';
       
       this.showConnectionModal(
         'success',
         '連線成功！',
-        `✅ 成功建立連線：${fromTypeName}${fromTypeLabel} → ${toTypeName}${toTypeLabel}`,
+        `成功建立連線：${fromTypeName}${fromTypeLabel} → ${toTypeName}${toTypeLabel}`,
         false
       );
       

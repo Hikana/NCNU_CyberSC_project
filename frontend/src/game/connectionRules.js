@@ -4,11 +4,11 @@
  */
 
 // 建築物類型定義（與商店數據保持一致）
-export const INTERNET_SERVER_TYPE = {
-  name: 'Internet Server',
+export const INTERNET_TOWER_TYPE = {
+  name: 'Public Internet Tower',
   type: 'castle',
   maxConnections: 12,
-  description: 'Internet Server - 伺服器核心，只允許 Router 連線'
+  description: 'Public Internet Tower - 公網塔，只允許 Router 連線'
 }
 
 export const BUILDING_TYPES = {
@@ -138,7 +138,7 @@ export class ConnectionValidator {
   }
 
   /**
-   * 取得格子的建築類型，支援城堡（Internet Server）
+   * 取得格子的建築類型，支援城堡（Public Internet Tower）
    */
   getCellType(cell) {
     if (!cell) return null
@@ -146,7 +146,7 @@ export class ConnectionValidator {
       return this.getBuildingType(cell.buildingId)
     }
     if (cell.type === 'castle') {
-      return INTERNET_SERVER_TYPE
+      return INTERNET_TOWER_TYPE
     }
     return null
   }
@@ -226,12 +226,24 @@ export class ConnectionValidator {
    * @returns {Object} 驗證結果 {valid: boolean, reason: string}
    */
   validateConnectionRules(fromType, toType, fromConnections, toConnections) {
+    // 規則4-1: 只有 Router 可以連到 Public Internet Tower（castle）
+    // 必須最先檢查這個規則，避免其他規則允許非 Router 連到 castle
+    if (fromType.type === 'castle' || toType.type === 'castle') {
+      // 只有 Router 可以連到 castle
+      if ((fromType.type === 'router' && toType.type === 'castle') ||
+          (fromType.type === 'castle' && toType.type === 'router')) {
+        return { valid: true };
+      }
+      // 其他設備不能連到 castle
+      return { valid: false, reason: '只有 Router 可以連接到 Public Internet Tower' };
+    }
+
     // 規則1: Host 只能連一個設備（一張網卡概念）
     if (fromType.type === 'host') {
       if (fromConnections.length >= 1) {
         return { valid: false, reason: '貓屋只能連一個設備（一張網卡）' };
       }
-      // Host 可以連 Host、Switch 或 Router
+      // Host 可以連 Host、Switch 或 Router（但不能連 castle，已在上面檢查）
       return { valid: true };
     }
 
@@ -239,7 +251,7 @@ export class ConnectionValidator {
       if (toConnections.length >= 1) {
         return { valid: false, reason: '貓屋只能連一個設備（一張網卡）' };
       }
-      // Host 可以連 Host、Switch 或 Router
+      // Host 可以連 Host、Switch 或 Router（但不能連 castle，已在上面檢查）
       return { valid: true };
     }
 
@@ -266,14 +278,8 @@ export class ConnectionValidator {
       return { valid: true };
     }
 
-    // 規則4: Router 可以連接到任何設備
+    // 規則4: Router 可以連接到其他設備（除了 castle，castle 已在最前面處理）
     if (fromType.type === 'router' || toType.type === 'router') {
-      return { valid: true };
-    }
-
-    // 規則4-1: Router 可以連到 Internet Server（castle）
-    if ((fromType.type === 'router' && toType.type === 'castle') ||
-        (fromType.type === 'castle' && toType.type === 'router')) {
       return { valid: true };
     }
 

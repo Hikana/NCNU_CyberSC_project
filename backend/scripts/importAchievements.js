@@ -22,11 +22,11 @@ const sourceAchievements = [
   // 連線相關（首次）
   { id: 'connect_to_switch', name: '接通交換器', description: '連線到 Switch', maxProgress: 1, reward: { techPoints: 30, wallDefense: 10 } },
   { id: 'connect_to_router', name: '接通路由器', description: '連線到 Router', maxProgress: 1, reward: { techPoints: 30, wallDefense: 10 } },
-  { id: 'connect_to_internet_server', name: '接通網路伺服器', description: '連線到網路伺服器', maxProgress: 1, reward: { techPoints: 30, wallDefense: 10 } },
-  // 伺服器等級相關
-  { id: 'server_level_3', name: '伺服器技術員', description: '伺服器達到等級3', maxProgress: 3, reward: { techPoints: 30, wallDefense: 20 } },
-  { id: 'server_level_5', name: '伺服器工程師', description: '伺服器達到等級5', maxProgress: 5, reward: { techPoints: 100, wallDefense: 30 } },
-  { id: 'server_level_10', name: '伺服器架構師', description: '伺服器達到等級10', maxProgress: 10, reward: { techPoints: 200, wallDefense: 50 } },
+  { id: 'connect_to_internet_tower', name: '接通公網塔', description: '連線到 Public Internet Tower', maxProgress: 1, reward: { techPoints: 30, wallDefense: 10 } },
+  // 公網塔等級相關
+  { id: 'internet_tower_level_3', name: '公網塔技術員', description: 'Public Internet Tower 達到等級3', maxProgress: 3, reward: { techPoints: 30, wallDefense: 20 } },
+  { id: 'internet_tower_level_5', name: '公網塔工程師', description: 'Public Internet Tower 達到等級5', maxProgress: 5, reward: { techPoints: 100, wallDefense: 30 } },
+  { id: 'internet_tower_level_10', name: '公網塔架構師', description: 'Public Internet Tower 達到等級10', maxProgress: 10, reward: { techPoints: 200, wallDefense: 50 } },
 ];
 
 
@@ -53,8 +53,8 @@ function deriveCondition(desc, maxProgress) {
   if (/連線到 Router/i.test(desc)) {
     return { field: 'connectToRouterCount', value: 1 };
   }
-  if (/連線到網路伺服器/i.test(desc)) {
-    return { field: 'connectToInternetServerCount', value: 1 };
+  if (/連線到 Public Internet Tower/i.test(desc)) {
+    return { field: 'connectToInternetTowerCount', value: 1 };
   }
   if (/首次建造 Switch/i.test(desc)) {
     return { field: 'switchCount', value: 1 };
@@ -62,8 +62,8 @@ function deriveCondition(desc, maxProgress) {
   if (/首次建造 Router/i.test(desc)) {
     return { field: 'routerCount', value: 1 };
   }
-  if (/伺服器達到等級/i.test(desc)) {
-    const m = desc.match(/伺服器達到等級(\d+)/);
+  if (/Public Internet Tower 達到等級/i.test(desc)) {
+    const m = desc.match(/Public Internet Tower 達到等級(\d+)/);
     const value = m ? Number(m[1]) : maxProgress;
     return { field: 'castleLevel', value };
   }
@@ -107,5 +107,4 @@ async function importAchievements() {
 }
 
 importAchievements();
-
 
