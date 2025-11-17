@@ -2,22 +2,15 @@
   <!-- ✅ 固定導覽列 -->
   <div class="fixed top-0 left-0 w-full z-[99999] bg-wordcolor bg-opacity-80 backdrop-blur-md flex justify-between items-center px-10 py-4 h-20">
 
-    <!-- 🔹 左側 logo + 選單 -->
-    <div class="flex items-center space-x-9">
-      <!-- ✅ menu.gif / menu2.gif  -->
-      <img
-        :src="isScrolling ? '/src/assets/image/Menu/menu2.gif' : '/src/assets/image/Menu/menu.gif'"
-        class="w-20 h-20 cursor-pointer transition-transform "
-      />
-
-      <!-- ✅ 動態選單按鈕 -->
-      <div class="flex space-x-7">
+    <!-- 🔹 左側選單 -->
+    <div class="flex items-center space-x-4">
+      <div class="flex space-x-5">
         <button
           v-for="(item, index) in menuItems"
           :key="index"
           @click="handleClick(item)"
           :class="[
-            'px-6 py-2 font-semibold rounded-xl shadow-md transition',
+            'px-5 py-2 font-semibold rounded-xl shadow-md transition',
             activeSection === item.ref
               ? 'bg-wordcolor text-white'
               : 'bg-white text-gray-700 hover:bg-gray-200'
@@ -28,11 +21,19 @@
       </div>
     </div>
 
-    <!-- ✅ 中間網站標題 -->
-    <div class="absolute left-1/2 transform -translate-x-1/2 flex flex-col text-white items-center">
-      <div class="text-sm font-medium">資安教育網站</div>
-      <div class="text-base font-bold">Code Fortress：資安築城記</div>
+    <!-- ✅ 中間網站標題 + 貓 GIF -->
+    <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center text-white">
+      <div class="flex flex-col items-center text-center">
+        <div class="text-sm font-medium">資安教育網站</div>
+        <div class="text-base font-bold">Code Fortress：資安築城記</div>
+      </div>
+      <!-- ✅ 貓緊貼標題右側 -->
+      <img
+        :src="isScrolling ? '/src/assets/image/Menu/menu2.gif' : '/src/assets/image/Menu/menu.gif'"
+        class="w-16 h-16 ml-[10px] cursor-pointer transition-transform hover:scale-110"
+      />
     </div>
+
 
     <!-- 🔹 右側功能按鈕 -->
     <div class="flex space-x-7">
@@ -49,11 +50,11 @@
         練功房
       </button>
       <button
-          class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
-          @click="handleAuthAction"
-        >
-          {{ isLoggedIn ? '登出' : '登入 / 註冊' }}
-        </button>
+        class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
+        @click="handleAuthAction"
+      >
+        {{ isLoggedIn ? '登出' : '登入 / 註冊' }}
+      </button>
     </div>
   </div>
 
