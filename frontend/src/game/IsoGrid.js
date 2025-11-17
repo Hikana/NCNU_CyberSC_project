@@ -3,7 +3,7 @@ import grassImg from '@/assets/grass.png'
 import landImg from '@/assets/land.png'
 import { useBuildingStore } from '@/stores/buildings'
 import { useWallStore } from '@/stores/wall'
-import { getConnectionColor } from '@/game/connectionRules'
+import { getConnectionColor, INTERNET_SERVER_TYPE } from '@/game/connectionRules'
 import castleImg from '@/assets/castle0.png'
 import can1Img from '@/assets/can1.png'
 import { audioService } from '@/services/audioService'
@@ -879,6 +879,17 @@ export class IsoGrid {
     const halfW = this.tileSize / 2;
     const halfH = this.tileSize / 4;
     
+    const resolveCellType = (cell) => {
+      if (!cell) return null
+      if (cell.buildingId) {
+        return this.buildingStore.getBuildingType(cell.buildingId)
+      }
+      if (cell.type === 'castle') {
+        return INTERNET_SERVER_TYPE
+      }
+      return null
+    }
+
     connectionsToDraw.forEach((connection, index) => {
       // 計算起始和結束位置的等角座標
       const fromX = (connection.from.x - connection.from.y) * halfW;
@@ -900,10 +911,10 @@ export class IsoGrid {
           this.buildingStore.map[connection.from.y][connection.from.x] &&
           this.buildingStore.map[connection.to.y] && 
           this.buildingStore.map[connection.to.y][connection.to.x]) {
-        const fromBuildingId = this.buildingStore.map[connection.from.y][connection.from.x].buildingId;
-        const toBuildingId = this.buildingStore.map[connection.to.y][connection.to.x].buildingId;
-        const fromType = this.buildingStore.getBuildingType(fromBuildingId);
-        const toType = this.buildingStore.getBuildingType(toBuildingId);
+        const fromCell = this.buildingStore.map[connection.from.y][connection.from.x];
+        const toCell = this.buildingStore.map[connection.to.y][connection.to.x];
+        const fromType = resolveCellType(fromCell);
+        const toType = resolveCellType(toCell);
         if (fromType && toType) {
           connectionColor = getConnectionColor(fromType, toType);
         }

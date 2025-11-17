@@ -413,7 +413,20 @@ export class Game {
     const cell = this.buildingStore.map?.[row]?.[col];
     if (!cell) return;
     
-    // 伺服器區域的點擊處理
+    // 連線模式處理
+    if (this.buildingStore.isConnecting) {
+      const isValidTarget = (cell.status === 'placed' && cell.buildingId) || cell.type === 'castle';
+      if (isValidTarget) {
+        // 點擊到有建築物的格子，完成連線
+        this.buildingStore.completeConnection({ x: col, y: row });
+      } else {
+        // 點擊到沒有建築物的格子，取消連線
+        this.buildingStore.cancelConnection();
+      }
+      return;
+    }
+
+    // 伺服器區域的點擊處理（非連線模式）
     if (cell.type === 'castle') {
       const allowWafPlacement = this.buildingStore?.isPlacing && this.buildingStore.isPlacingFirewall?.() && this.buildingStore.getSelectedFirewallKind?.() === 'waf';
       if (!allowWafPlacement) {
@@ -423,18 +436,6 @@ export class Game {
         }
         return;
       }
-    }
-
-    // 連線模式處理
-    if (this.buildingStore.isConnecting) {
-      if (cell.status === 'placed' && cell.buildingId) {
-        // 點擊到有建築物的格子，完成連線
-        this.buildingStore.completeConnection({ x: col, y: row });
-      } else {
-        // 點擊到沒有建築物的格子，取消連線
-        this.buildingStore.cancelConnection();
-      }
-      return;
     }
 
     // 只有在放置建築模式時才允許滑鼠點擊

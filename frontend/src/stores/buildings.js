@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { usePlayerStore } from './player';
 import { apiService } from '@/services/apiService'; // 引入我們統一的 apiService
-import { BUILDING_TYPES, createConnectionValidator, getConnectionColor } from '@/game/connectionRules'; // 引入連線規則模組
+import { BUILDING_TYPES, createConnectionValidator, getConnectionColor, INTERNET_SERVER_TYPE } from '@/game/connectionRules'; // 引入連線規則模組
 import { audioService } from '@/services/audioService'; // 引入音頻服務
 import routerImg from '@/assets/router.png';
 import switchImg from '@/assets/switch.png';
@@ -337,11 +337,39 @@ export const useBuildingStore = defineStore('buildings', {
         return;
       }
 
+      const canonicalServerPosition = this.getCanonicalCastlePosition();
+
+      const normalizedTarget = this.normalizeTargetPosition(targetPosition);
+      if (!normalizedTarget) {
+        console.warn('無法解析目標位置');
+        this.showConnectionError('目標建築不存在或已被移除');
+        this.cancelConnection();
+        return;
+      }
+
+      const isDestinationCastle = canonicalServerPosition &&
+        normalizedTarget.x === canonicalServerPosition.x &&
+        normalizedTarget.y === canonicalServerPosition.y;
+
+      if (isDestinationCastle) {
+        const sourceConnections = this.getBuildingConnections(this.connectionSource.x, this.connectionSource.y);
+        const alreadyConnectedToCastle = sourceConnections.some(conn => {
+          return (conn.to.x === canonicalServerPosition.x && conn.to.y === canonicalServerPosition.y) ||
+                 (conn.from.x === canonicalServerPosition.x && conn.from.y === canonicalServerPosition.y);
+        });
+
+        if (alreadyConnectedToCastle) {
+          this.showConnectionError('此 Router 已連到 Internet Server，無法重複連線');
+          this.cancelConnection();
+          return;
+        }
+      }
+
       // 檢查連線是否已存在
       const connectionExists = this.connections.some(conn => 
         (conn.from.x === this.connectionSource.x && conn.from.y === this.connectionSource.y && 
-         conn.to.x === targetPosition.x && conn.to.y === targetPosition.y) ||
-        (conn.from.x === targetPosition.x && conn.from.y === targetPosition.y && 
+         conn.to.x === normalizedTarget.x && conn.to.y === normalizedTarget.y) ||
+        (conn.from.x === normalizedTarget.x && conn.from.y === normalizedTarget.y && 
          conn.to.x === this.connectionSource.x && conn.to.y === this.connectionSource.y)
       );
 
@@ -355,14 +383,14 @@ export const useBuildingStore = defineStore('buildings', {
       const validator = createConnectionValidator(this.map, this.connections);
       
       // 檢查是否已經存在相同的連線
-      if (validator.isConnectionExists(this.connectionSource.x, this.connectionSource.y, targetPosition.x, targetPosition.y)) {
+      if (validator.isConnectionExists(this.connectionSource.x, this.connectionSource.y, normalizedTarget.x, normalizedTarget.y)) {
         console.log('連線已存在');
         this.cancelConnection();
         return;
       }
 
       // 驗證連線規則
-      const validation = validator.canConnectBuildings(this.connectionSource.x, this.connectionSource.y, targetPosition.x, targetPosition.y);
+      const validation = validator.canConnectBuildings(this.connectionSource.x, this.connectionSource.y, normalizedTarget.x, normalizedTarget.y);
       if (!validation.valid) {
         console.log('連線規則驗證失敗:', validation.reason);
         this.showConnectionError(validation.reason);
@@ -371,27 +399,55 @@ export const useBuildingStore = defineStore('buildings', {
       }
 
       try {
+        const sourcePosition = this.connectionSource ? { ...this.connectionSource } : null;
+        if (!sourcePosition) {
+          console.warn('連線來源不存在，無法完成連線');
+          this.showConnectionError('來源建築不存在或已被移除');
+          this.cancelConnection();
+          return;
+        }
+
+        const sourceRow = sourcePosition.y;
+        const sourceCol = sourcePosition.x;
+        if (!this.map?.[sourceRow]?.[sourceCol]) {
+          console.warn('找不到來源建築在地圖上的資料');
+          this.showConnectionError('來源建築不存在或已被移除');
+          this.cancelConnection();
+          return;
+        }
+
         // 添加新連線到後端
+        const targetRow = normalizedTarget.y;
+        const targetCol = normalizedTarget.x;
+        const targetCell = this.map?.[targetRow]?.[targetCol];
+        if (!targetCell) {
+          console.warn('找不到目標建築在地圖上的資料');
+          this.showConnectionError('目標建築不存在或已被移除');
+          this.cancelConnection();
+          return;
+        }
+
         const newConnection = {
-          from: { ...this.connectionSource },
-          to: { ...targetPosition }
+          from: sourcePosition,
+          to: { ...normalizedTarget }
         };
 
         const savedConnection = await apiService.addConnection(newConnection);
+        const normalizedSavedConnection = this.normalizeConnectionEndpoints(savedConnection) || newConnection;
         console.log('連線已保存到後端:', savedConnection);
 
         // 添加到本地狀態
-        this.connections.push(savedConnection);
+        this.connections.push(normalizedSavedConnection);
         console.log('本地連線列表已更新');
         
         // 顯示連線成功提示
-        const fromCell = this.map[this.connectionSource.y][this.connectionSource.x];
-        const toCell = this.map[targetPosition.y][targetPosition.x];
-        const fromType = this.getBuildingType(fromCell.buildingId);
-        const toType = this.getBuildingType(toCell.buildingId);
+        const fromCell = this.map[sourceRow][sourceCol];
+        const toCell = targetCell;
+        const fromType = this.resolveCellType(fromCell);
+        const toType = this.resolveCellType(toCell);
         // 從地圖中獲取建築類型（host、switch、router）
         const fromBuildingType = fromCell.type || (fromType?.type || 'host');
-        const toBuildingType = toCell.type || (toType?.type || 'host');
+        const toBuildingType = (toCell?.type) || (toType?.type || 'host');
         this.showConnectionSuccess(fromType, toType, fromBuildingType, toBuildingType);
         
         // 刷新玩家資料以更新連線計數
@@ -424,7 +480,9 @@ export const useBuildingStore = defineStore('buildings', {
     async loadConnections() {
       try {
         const connections = await apiService.getConnections();
-        this.connections = connections;
+        this.connections = (connections || [])
+          .map(conn => this.normalizeConnectionEndpoints(conn))
+          .filter(Boolean);
         console.log('已載入連線:', connections.length, '條');
       } catch (error) {
         console.error('載入連線失敗:', error);
@@ -480,6 +538,76 @@ export const useBuildingStore = defineStore('buildings', {
     // 連線規則相關方法
     getBuildingType(buildingId) {
       return this.buildingTypes[buildingId] || null;
+    },
+
+    resolveCellType(cell) {
+      if (!cell) return null;
+      if (cell.buildingId) {
+        return this.getBuildingType(cell.buildingId);
+      }
+      if (cell.type === 'castle') {
+        return INTERNET_SERVER_TYPE;
+      }
+      return null;
+    },
+
+    getCastleTiles() {
+      const tiles = [];
+      if (!Array.isArray(this.map)) return tiles;
+      for (let row = 0; row < this.map.length; row++) {
+        const rowData = this.map[row];
+        if (!Array.isArray(rowData)) continue;
+        for (let col = 0; col < rowData.length; col++) {
+          const cell = rowData[col];
+          if (cell && cell.type === 'castle') {
+            tiles.push({ x: col, y: row });
+          }
+        }
+      }
+      return tiles;
+    },
+
+    getCanonicalCastlePosition() {
+      const tiles = this.getCastleTiles();
+      if (tiles.length === 0) return null;
+      tiles.sort((a, b) => {
+        if (a.y === b.y) return a.x - b.x;
+        return a.y - b.y;
+      });
+      return { ...tiles[Math.floor(tiles.length / 2)] };
+    },
+
+    normalizePosition(position) {
+      if (!position || typeof position.x === 'undefined' || typeof position.y === 'undefined') return null;
+      const x = Number(position.x);
+      const y = Number(position.y);
+      if (Number.isNaN(x) || Number.isNaN(y)) return null;
+      return { x, y };
+    },
+
+    normalizeTargetPosition(position) {
+      const base = this.normalizePosition(position);
+      if (!base) return null;
+      const cell = this.map?.[base.y]?.[base.x];
+      if (cell && cell.type === 'castle') {
+        const canonical = this.getCanonicalCastlePosition();
+        if (canonical) {
+          return canonical;
+        }
+      }
+      return base;
+    },
+
+    normalizeConnectionEndpoints(connection) {
+      if (!connection) return null;
+      const normalizedFrom = this.normalizeTargetPosition(connection.from) || this.normalizePosition(connection.from);
+      const normalizedTo = this.normalizeTargetPosition(connection.to) || this.normalizePosition(connection.to);
+      if (!normalizedFrom || !normalizedTo) return null;
+      return {
+        ...connection,
+        from: normalizedFrom,
+        to: normalizedTo
+      };
     },
 
     getBuildingConnections(x, y) {
