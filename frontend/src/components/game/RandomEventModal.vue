@@ -124,16 +124,49 @@
       </div>
     </div>
   </div>
+
+  <!-- 工具提示框 -->
+  <ToolNotificationModal 
+    :isVisible="toolNotification.visible"
+    :type="toolNotification.type"
+    :title="toolNotification.title"
+    :message="toolNotification.message"
+    @close="closeToolNotification"
+  />
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useEventStore } from '@/stores/eventStore'
 import { useInventoryStore } from '@/stores/inventory'
+import ToolNotificationModal from '@/components/game/ToolNotificationModal.vue'
 
 // 狀態管理
 const eventStore = useEventStore()
 const inventoryStore = useInventoryStore()
+
+// 工具提示框狀態
+const toolNotification = ref({
+  visible: false,
+  type: 'info',
+  title: '提示',
+  message: ''
+})
+
+// 顯示提示框的輔助函數
+function showToolNotification(type, title, message) {
+  toolNotification.value = {
+    visible: true,
+    type,
+    title,
+    message
+  }
+}
+
+// 關閉提示框的處理函數
+function closeToolNotification() {
+  toolNotification.value.visible = false
+}
 
 // 計算事件剩餘時間百分比
 const percent = computed(() => {
@@ -169,8 +202,12 @@ async function onDefenseClick(key) {
     
   } catch (error) {
     console.error('❌ 使用防禦工具失敗:', error)
-    // 可以顯示錯誤訊息給用戶
-    alert(`使用防禦工具失敗: ${error.message}`)
+    // 顯示錯誤訊息給用戶
+    showToolNotification(
+      'error',
+      '使用防禦工具失敗',
+      `使用防禦工具失敗: ${error.message}`
+    )
   }
 }
 </script>

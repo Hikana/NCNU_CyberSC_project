@@ -248,11 +248,13 @@
 
   </div>
   
-  <!-- 成功訊息 -->
-  <SuccessMessage 
-    :message="successMessage" 
-    :show="showSuccessMessage"
-    @close="showSuccessMessage = false"
+  <!-- 工具提示框 -->
+  <ToolNotificationModal 
+    :isVisible="toolNotification.visible"
+    :type="toolNotification.type"
+    :title="toolNotification.title"
+    :message="toolNotification.message"
+    @close="closeToolNotification"
   />
 </template>
 
@@ -261,7 +263,7 @@ import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue'
 import BuildingShop from '@/components/game/BuildingShop.vue'
 import AchievementMenu from '@/components/game/AchievementMenu.vue'
 import HistoryPanel from '@/components/game/HistoryPanel.vue'
-import SuccessMessage from '@/components/game/SuccessMessage.vue'
+import ToolNotificationModal from '@/components/game/ToolNotificationModal.vue'
 import { useUiStore } from '@/stores/ui';
 import { useAchievementStore } from '@/stores/achievement'
 import { useInventoryStore } from '@/stores/inventory.js';
@@ -287,9 +289,28 @@ const selectedEvent = ref(null)
 const showToolSelection = ref(false)
 const selectedEventForTool = ref(null)
 
-// 成功訊息
-const showSuccessMessage = ref(false)
-const successMessage = ref('')
+// 工具提示框狀態
+const toolNotification = ref({
+  visible: false,
+  type: 'info', // 'success', 'error', 'info'
+  title: '提示',
+  message: ''
+})
+
+// 顯示提示框的輔助函數
+function showToolNotification(type, title, message) {
+  toolNotification.value = {
+    visible: true,
+    type,
+    title,
+    message
+  }
+}
+
+// 關閉提示框的處理函數
+function closeToolNotification() {
+  toolNotification.value.visible = false
+}
 
 // 點擊物品顯示詳細資訊
 function selectItem(item) {
@@ -344,8 +365,11 @@ async function useToolForEvent(tool) {
       await inventoryStore.useItem(tool.id)
       
       // 顯示成功訊息
-      showSuccessMessage.value = true
-      successMessage.value = `成功使用 ${tool.name} 處理了事件：${selectedEventForTool.value.eventName}！`
+      showToolNotification(
+        'success',
+        '成功處理事件！',
+        `成功使用 ${tool.name} 處理了事件：${selectedEventForTool.value.eventName}！`
+      )
       
       // 更新玩家防禦值
       const playerStore = usePlayerStore()
@@ -359,7 +383,11 @@ async function useToolForEvent(tool) {
       // 工具無效，但仍會消耗
       await inventoryStore.useItem(tool.id)
       // 顯示錯誤訊息
-      alert(`❌ ${tool.name} 無法處理此事件，但工具已消耗！\n\n正確的工具應該是：${getRequiredTools(selectedEventForTool.value)}`)
+      showToolNotification(
+        'error',
+        '工具無效',
+        `${tool.name} 無法處理此事件，但工具已消耗！\n\n正確的工具應該是：${getRequiredTools(selectedEventForTool.value)}`
+      )
     }
     
     // 關閉工具選擇介面
@@ -368,7 +396,11 @@ async function useToolForEvent(tool) {
     
   } catch (error) {
     console.error('❌ 處理事件失敗:', error)
-    alert(`處理事件失敗: ${error.message}`)
+    showToolNotification(
+      'error',
+      '處理事件失敗',
+      `處理事件失敗: ${error.message}`
+    )
   }
 }
 
@@ -407,7 +439,11 @@ async function useItem(item) {
     
     // 檢查是否擁有該物品
     if (!item || item.qty <= 0) {
-      alert(`你沒有 ${item.name} 這個物品`)
+      showToolNotification(
+        'error',
+        '物品不足',
+        `你沒有 ${item.name} 這個物品`
+      )
       return
     }
     
@@ -428,7 +464,11 @@ async function useItem(item) {
         // 使用物品（會扣掉數量）
         await inventoryStore.useItem(item.id)
         
-        alert(`✅ 成功使用 ${item.name} 處理了 ${eventsNeedingTool.length} 個資安事件！`)
+        showToolNotification(
+          'success',
+          '成功處理事件！',
+          `成功使用 ${item.name} 處理了 ${eventsNeedingTool.length} 個資安事件！`
+        )
         
         // 更新玩家防禦值
         const playerStore = usePlayerStore()
@@ -446,7 +486,11 @@ async function useItem(item) {
     console.log(`✅ 成功使用物品 ${item.name}`)
     
     // 顯示使用結果
-    alert(`成功使用 ${item.name}！`)
+    showToolNotification(
+      'success',
+      '使用成功',
+      `成功使用 ${item.name}！`
+    )
     
     // 更新玩家防禦值
     const playerStore = usePlayerStore()
@@ -457,7 +501,11 @@ async function useItem(item) {
     
   } catch (error) {
     console.error('❌ 使用物品失敗:', error)
-    alert(`使用物品失敗: ${error.message}`)
+    showToolNotification(
+      'error',
+      '使用物品失敗',
+      `使用物品失敗: ${error.message}`
+    )
   }
 }
 
