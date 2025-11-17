@@ -42,12 +42,6 @@
     </div>
 
     <!-- 第四章：OWASP -->
-    <SectionAnimation
-      :lines="[
-        '當我們建立網站或應用程式時，',
-        '了解常見漏洞就是防禦的第一步！',
-      ]"
-    />
     <div ref="top10Section">
         <header class="w-screen bg-bgg py-10"></header>
         <header class="relative w-screen bg-bgg py-32">
@@ -56,16 +50,15 @@
           </div>
         </header>
         <ChapterIntroduction4 />
+        <div class="w-screen bg-bgg py-8">
+          <p class="text-center text-2xl md:text-3xl font-semibold text-wordcolor tracking-wide">
+            OWASP TOP 10 (2019) 內容
+          </p>
+        </div>
         <NewTOP10 />
     </div>
 
     <!-- 第五章：密碼學 -->
-    <SectionAnimation
-      :lines="[
-        '想守護資訊安全，',
-        '得先了解網路的運作方式與保密的核心原則。',
-      ]"
-    />
     <div ref="crypto">
         <header class="relative w-screen bg-bgg py-32">
           <div class="absolute top-14 left-8 text-wordcolor px-8 z-10">
@@ -98,14 +91,6 @@
 
 
     <!-- 結尾提示 -->
-    <SectionAnimation
-      :lines="[
-        '現在，讓我們進入資安小鎮，',
-        '親身體驗一場充滿挑戰與學習的資安任務吧！',
-        '倘若你想先了解自身能力，',
-        '不仿先到「練功坊」試試喔！',
-      ]"
-    />
 
     <Menu />
   </div>
@@ -121,7 +106,6 @@ import SymmetricEncryptionAndAES from "@/components/Home/SymmetricEncryptionAndA
 import AsymmetricEncryptionAndRSA from "@/components/Home/AsymmetricEncryptionAndRSA.vue"
 import DH from "@/components/Home/DH.vue"
 import SevenStage from "@/components/Home/SevenStage.vue"
-import SectionAnimation from "@/components/Home/SectionAnimation.vue"
 import IntroductionSection from "@/components/Home/IntroductionSection.vue"
 import ChapterIntroduction1 from "@/components/Home/ChapterIntroduction1.vue"
 import ChapterIntroduction2 from "@/components/Home/ChapterIntroduction2.vue"

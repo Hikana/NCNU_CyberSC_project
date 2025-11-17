@@ -1,16 +1,18 @@
 <template>
   <!-- ✅ 固定導覽列 -->
-  <div class="fixed top-0 left-0 w-full z-[99999] bg-wordcolor bg-opacity-80 backdrop-blur-md flex justify-between items-center px-10 py-4 h-20">
+  <div
+    class="fixed top-0 left-0 w-full z-[99999] bg-wordcolor bg-opacity-80 backdrop-blur-md flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-4 md:px-10 py-4 h-auto md:h-20"
+  >
 
     <!-- 🔹 左側選單 -->
-    <div class="flex items-center space-x-4">
-      <div class="flex space-x-5">
+    <div class="order-2 md:order-1 flex flex-wrap items-center justify-center md:justify-start gap-3 md:gap-5 md:flex-none">
+      <div class="flex flex-wrap justify-center md:justify-start gap-3 md:gap-5">
         <button
           v-for="(item, index) in menuItems"
           :key="index"
           @click="handleClick(item)"
           :class="[
-            'px-5 py-2 font-semibold rounded-xl shadow-md transition',
+            'px-4 md:px-5 py-2 text-sm md:text-base font-semibold rounded-xl shadow-md transition',
             activeSection === item.ref
               ? 'bg-wordcolor text-white'
               : 'bg-white text-gray-700 hover:bg-gray-200'
@@ -22,7 +24,7 @@
     </div>
 
     <!-- ✅ 中間網站標題 + 貓 GIF -->
-    <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center text-white">
+    <div class="order-1 md:order-2 flex flex-col items-center text-center text-white md:flex-1 md:flex-row md:justify-center md:space-x-3">
       <div class="flex flex-col items-center text-center">
         <div class="text-sm font-medium">資安教育網站</div>
         <div class="text-base font-bold">Code Fortress：資安築城記</div>
@@ -30,27 +32,28 @@
       <!-- ✅ 貓緊貼標題右側 -->
       <img
         :src="isScrolling ? '/src/assets/image/Menu/menu2.gif' : '/src/assets/image/Menu/menu.gif'"
-        class="w-16 h-16 ml-[10px] cursor-pointer transition-transform hover:scale-110"
+        class="w-14 h-14 md:w-16 md:h-16 mt-2 md:mt-0 cursor-pointer transition-transform hover:scale-110"
+        @click="scrollToTop"
       />
     </div>
 
 
     <!-- 🔹 右側功能按鈕 -->
-    <div class="flex space-x-7">
+    <div class="order-3 flex flex-wrap justify-center md:justify-end gap-3 md:gap-7 md:flex-none">
       <button
-        class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
+        class="px-5 md:px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
         @click="goCyberTown"
       >
         資安小鎮
       </button>
       <button
-        class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
+        class="px-5 md:px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
         @click="goTrainingRoom"
       >
         練功房
       </button>
       <button
-        class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
+        class="px-5 md:px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
         @click="handleAuthAction"
       >
         {{ isLoggedIn ? '登出' : '登入 / 註冊' }}
@@ -281,6 +284,10 @@ export default {
         return
       }
       this.$router.push('/questions')
+    },
+
+    scrollToTop() {
+      window.scrollTo({ top: 0, behavior: "smooth" })
     },
 
   }

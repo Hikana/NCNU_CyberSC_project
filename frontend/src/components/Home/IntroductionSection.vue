@@ -55,11 +55,7 @@
             <h3 class="font-bold text-wordcolor">🐾第五章：祕密信封的魔法（密碼學）</h3>
             <p>用加密與簽章保護信件，讓祕密安全送達。</p>
           </li>
-
-          <li class="story-paragraph fade-in-delay-8">
-            <h3 class="font-bold text-wordcolor">🐾第六章：白貓的筆記本（證照導覽）</h3>
-            <p>從小鎮筆記出發，踏上資安學習與成長的旅程。</p>
-          </li>
+          
         </ul>
       </div>
     </div>
@@ -92,7 +88,7 @@ onMounted(() => {
 /* 左右兩側區塊 */
 .story-side,
 .menu-side {
-  flex: 0 0 45%;
+  flex: 0 0 calc(50% - 0.5cm);
   padding: 2.5rem;
   border-radius: 30px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
