@@ -64,12 +64,12 @@
       ]"
     />
     <div ref="crypto">
-        <header class="w-screen bg-bgg py-10"></header>
         <header class="relative w-screen bg-bgg py-32">
-          <div class="absolute top-14 left-8 text-wordcolor px-8">
+          <div class="absolute top-14 left-8 text-wordcolor px-8 z-10">
             <h2 class="text-4xl md:text-5xl font-bold">第五章：祕密信封的魔法（密碼學）</h2>
           </div>
         </header>
+        <header class="w-screen bg-bgg py-10"></header>
         <WhyCrypto />
         <header class="w-screen bg-bgg py-32"></header>
 
