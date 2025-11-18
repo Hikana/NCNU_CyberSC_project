@@ -50,11 +50,33 @@
             
             <!-- 物品詳細資訊 -->
             <div v-if="selectedItem" class="item-detail">
-              <h3>{{ selectedItem.name }}</h3>
-              <p class="item-description">防禦工具 - {{ selectedItem.type }}</p>
-              <div class="item-stats">
-                <div class="stat">數量: x{{ selectedItem.qty }}</div>
-                <div class="stat">類型: {{ selectedItem.type }}</div>
+              <div class="tool-detail-header">
+                <div class="tool-detail-title">
+                  <h3>{{ selectedItem.name }}</h3>
+                </div>
+              </div>
+
+              <div class="tool-story-card" v-if="selectedToolDesc">
+                <div class="section-title">工具說明</div>
+                <p class="tool-story-text">{{ selectedToolDesc }}</p>
+              </div>
+
+              <div v-if="selectedItemDetail" class="item-realdesc-wrapper">
+                <button 
+                  class="realdesc-toggle-btn" 
+                  type="button"
+                  @click="toggleRealDesc"
+                  :aria-expanded="isRealDescExpanded.toString()"
+                >
+                  <span>{{ isRealDescExpanded ? '隱藏現實世界防禦說明' : '顯示現實世界防禦說明' }}</span>
+                  <span class="chevron">{{ isRealDescExpanded ? '▲' : '▼' }}</span>
+                </button>
+                <transition name="fade-expand">
+                  <div v-if="isRealDescExpanded" class="item-realdesc">
+                    <div class="item-realdesc-title">現實世界如何防禦？</div>
+                    <p>{{ selectedItemDetail }}</p>
+                  </div>
+                </transition>
               </div>
               <div class="item-actions">
                 <button class="use-btn" @click="useItem(selectedItem)">使用</button>
@@ -271,6 +293,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useEventLogStore } from '@/stores/eventLogStore';
 import { usePlayerStore } from '@/stores/player'
 import { useBuildingStore } from '@/stores/buildings';
+import defenseToolList from '@/game/rewards'
 
 
 const player = usePlayerStore()
@@ -288,6 +311,20 @@ const selectedItem = ref(null)
 const selectedEvent = ref(null)
 const showToolSelection = ref(false)
 const selectedEventForTool = ref(null)
+const isRealDescExpanded = ref(false)
+
+const defenseToolDetailMap = defenseToolList.reduce((map, tool) => {
+  map[tool.id] = tool
+  return map
+}, {})
+
+const selectedToolInfo = computed(() => {
+  if (!selectedItem.value) return null
+  return defenseToolDetailMap[selectedItem.value.id] || null
+})
+
+const selectedToolDesc = computed(() => selectedToolInfo.value?.desc || '')
+const selectedItemDetail = computed(() => selectedToolInfo.value?.realdesc || '')
 
 // 工具提示框狀態
 const toolNotification = ref({
@@ -315,6 +352,7 @@ function closeToolNotification() {
 // 點擊物品顯示詳細資訊
 function selectItem(item) {
   selectedItem.value = item
+  isRealDescExpanded.value = false
 }
 
 // 點擊事件顯示詳細資訊
@@ -339,6 +377,10 @@ function closeEventDetail() {
   selectedEvent.value = null
   showToolSelection.value = false
   selectedEventForTool.value = null
+}
+
+function toggleRealDesc() {
+  isRealDescExpanded.value = !isRealDescExpanded.value
 }
 
 // 選擇工具處理事件
@@ -1116,10 +1158,10 @@ async function deleteConnection(connectionId) {
 .inventory-content {
   display: flex;
   gap: 20px;
-  height: auto;
   min-height: 0;
   overflow-y: auto;
   padding: 20px;
+  align-items: flex-start;
 }
 
 .inventory-list {
@@ -1170,6 +1212,46 @@ async function deleteConnection(connectionId) {
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: 2px solid rgba(52, 152, 219, 0.3);
+  overflow-y: auto;
+  max-height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tool-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.tool-detail-title h3 {
+  margin: 8px 0 0 0;
+  font-size: 22px;
+  color: #1f2937;
+}
+
+
+.tool-story-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.02));
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-weight: 700;
+  color: #1d4ed8;
+  margin-bottom: 10px;
+}
+
+.tool-story-text {
+  margin: 0;
+  color: #374151;
+  line-height: 1.6;
 }
 
 .item-detail h3 {
@@ -1186,6 +1268,67 @@ async function deleteConnection(connectionId) {
 
 .item-stats {
   margin-bottom: 20px;
+}
+
+.item-realdesc {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: rgba(52, 152, 219, 0.08);
+  border-radius: 10px;
+  border: 1px solid rgba(52, 152, 219, 0.2);
+  line-height: 1.6;
+  color: #2c3e50;
+  font-size: 0.95rem;
+  white-space: pre-line;    /* 讓長段落自動換行且保留斷行 */
+  word-break: break-word;   /* 單字太長時強制換行 */
+  overflow-wrap: anywhere;  /* 任何地方都可以斷行，避免文字衝出卡片 */
+}
+
+.item-realdesc-title {
+  font-weight: 600;
+  color: #1d4ed8;
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+.item-realdesc-wrapper {
+  margin-bottom: 20px;
+}
+
+.realdesc-toggle-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(52, 152, 219, 0.4);
+  background: rgba(52, 152, 219, 0.1);
+  color: #1d4ed8;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.realdesc-toggle-btn:hover {
+  background: rgba(52, 152, 219, 0.2);
+  border-color: rgba(52, 152, 219, 0.7);
+}
+
+.chevron {
+  font-size: 0.85rem;
+}
+
+.fade-expand-enter-active,
+.fade-expand-leave-active {
+  transition: all 0.25s ease;
+}
+
+.fade-expand-enter-from,
+.fade-expand-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 .stat {
