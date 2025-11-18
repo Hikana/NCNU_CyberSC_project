@@ -63,7 +63,7 @@ export const useAchievementStore = defineStore('achievement', {
       const eventCount = playerStore.eventResolvedCount || 0;
       const connectToSwitchCount = playerStore.connectToSwitchCount || 0;
       const connectToRouterCount = playerStore.connectToRouterCount || 0;
-      const connectToInternetServerCount = playerStore.connectToInternetServerCount || 0;
+      const connectToInternetTowerCount = playerStore.connectToInternetTowerCount || 0;
       const castleLevel = playerStore.castleLevel || 0;
 
       // 統計已放置的 switch 和 router 數量
@@ -79,7 +79,7 @@ export const useAchievementStore = defineStore('achievement', {
         });
       }
 
-      const gameStats = { answeredCount, itemCount, eventCount, connectToSwitchCount, connectToRouterCount, connectToInternetServerCount, switchCount, routerCount, castleLevel };
+      const gameStats = { answeredCount, itemCount, eventCount, connectToSwitchCount, connectToRouterCount, connectToInternetTowerCount, switchCount, routerCount, castleLevel };
       
       try {
         const uid = playerStore.userId || playerStore.initFromAuth();
@@ -103,7 +103,7 @@ export const useAchievementStore = defineStore('achievement', {
                         : field === 'eventCount' ? eventCount
                         : field === 'connectToSwitchCount' ? connectToSwitchCount
                         : field === 'connectToRouterCount' ? connectToRouterCount
-                        : field === 'connectToInternetServerCount' ? connectToInternetServerCount
+                        : field === 'connectToInternetTowerCount' ? connectToInternetTowerCount
                         : field === 'switchCount' ? switchCount
                         : field === 'routerCount' ? routerCount
                         : field === 'castleLevel' ? castleLevel

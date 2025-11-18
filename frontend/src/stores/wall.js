@@ -46,22 +46,19 @@ export const useWallStore = defineStore('wall', {
       
       if (playerStore.defense >= requiredDefense) {
         this.castleLevel++;
-        console.log(`伺服器自動升級成功！目前等級: ${this.castleLevel}，需要防禦力: ${requiredDefense}`);
-        return true;
       } else {
-        console.log(`防禦力不足！需要 ${requiredDefense} 防禦力才能升級，目前有 ${playerStore.defense}`);
         return false;
       }
     },
 
-    // 更新防禦點數並檢查是否可以升級伺服器
+    // 更新防禦點數並檢查是否可以升級
     async updateDefensePoints(newValue) {
       const playerStore = usePlayerStore();
       await playerStore.updateDefense(newValue);
       this.checkCastleUpgrade();
     },
 
-    // 檢查伺服器是否可以升級
+    // 檢查是否可以升級
     checkCastleUpgrade() {
       const playerStore = usePlayerStore();
       const requiredDefense = (this.castleLevel + 1) * 150;
@@ -70,35 +67,35 @@ export const useWallStore = defineStore('wall', {
       }
     },
 
-    // 載入伺服器等級
+    // 載入等級
     async loadCastleLevel() {
       try {
         const playerStore = usePlayerStore();
         if (!playerStore.userId) {
-          console.warn('尚未登入，無法載入伺服器等級');
+          console.warn('尚未登入，無法載入公網塔等級');
           return;
         }
         const playerData = await apiService.getPlayer(playerStore.userId);
         
         if (playerData.castleLevel !== undefined) {
           this.castleLevel = playerData.castleLevel;
-          console.log('伺服器等級已載入:', this.castleLevel);
+          console.log('公網塔等級已載入:', this.castleLevel);
         }
         
         this.initialized = true;
       } catch (error) {
-        console.error('載入伺服器等級失敗:', error);
+        console.error('載入公網塔等級失敗:', error);
         this.castleLevel = 0;
         this.initialized = true;
       }
     },
 
-    // 更新伺服器等級到資料庫
+    // 更新公網塔等級到資料庫
     async updateCastleLevel(newLevel) {
       try {
         const playerStore = usePlayerStore();
         if (!playerStore.userId) {
-          console.warn('尚未登入，無法更新伺服器等級');
+          console.warn('尚未登入，無法更新公網塔等級');
           return;
         }
         const currentUserId = playerStore.userId;
@@ -121,9 +118,9 @@ export const useWallStore = defineStore('wall', {
           console.warn('檢查成就失敗（忽略）:', e);
         }
         
-        console.log('伺服器等級已更新到資料庫:', newLevel);
+        console.log('公網塔等級已更新到資料庫:', newLevel);
       } catch (error) {
-        console.error('更新伺服器等級失敗:', error);
+        console.error('更新公網塔等級失敗:', error);
       }
     },
 
@@ -138,7 +135,7 @@ export const useWallStore = defineStore('wall', {
       const currentDefense = playerStore.defense;
       const targetLevel = this.calculateCastleLevel();
       
-      console.log(`伺服器等級同步檢查: 防禦值=${currentDefense}, 當前等級=${this.castleLevel}, 目標等級=${targetLevel}`);
+      console.log(`公網塔等級同步檢查: 防禦值=${currentDefense}, 當前等級=${this.castleLevel}, 目標等級=${targetLevel}`);
       
       if (targetLevel !== this.castleLevel) {
         if (targetLevel > this.castleLevel) {          
@@ -150,27 +147,27 @@ export const useWallStore = defineStore('wall', {
         
         this.triggerMapRedraw();
       } else {
-        console.log(`伺服器等級無需變更，保持等級 ${this.castleLevel}`);
+        console.log(`公網塔等級無需變更，保持等級 ${this.castleLevel}`);
       }
     },
 
     showCastleUpgradeMessage(newLevel) {
-      this.castleUpgradeMessage = `伺服器升級到等級 ${newLevel}！`;
+      this.castleUpgradeMessage = '網路連線升級！小鎮的信件在郵路上的傳遞速度變得更快、更穩定。';
       setTimeout(() => {
         this.castleUpgradeMessage = null;
-      }, 3000);
+      }, 6000);
     },
 
     showCastleDowngradeMessage(newLevel) {
-      this.castleDowngradeMessage = `伺服器降級到等級 ${newLevel}...`;
+      this.castleDowngradeMessage = '網路連線下降了……郵路有點塞車，小鎮的信件傳遞變慢了。';
       setTimeout(() => {
         this.castleDowngradeMessage = null;
-      }, 3000);
+      }, 6000);
     },
 
     // 觸發地圖重繪
     triggerMapRedraw() {      
-      console.log('觸發地圖重繪以更新伺服器等級');
+      console.log('觸發地圖重繪以更新公網塔等級');
     },
   }
 });

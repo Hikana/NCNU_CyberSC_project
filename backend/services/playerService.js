@@ -64,7 +64,7 @@ class PlayerService {
 
   // 檢查並更新成就進度
   async checkAchievements(userId, gameStats) {
-    const { answeredCount, itemCount, developedCount, eventCount, connectToSwitchCount, connectToRouterCount, connectToInternetServerCount, switchCount, routerCount, castleLevel } = gameStats;
+    const { answeredCount, itemCount, developedCount, eventCount, connectToSwitchCount, connectToRouterCount, connectToInternetTowerCount, switchCount, routerCount, castleLevel } = gameStats;
     
     // 1. 取得玩家當前成就進度
     const playerAchievements = await this.getPlayerAchievements(userId);
@@ -82,7 +82,7 @@ class PlayerService {
                     : field === 'eventCount' ? eventCount
                     : field === 'connectToSwitchCount' ? (connectToSwitchCount || 0)
                     : field === 'connectToRouterCount' ? (connectToRouterCount || 0)
-                    : field === 'connectToInternetServerCount' ? (connectToInternetServerCount || 0)
+                    : field === 'connectToInternetTowerCount' ? (connectToInternetTowerCount || 0)
                     : field === 'switchCount' ? (gameStats.switchCount || 0)
                     : field === 'routerCount' ? (gameStats.routerCount || 0)
                     : field === 'castleLevel' ? (castleLevel || 0)

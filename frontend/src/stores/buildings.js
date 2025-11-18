@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { usePlayerStore } from './player';
 import { apiService } from '@/services/apiService'; // 引入我們統一的 apiService
-import { BUILDING_TYPES, createConnectionValidator, getConnectionColor } from '@/game/connectionRules'; // 引入連線規則模組
+import { BUILDING_TYPES, createConnectionValidator, getConnectionColor, INTERNET_TOWER_TYPE } from '@/game/connectionRules'; // 引入連線規則模組
 import { audioService } from '@/services/audioService'; // 引入音頻服務
 import routerImg from '@/assets/router.png';
 import switchImg from '@/assets/switch.png';
@@ -232,6 +232,7 @@ export const useBuildingStore = defineStore('buildings', {
       if (this.isPlacingFirewall()) {
         const { x, y } = this.selectedTile;
         try {
+          const firewallKind = this.getSelectedFirewallKind?.();
           const updated = await apiService.placeFirewall(this.selectedBuildingId, { x, y });
           if (Array.isArray(updated) && Array.isArray(updated[0])) {
             this.map = updated;
@@ -240,11 +241,18 @@ export const useBuildingStore = defineStore('buildings', {
           this.isPlacing = false;
           this.selectedTile = null;
           this.selectedBuildingId = null;
-          this.showPlacementMessage('已架設防火牆');
+
+          const firewallMessages = {
+            waf: '已建立 Web Application Firewall，可降低 DDoS、SQL Injection、XSS 攻擊風險。',
+            nwf: '已建立 Network Firewall，可降低 Unauthorized Access 攻擊風險，強化網路邊界防護。',
+            hf: '已建立 Host Firewall，可降低 Brute Force 攻擊風險，保護單一主機安全。'
+          };
+          const message = firewallMessages[firewallKind] ;
+          this.showConnectionModal('success', '防火牆已建立', `${message}`, false);
           return;
         } catch (e) {
           console.error('架設防火牆失敗:', e);
-          this.showPlacementMessage(e?.message || '架設防火牆失敗');
+          this.showPlacementMessage(e?.message );
           return;
         }
       }
@@ -337,11 +345,39 @@ export const useBuildingStore = defineStore('buildings', {
         return;
       }
 
+      const canonicalServerPosition = this.getCanonicalCastlePosition();
+
+      const normalizedTarget = this.normalizeTargetPosition(targetPosition);
+      if (!normalizedTarget) {
+        console.warn('無法解析目標位置');
+        this.showConnectionError('目標建築不存在或已被移除');
+        this.cancelConnection();
+        return;
+      }
+
+      const isDestinationCastle = canonicalServerPosition &&
+        normalizedTarget.x === canonicalServerPosition.x &&
+        normalizedTarget.y === canonicalServerPosition.y;
+
+      if (isDestinationCastle) {
+        const sourceConnections = this.getBuildingConnections(this.connectionSource.x, this.connectionSource.y);
+        const alreadyConnectedToCastle = sourceConnections.some(conn => {
+          return (conn.to.x === canonicalServerPosition.x && conn.to.y === canonicalServerPosition.y) ||
+                 (conn.from.x === canonicalServerPosition.x && conn.from.y === canonicalServerPosition.y);
+        });
+
+        if (alreadyConnectedToCastle) {
+          this.showConnectionError('此 Router 已連 Public Internet Tower，無法重複連線');
+          this.cancelConnection();
+          return;
+        }
+      }
+
       // 檢查連線是否已存在
       const connectionExists = this.connections.some(conn => 
         (conn.from.x === this.connectionSource.x && conn.from.y === this.connectionSource.y && 
-         conn.to.x === targetPosition.x && conn.to.y === targetPosition.y) ||
-        (conn.from.x === targetPosition.x && conn.from.y === targetPosition.y && 
+         conn.to.x === normalizedTarget.x && conn.to.y === normalizedTarget.y) ||
+        (conn.from.x === normalizedTarget.x && conn.from.y === normalizedTarget.y && 
          conn.to.x === this.connectionSource.x && conn.to.y === this.connectionSource.y)
       );
 
@@ -355,14 +391,14 @@ export const useBuildingStore = defineStore('buildings', {
       const validator = createConnectionValidator(this.map, this.connections);
       
       // 檢查是否已經存在相同的連線
-      if (validator.isConnectionExists(this.connectionSource.x, this.connectionSource.y, targetPosition.x, targetPosition.y)) {
+      if (validator.isConnectionExists(this.connectionSource.x, this.connectionSource.y, normalizedTarget.x, normalizedTarget.y)) {
         console.log('連線已存在');
         this.cancelConnection();
         return;
       }
 
       // 驗證連線規則
-      const validation = validator.canConnectBuildings(this.connectionSource.x, this.connectionSource.y, targetPosition.x, targetPosition.y);
+      const validation = validator.canConnectBuildings(this.connectionSource.x, this.connectionSource.y, normalizedTarget.x, normalizedTarget.y);
       if (!validation.valid) {
         console.log('連線規則驗證失敗:', validation.reason);
         this.showConnectionError(validation.reason);
@@ -371,29 +407,71 @@ export const useBuildingStore = defineStore('buildings', {
       }
 
       try {
+        const sourcePosition = this.connectionSource ? { ...this.connectionSource } : null;
+        if (!sourcePosition) {
+          console.warn('連線來源不存在，無法完成連線');
+          this.showConnectionError('來源建築不存在或已被移除');
+          this.cancelConnection();
+          return;
+        }
+
+        const sourceRow = sourcePosition.y;
+        const sourceCol = sourcePosition.x;
+        if (!this.map?.[sourceRow]?.[sourceCol]) {
+          console.warn('找不到來源建築在地圖上的資料');
+          this.showConnectionError('來源建築不存在或已被移除');
+          this.cancelConnection();
+          return;
+        }
+
         // 添加新連線到後端
+        const targetRow = normalizedTarget.y;
+        const targetCol = normalizedTarget.x;
+        const targetCell = this.map?.[targetRow]?.[targetCol];
+        if (!targetCell) {
+          console.warn('找不到目標建築在地圖上的資料');
+          this.showConnectionError('目標建築不存在或已被移除');
+          this.cancelConnection();
+          return;
+        }
+
         const newConnection = {
-          from: { ...this.connectionSource },
-          to: { ...targetPosition }
+          from: sourcePosition,
+          to: { ...normalizedTarget }
         };
 
         const savedConnection = await apiService.addConnection(newConnection);
+        const normalizedSavedConnection = this.normalizeConnectionEndpoints(savedConnection) || newConnection;
         console.log('連線已保存到後端:', savedConnection);
 
         // 添加到本地狀態
-        this.connections.push(savedConnection);
+        this.connections.push(normalizedSavedConnection);
         console.log('本地連線列表已更新');
         
         // 顯示連線成功提示
-        const fromType = this.getBuildingType(this.map[this.connectionSource.y][this.connectionSource.x].buildingId);
-        const toType = this.getBuildingType(this.map[targetPosition.y][targetPosition.x].buildingId);
-        this.showConnectionSuccess(fromType, toType);
+        const fromCell = this.map[sourceRow][sourceCol];
+        const toCell = targetCell;
+        const fromType = this.resolveCellType(fromCell);
+        const toType = this.resolveCellType(toCell);
+        // 從地圖中獲取建築類型（host、switch、router）
+        const fromBuildingType = fromCell.type || (fromType?.type || 'host');
+        const toBuildingType = (toCell?.type) || (toType?.type || 'host');
+        this.showConnectionSuccess(fromType, toType, fromBuildingType, toBuildingType);
         
         // 刷新玩家資料以更新連線計數
         try {
           const { usePlayerStore } = await import('./player');
           const playerStore = usePlayerStore();
           await playerStore.loadPlayerData();
+          
+          // 檢查成就（連線成功後）
+          try {
+            const { useAchievementStore } = await import('./achievement');
+            const achievementStore = useAchievementStore();
+            await achievementStore.checkAllAchievements();
+          } catch (e) {
+            console.warn('檢查成就失敗（忽略）:', e);
+          }
         } catch (e) {
           console.warn('刷新玩家資料失敗（忽略）:', e);
         }
@@ -419,7 +497,9 @@ export const useBuildingStore = defineStore('buildings', {
     async loadConnections() {
       try {
         const connections = await apiService.getConnections();
-        this.connections = connections;
+        this.connections = (connections || [])
+          .map(conn => this.normalizeConnectionEndpoints(conn))
+          .filter(Boolean);
         console.log('已載入連線:', connections.length, '條');
       } catch (error) {
         console.error('載入連線失敗:', error);
@@ -477,6 +557,76 @@ export const useBuildingStore = defineStore('buildings', {
       return this.buildingTypes[buildingId] || null;
     },
 
+    resolveCellType(cell) {
+      if (!cell) return null;
+      if (cell.buildingId) {
+        return this.getBuildingType(cell.buildingId);
+      }
+      if (cell.type === 'castle') {
+        return INTERNET_TOWER_TYPE;
+      }
+      return null;
+    },
+
+    getCastleTiles() {
+      const tiles = [];
+      if (!Array.isArray(this.map)) return tiles;
+      for (let row = 0; row < this.map.length; row++) {
+        const rowData = this.map[row];
+        if (!Array.isArray(rowData)) continue;
+        for (let col = 0; col < rowData.length; col++) {
+          const cell = rowData[col];
+          if (cell && cell.type === 'castle') {
+            tiles.push({ x: col, y: row });
+          }
+        }
+      }
+      return tiles;
+    },
+
+    getCanonicalCastlePosition() {
+      const tiles = this.getCastleTiles();
+      if (tiles.length === 0) return null;
+      tiles.sort((a, b) => {
+        if (a.y === b.y) return a.x - b.x;
+        return a.y - b.y;
+      });
+      return { ...tiles[Math.floor(tiles.length / 2)] };
+    },
+
+    normalizePosition(position) {
+      if (!position || typeof position.x === 'undefined' || typeof position.y === 'undefined') return null;
+      const x = Number(position.x);
+      const y = Number(position.y);
+      if (Number.isNaN(x) || Number.isNaN(y)) return null;
+      return { x, y };
+    },
+
+    normalizeTargetPosition(position) {
+      const base = this.normalizePosition(position);
+      if (!base) return null;
+      const cell = this.map?.[base.y]?.[base.x];
+      if (cell && cell.type === 'castle') {
+        const canonical = this.getCanonicalCastlePosition();
+        if (canonical) {
+          return canonical;
+        }
+      }
+      return base;
+    },
+
+    normalizeConnectionEndpoints(connection) {
+      if (!connection) return null;
+      const normalizedFrom = this.normalizeTargetPosition(connection.from) || this.normalizePosition(connection.from);
+      const normalizedTo = this.normalizeTargetPosition(connection.to) || this.normalizePosition(connection.to);
+      if (!normalizedFrom || !normalizedTo) return null;
+      return {
+        ...connection,
+        from: normalizedFrom,
+        to: normalizedTo
+      };
+    },
+
     getBuildingConnections(x, y) {
       return this.connections.filter(conn => 
         (conn.from.x === x && conn.from.y === y) ||
@@ -504,11 +654,34 @@ export const useBuildingStore = defineStore('buildings', {
       this.connectionModal.isVisible = false;
     },
 
-    async showConnectionSuccess(fromType, toType) {
+    async showConnectionSuccess(fromType, toType, fromBuildingType = null, toBuildingType = null) {
+      // 獲取建築類型顯示名稱
+      const getTypeDisplayName = (type) => {
+        const typeMap = {
+          'host': 'Host',
+          'switch': 'Switch',
+          'router': 'Router',
+          'castle': 'Public Internet Tower',
+          'firewall': 'Firewall'
+        };
+        return typeMap[type] || type;
+      };
+      
+      const formatDisplayName = (type) => {
+        if (!type) return '未知建築';
+        if (type.type === 'castle') return '公網塔';
+        return type.name || '未知建築';
+      };
+
+      const fromTypeName = formatDisplayName(fromType);
+      const toTypeName = formatDisplayName(toType);
+      const fromTypeLabel = fromBuildingType ? ` (${getTypeDisplayName(fromBuildingType)})` : '';
+      const toTypeLabel = toBuildingType ? ` (${getTypeDisplayName(toBuildingType)})` : '';
+      
       this.showConnectionModal(
         'success',
         '連線成功！',
-        `✅ 成功建立連線：${fromType?.name} → ${toType?.name}`,
+        `成功建立連線：${fromTypeName}${fromTypeLabel} → ${toTypeName}${toTypeLabel}`,
         false
       );
       

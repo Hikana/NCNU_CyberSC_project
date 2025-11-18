@@ -262,7 +262,6 @@ function onNpcClick() {
   align-items: center;
   gap: 10px;
   box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
-  animation: slideInFromTop 0.5s ease-out;
 }
 
 .upgrade-text {
@@ -291,7 +290,6 @@ function onNpcClick() {
   align-items: center;
   gap: 10px;
   box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
-  animation: slideInFromTop 0.5s ease-out;
 }
 
 .downgrade-text {

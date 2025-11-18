@@ -696,6 +696,25 @@ async function deleteConnection(connectionId) {
   backdrop-filter: blur(5px);
   pointer-events: auto;
 }
+
+/* 通用滑動條樣式 - 灰色 */
+.npc-menu ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.npc-menu ::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.npc-menu ::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.3);
+  border-radius: 4px;
+}
+
+.npc-menu ::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.5);
+}
 .close-btn {
   position: absolute;
   top: 15px;
@@ -1502,12 +1521,12 @@ async function deleteConnection(connectionId) {
 }
 
 .events-list-scroll::-webkit-scrollbar-thumb {
-  background: rgba(231, 76, 60, 0.3);
+  background: rgba(128, 128, 128, 0.3);
   border-radius: 3px;
 }
 
 .events-list-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(231, 76, 60, 0.5);
+  background: rgba(128, 128, 128, 0.5);
 }
 
 .event-item {
@@ -1644,12 +1663,12 @@ async function deleteConnection(connectionId) {
 }
 
 .event-detail-body::-webkit-scrollbar-thumb {
-  background: rgba(231, 76, 60, 0.3);
+  background: rgba(128, 128, 128, 0.5);
   border-radius: 4px;
 }
 
 .event-detail-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(231, 76, 60, 0.5);
+  background: rgba(128, 128, 128, 0.8);
 }
 
 .event-description-section h4 {

@@ -1,7 +1,6 @@
 const playerData = require('../models/playerData');
 const shopData = require('../models/shopData');
 
-// 與前端 IsoGrid 對齊的城堡座標（以 row,col = y,x）
 const CASTLE_TILES = new Set([
     '0,0','0,1','0,2',
     '1,0','1,1','1,2',
@@ -26,10 +25,9 @@ class BuildingService {
           const playerTileData = playerLand[tileKey];
           const isCastle = this.isCastleTile(y, x);
 
-          // 任何情況下，城堡 3x3 一律固定為 developed/castle
           if (isCastle) {
             return {
-              status: 'developed',
+              status: 'placed',
               type: 'castle',
               buildingId: null,
               firewall: (playerTileData && playerTileData.firewall) ? playerTileData.firewall : null,
@@ -90,9 +88,8 @@ class BuildingService {
       if (!targetTile) throw new Error('無效的位置');
       if (targetTile.status !== 'developed') throw new Error('該位置無法放置建築');
   
-      // 4. 伺服器區域限制
-      if (this.isCastleTile(y, x)) throw new Error('此區域為網路伺服器(Internet Server)，無法放置建築');
-      console.log('伺服器檢查通過');
+      // 4. 公網塔區域限制
+      if (this.isCastleTile(y, x)) throw new Error('此區域為 Public Internet Tower，無法放置建築');``
   
       // 5. 扣除科技點
       await playerData.updatePlayer(userId, { techPoints: player.techPoints - buildingInfo.techCost });
@@ -182,7 +179,7 @@ class BuildingService {
       }
     } else if (kind === 'waf') {
       if (!(targetTile.type === 'castle')) {
-        throw new Error('WAF 只能架在網路伺服器(Internet Server)');
+        throw new Error('WAF 只能架在 Public Internet Tower');
       }
     }
 
@@ -266,7 +263,7 @@ class BuildingService {
         await playerData.incrementConnectToRouterCount(userId);
       }
       if (types.includes('castle')) {
-        await playerData.incrementConnectToInternetServerCount(userId);
+        await playerData.incrementConnectToInternetTowerCount(userId);
       }
     } catch (e) {
       console.warn('增加連線計數時發生錯誤（略過不中斷）:', e.message);
