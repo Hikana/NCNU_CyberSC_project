@@ -32,7 +32,7 @@
                 'w-20 h-20 rounded-full text-3xl font-bold transition-all duration-300 flex items-center justify-center',
                 selectedId === item.id 
                   ? 'bg-middleGray text-wordcolor scale-110' 
-                  : 'bg-wordcolor text-white hover:bg-gray-500'
+                  : 'bg-bggray text-wordcolor hover:bg-lightGray'
               ]"
             >
               {{ item.id }}
@@ -43,14 +43,14 @@
         <!-- 右欄：內容（白底框＋可滾動） -->
         <div class="text-left self-start">
           <div
-            class="bg-lightGray text-wordcolor rounded-2xl shadow-lg p-6 md:p-8 max-h-[85vh] overflow-y-auto border border-gray-300"
+            class="info-card text-wordcolor rounded-2xl max-h-[85vh] overflow-y-auto"
           >
             <!-- 顯示選中的內容 -->
             <div v-if="selectedContent" class="space-y-6">
               <h3 class="font-semibold text-2xl mb-2">
                 {{ selectedContent.title }}
               </h3>
-              <h4 class="text-xl mb-4 text-gray-700">{{ selectedContent.subtitle }}</h4>
+              <h4 class="text-xl mb-4 text-wordcolor">{{ selectedContent.subtitle }}</h4>
 
               <!-- 遍歷 contents -->
               <div v-for="(content, cIndex) in selectedContent.contents" :key="cIndex" class="mb-6">

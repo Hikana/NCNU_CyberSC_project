@@ -14,31 +14,31 @@
       <div class="story-content space-y-6 bg-lightGray rounded-2xl p-8 md:p-12">
         <!-- 第一段 -->
         <div class="story-paragraph fade-in">
-          <p class="text-xl md:text-2xl leading-relaxed text-gray-800">在一個遙遠又安靜的小鎮裡，</p>
-          <p class="text-xl md:text-2xl leading-relaxed text-gray-800">貓咪們過著和平又忙碌的生活。</p>
+          <p class="text-xl md:text-2xl leading-relaxed text-wordcolor">在一個遙遠又安靜的小鎮裡，</p>
+          <p class="text-xl md:text-2xl leading-relaxed text-wordcolor">貓咪們過著和平又忙碌的生活。</p>
         </div>
 
         <!-- 第二段 -->
         <div class="story-paragraph fade-in-delay-1">
-          <p class="text-xl md:text-2xl leading-relaxed text-gray-800">有一天，牠們決定要建立一個<span class="font-bold text-wordcolor text-2xl md:text-3xl">「郵件網路系統」</span>，</p>
-          <p class="text-xl md:text-2xl leading-relaxed text-gray-800">讓信件能快速、安全地送到每一位貓朋友手中。</p>
+          <p class="text-xl md:text-2xl leading-relaxed text-wordcolor">有一天，牠們決定要建立一個<span class="font-bold text-wordcolor text-2xl md:text-3xl">「郵件網路系統」</span>，</p>
+          <p class="text-xl md:text-2xl leading-relaxed text-wordcolor">讓信件能快速、安全地送到每一位貓朋友手中。</p>
         </div>
 
         <!-- 轉折段 -->
         <div class="story-paragraph fade-in-delay-2 mt-8">
-          <p class="text-xl md:text-2xl leading-relaxed text-gray-700 italic">可是，信件經常寄丟、寄錯、甚至被偷看……</p>
-          <p class="text-xl md:text-2xl leading-relaxed text-gray-800 mt-4">白貓<span class="font-bold text-wordcolor">小賽（Cipher）</span>每天忙著修郵局，卻怎麼都找不到問題。</p>
+          <p class="text-xl md:text-2xl leading-relaxed text-wordcolor italic">可是，信件經常寄丟、寄錯、甚至被偷看……</p>
+          <p class="text-xl md:text-2xl leading-relaxed text-wordcolor mt-4">白貓<span class="font-bold text-wordcolor">小賽（Cipher）</span>每天忙著修郵局，卻怎麼都找不到問題。</p>
         </div>
 
         <!-- 呼籲段 -->
         <div class="story-paragraph fade-in-delay-3 mt-8">
-          <p class="text-xl md:text-2xl leading-relaxed text-gray-800">為了讓貓鎮重新恢復秩序，</p>
-          <p class="text-xl md:text-2xl leading-relaxed text-gray-800">小賽需要一位<span class="font-bold text-wordcolor text-2xl md:text-3xl">「系統助理」</span>來幫牠一起建造安全的郵件防線。</p>
+          <p class="text-xl md:text-2xl leading-relaxed text-wordcolor">為了讓貓鎮重新恢復秩序，</p>
+          <p class="text-xl md:text-2xl leading-relaxed text-wordcolor">小賽需要一位<span class="font-bold text-wordcolor text-2xl md:text-3xl">「系統助理」</span>來幫牠一起建造安全的郵件防線。</p>
         </div>
 
         <!-- 結尾 -->
         <div class="story-paragraph fade-in-delay-4 mt-12">
-          <p class="text-2xl md:text-3xl leading-relaxed text-gray-700 mb-6">而那位助理——</p>
+          <p class="text-2xl md:text-3xl leading-relaxed text-wordcolor mb-6">而那位助理——</p>
           <p class="text-4xl md:text-6xl font-extrabold text-wordcolor mt-6 animate-pulse">
             就是你。
           </p>

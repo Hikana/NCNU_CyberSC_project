@@ -21,14 +21,14 @@
           @click="toggleCard(stone.id)"
         >
           <div class="card-inner rounded-xl shadow-lg">
-            <div class="card-face card-front bg-wordcolor text-white flex flex-col items-center justify-center rounded-xl">
+            <div class="card-face card-front bg-blueGray text-wordcolor flex flex-col items-center justify-center rounded-xl">
               <p class="text-4xl font-extrabold tracking-wide">{{ stone.id }}</p>
             </div>
             <div class="card-face card-back bg-lightGray text-wordcolor rounded-xl">
               <h3 class="text-[26px] font-bold text-center" v-html="stone.title"></h3>
               <p class="text-[20px] font-bold w-full px-4 mt-4 text-left leading-relaxed flex-1" v-html="stone.text"></p>
               <button
-                class="mt-4 px-6 py-2 rounded-full bg-wordcolor text-white font-semibold shadow hover:bg-wordcolor/90 transition"
+                class="mt-4 px-6 py-2 rounded-full bg-blueGray text-wordcolor font-semibold shadow hover:bg-blueGrayPressed transition"
                 @click.stop="showOverlay(stone.id)"
               >
                 查看更多
@@ -49,7 +49,7 @@
           </h2>
 
           <button
-            class="absolute top-2 right-2 p-2 text-xl bg-lightGray font-bold text-gray-800 hover:text-black"
+            class="absolute top-2 right-2 p-2 text-xl bg-lightGray font-bold text-wordcolor hover:text-blueGrayPressed"
             @click="closeOverlay"
           >
             ✕
@@ -59,7 +59,7 @@
             <div
               v-for="(item, index) in overlayContents"
               :key="index"
-              class="bg-wordcolor rounded-2xl p-5 shadow-lg text-white text-lg"
+              class="bg-blueGray rounded-2xl p-5 shadow-lg text-wordcolor text-lg"
             >
               <h3 class="font-bold text-xl mb-2">{{ item.title }}</h3>
               <p v-html="item.content"></p>

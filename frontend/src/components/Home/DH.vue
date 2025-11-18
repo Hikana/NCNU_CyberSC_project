@@ -16,23 +16,25 @@
 
       <!-- 左欄 -->
       <div class="text-left self-start">
-        <h2 class="text-5xl font-bold mb-6">DH 金鑰交換</h2>
-        <h2 class="text-4xl font-bold mb-6">Diffie-Hellman Key Exchange</h2>
-        <div class="text-lg md:text-xl leading-relaxed space-y-4">
-          <h4 class="text-2xl font-bold mb-2">
-            <br/>這不是加密，而是「在不安全的網路中共享一把秘密鑰匙」。<br/><br/>
-            像在大庭廣眾混顏色，每個人都公開「底色 + 自己的部分」，<br/>
-            但最終只有兩人能算出完全一樣的「最終顏色（共享密鑰）」。
-          </h4>
+        <div class="info-card space-y-4">
+          <h2 class="text-5xl font-bold">DH 金鑰交換</h2>
+          <h2 class="text-4xl font-bold">Diffie-Hellman Key Exchange</h2>
+          <div class="text-lg md:text-xl leading-relaxed">
+            <h4 class="text-2xl font-bold">
+              這不是加密，而是「在不安全的網路中共享一把秘密鑰匙」。<br/><br/>
+              像在大庭廣眾混顏色，每個人都公開「底色 + 自己的部分」，<br/>
+              但最終只有兩人能算出完全一樣的「最終顏色（共享密鑰）」。
+            </h4>
+          </div>
         </div>
       </div>
 
       <!-- 右欄 -->
       <div class="text-left self-center">
-        <div class="mb-8">
+        <div class="info-card space-y-8">
 
           <!-- 優缺點 -->
-          <div class="grid grid-cols-2 gap-6 text-lg md:text-xl leading-relaxed mb-10">
+          <div class="grid grid-cols-2 gap-6 text-lg md:text-xl leading-relaxed">
             <div>
               <h3 class="text-2xl font-semibold mb-4">優點：</h3>
               <ul class="list-disc pl-6 space-y-1">
@@ -50,7 +52,7 @@
           </div>
 
           <!-- 運作原理 -->
-          <div class="mb-10">
+          <div>
             <h3 class="text-2xl font-semibold mb-4">運作原理：</h3>
             <ul class="list-disc pl-6 space-y-1 text-lg md:text-xl italic">
               <li>A 和 B 先公開一個共同底數 (g) 和模數 (p)。</li>
@@ -61,7 +63,7 @@
           </div>
 
           <!-- 舉例 -->
-          <div class="mb-10">
+          <div>
             <h3 class="text-2xl font-semibold mb-4">舉例應用：</h3>
             <ul class="list-disc pl-6 space-y-1 text-lg md:text-xl italic">
               <li>HTTPS / TLS 建立安全通道</li>

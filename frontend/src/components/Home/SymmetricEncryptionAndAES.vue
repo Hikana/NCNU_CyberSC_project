@@ -23,25 +23,23 @@
       >
         <!-- 左欄 -->
         <div class="text-left self-start">
-          <h2 class="text-5xl font-bold mb-6">
-            對稱式加密
-          </h2>
-          <h2 class="text-4xl font-bold mb-6">
-            Symmetric Encryption
-          </h2>
-          <div class="text-lg md:text-xl leading-relaxed space-y-4">
-            <h4 class="text-2xl font-bold mb-2">
-              <br/>加密和解密使用「同一把」密鑰。<br/><br/>
-              這就像你家用的大門鑰匙。你出門時用這把鑰匙鎖上門（加密），<br/>你的家人（接收者）回家時，必須擁有那把一模一樣的鑰匙，<br/>才能把門打開（解密）。
-            </h4>
+          <div class="info-card space-y-4">
+            <h2 class="text-5xl font-bold">對稱式加密</h2>
+            <h2 class="text-4xl font-bold">Symmetric Encryption</h2>
+            <div class="text-lg md:text-xl leading-relaxed">
+              <h4 class="text-2xl font-bold">
+                加密和解密使用「同一把」密鑰。<br/><br/>
+                這就像你家用的大門鑰匙。你出門時用這把鑰匙鎖上門（加密），<br/>你的家人（接收者）回家時，必須擁有那把一模一樣的鑰匙，<br/>才能把門打開（解密）。
+              </h4>
+            </div>
           </div>
         </div>
 
         <!-- 右欄 -->
         <div class="text-left self-center">
-          <div class="mb-8">
+          <div class="info-card space-y-8">
             <!-- 優缺點 -->
-            <div class="grid grid-cols-2 gap-6 text-lg md:text-xl leading-relaxed mb-10">
+            <div class="grid grid-cols-2 gap-6 text-lg md:text-xl leading-relaxed">
               <div>
                 <h3 class="text-2xl font-semibold mb-4">優點：</h3>
                 <ul class="list-disc pl-6 space-y-1">
@@ -60,7 +58,7 @@
             </div>
 
             <!-- 運作原理 -->
-            <div class="mb-10">
+            <div>
               <h3 class="text-2xl font-semibold mb-4">運作原理：</h3>
               <div class="flex flex-wrap gap-x-6 gap-y-2 text-lg md:text-xl italic">
                 <ul class="list-disc pl-6 space-y-1">
@@ -73,7 +71,7 @@
             </div>
 
             <!-- 舉例 -->
-            <div class="mb-10">
+            <div>
               <h3 class="text-2xl font-semibold mb-4">舉例應用：</h3>
               <div class="flex flex-wrap gap-x-6 gap-y-2 text-lg md:text-xl italic">
                 <ul class="list-disc pl-6 space-y-1">

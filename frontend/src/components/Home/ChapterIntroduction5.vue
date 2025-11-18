@@ -44,7 +44,7 @@
   padding: 2.5rem;
   border-radius: 30px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
-  background-color: #D7D1E2; /* lightGray 調亮 5% */
+  background-color: #FAC6D3;
   display: flex;
   flex-direction: column;
 }
@@ -63,7 +63,7 @@
 .section-title {
   font-size: 1.75rem;
   font-weight: bold;
-  color: #374151;
+  color: #352E2A;
   margin-bottom: 1.5rem;
   line-height: 1.8;
   letter-spacing: 0.3px;
@@ -74,7 +74,7 @@
   font-size: 1.25rem;
   line-height: 1.8;
   letter-spacing: 0.3px;
-  color: #374151;
+  color: #352E2A;
   margin-bottom: 1rem;
   white-space: pre-line;
 }

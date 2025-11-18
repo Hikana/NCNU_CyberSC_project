@@ -7,7 +7,7 @@
       <p
         v-for="(line, index) in visibleLines"
         :key="index"
-        class="text-2xl md:text-3xl font-semibold text-gray-700"
+        class="text-2xl md:text-3xl font-semibold text-wordcolor"
         :class="{ 'typing-active': index === currentTypingIndex }"
       >
         {{ line }}
@@ -75,7 +75,7 @@ p {
   border-right: 2px solid transparent;
 }
 .typing-active {
-  border-right: 2px solid #777;
+  border-right: 2px solid #AB78BE;
   animation: typing 1s steps(30, end), blink 0.75s step-end infinite;
 }
 @keyframes typing {

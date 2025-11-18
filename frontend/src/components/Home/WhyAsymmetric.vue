@@ -5,17 +5,19 @@
 
         <!-- 左欄：標題與說明 -->
         <div class="text-left self-start">
-          <h2 class="text-3xl md:text-5xl font-bold mb-6">為什麼需要非對稱加密？</h2>
-          <div class="leading-relaxed space-y-4 mb-8">
-            <h4 class="text-2xl font-semibold mb-2"><br/>對稱式加密速度快但存在「金鑰交換問題」。</h4>
-            <h4 class="text-2xl font-semibold mb-2">非對稱加密完美解決了這個問題，</h4>
-            <h4 class="text-2xl font-semibold mb-2">讓我們能在不安全的網路上建立安全信任。</h4>
+          <div class="info-card space-y-4">
+            <h2 class="text-3xl md:text-5xl font-bold">為什麼需要非對稱加密？</h2>
+            <div class="leading-relaxed space-y-4">
+              <h4 class="text-2xl font-semibold">對稱式加密速度快但存在「金鑰交換問題」。</h4>
+              <h4 class="text-2xl font-semibold">非對稱加密完美解決了這個問題，</h4>
+              <h4 class="text-2xl font-semibold">讓我們能在不安全的網路上建立安全信任。</h4>
+            </div>
           </div>
         </div>
 
         <!-- 右欄：內容 -->
-        <div class="text-left self-start space-y-10">
-          <div>
+        <div class="text-left self-start space-y-8">
+          <div class="info-card space-y-3">
             <h3 class="text-2xl font-semibold mb-3">對稱式加密的限制</h3>
             <ul class="list-disc ml-6 space-y-2 text-base md:text-xl">
               <li>加密與解密使用同一把鑰匙。</li>
@@ -25,7 +27,7 @@
             </ul>
           </div>
 
-          <div>
+          <div class="info-card space-y-3">
             <h3 class="text-2xl font-semibold mb-3">非對稱加密的解法</h3>
             <ul class="list-disc ml-6 space-y-2 text-base md:text-xl">
               <li>使用一對鑰匙：公鑰與私鑰。</li>
@@ -35,7 +37,7 @@
             </ul>
           </div>
 
-          <div>
+          <div class="info-card space-y-3">
             <h3 class="text-2xl font-semibold mb-3">優點與缺點</h3>
             <ul class="list-disc ml-6 space-y-2 text-base md:text-xl">
               <li><strong>優點：</strong> 完美解決金鑰交換問題，提供身分驗證能力。</li>

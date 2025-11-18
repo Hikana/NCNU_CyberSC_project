@@ -22,24 +22,26 @@
 
       <!-- 左欄 -->
       <div class="text-left self-start">
-        <h2 class="text-5xl font-bold mb-6">非對稱式加密</h2>
-        <h2 class="text-4xl font-bold mb-6">Asymmetric Encryption</h2>
-        <div class="text-lg md:text-xl leading-relaxed space-y-4">
-          <h4 class="text-2xl font-bold mb-2">
-            <br/>使用「一對密鑰」進行加解密：公鑰與私鑰。<br/><br/>
-            就像銀行保險箱：<br/>
-            公鑰 = 投錢口，人人可以把資料放進去（加密），但無法拿出來。<br/>
-            私鑰 = 開箱子的鑰匙，只有擁有者能開啟（解密）。
-          </h4>
+        <div class="info-card space-y-4">
+          <h2 class="text-5xl font-bold">非對稱式加密</h2>
+          <h2 class="text-4xl font-bold">Asymmetric Encryption</h2>
+          <div class="text-lg md:text-xl leading-relaxed">
+            <h4 class="text-2xl font-bold mb-2">
+              <br/>使用「一對密鑰」進行加解密：公鑰與私鑰。<br/><br/>
+              就像銀行保險箱：<br/>
+              公鑰 = 投錢口，人人可以把資料放進去（加密），但無法拿出來。<br/>
+              私鑰 = 開箱子的鑰匙，只有擁有者能開啟（解密）。
+            </h4>
+          </div>
         </div>
       </div>
 
       <!-- 右欄 -->
       <div class="text-left self-center">
-        <div class="mb-8">
+        <div class="info-card space-y-8">
 
           <!-- 優缺點 -->
-          <div class="grid grid-cols-2 gap-6 text-lg md:text-xl leading-relaxed mb-10">
+          <div class="grid grid-cols-2 gap-6 text-lg md:text-xl leading-relaxed">
             <div>
               <h3 class="text-2xl font-semibold mb-4">優點：</h3>
               <ul class="list-disc pl-6 space-y-1">
@@ -58,7 +60,7 @@
           </div>
 
           <!-- 運作原理 -->
-          <div class="mb-10">
+          <div>
             <h3 class="text-2xl font-semibold mb-4">運作原理：</h3>
             <ul class="list-disc pl-6 space-y-1 text-lg md:text-xl italic">
               <li>接收方 (B) 產生「公鑰 + 私鑰」。</li>
@@ -69,7 +71,7 @@
           </div>
 
           <!-- 舉例應用 -->
-          <div class="mb-10">
+          <div>
             <h3 class="text-2xl font-semibold mb-4">舉例應用：</h3>
             <ul class="list-disc pl-6 space-y-1 text-lg md:text-xl italic">
               <li class="font-bold">HTTPS / SSL 憑證：</li>

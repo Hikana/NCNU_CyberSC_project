@@ -13,9 +13,9 @@
         <!-- 右邊：主要學習內容 -->
         <div class="menu-side chapter-content">
           <h3 class="section-title">主要學習內容:</h3>
-          <p class="story-text">在網路世界裡，資料就像一封封信，會經過許多中繼站才送到對方手中。</p>
+          <p class="story-text">在網路世界裡，資料就像一封封郵件，會經過許多中繼站才送到對方手中。</p>
           <p class="story-text">這些傳送路徑由<span class="font-bold text-wordcolor">「網路七層模型（OSI 7 Layers）」</span>負責。</p>
-          <p class="story-text">從電線傳訊號的「實體層」，到貓咪打開信件的「應用層」，每一層都要合作，資料才能準確送達。</p>
+          <p class="story-text">從光電訊號的「實體層」，到貓咪打開信件的「應用層」，每一層都要合作，資料才能準確送達。</p>
           <p class="story-text">只要有一層出錯，就會像資安小鎮的郵件系統一樣——亂糟糟！</p>
         </div>
       </div>
@@ -42,7 +42,7 @@
   padding: 2.5rem;
   border-radius: 30px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
-  background-color: #D7D1E2; /* lightGray 調亮 5% */
+  background-color: #FAC6D3;
   display: flex;
   flex-direction: column;
 }
@@ -61,7 +61,7 @@
 .section-title {
   font-size: 1.75rem;
   font-weight: bold;
-  color: #374151;
+  color: #352E2A;
   margin-bottom: 1.5rem;
   line-height: 1.8;
   letter-spacing: 0.3px;
@@ -72,7 +72,7 @@
   font-size: 1.25rem;
   line-height: 1.8;
   letter-spacing: 0.3px;
-  color: #374151;
+  color: #352E2A;
   margin-bottom: 1rem;
   white-space: pre-line;
 }
