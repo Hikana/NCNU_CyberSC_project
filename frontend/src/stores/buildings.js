@@ -547,6 +547,34 @@ export const useBuildingStore = defineStore('buildings', {
       console.log('選中連線:', connectionId);
     },
 
+    focusConnection(connectionOrId) {
+      if (!connectionOrId) return;
+      const targetConnection = typeof connectionOrId === 'string'
+        ? this.connections.find(conn => conn.id === connectionOrId)
+        : connectionOrId;
+
+      if (!targetConnection) return;
+
+      this.selectConnection(targetConnection.id);
+
+      const centerX = (Number(targetConnection.from?.x) + Number(targetConnection.to?.x)) / 2;
+      const centerY = (Number(targetConnection.from?.y) + Number(targetConnection.to?.y)) / 2;
+
+      if (Number.isNaN(centerX) || Number.isNaN(centerY)) return;
+
+      const TILE_SIZE = 150;
+      const halfW = TILE_SIZE / 2;
+      const halfH = TILE_SIZE / 4;
+      const isoX = (centerX - centerY) * halfW;
+      const isoY = (centerX + centerY) * halfH;
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('moveToPosition', {
+          detail: { x: isoX, y: isoY }
+        }));
+      }
+    },
+
     // 清除選中連線
     clearSelectedConnection() {
       this.selectedConnectionId = null;
@@ -722,6 +750,10 @@ export const useBuildingStore = defineStore('buildings', {
       this.isDeletingConnection = false;
       this.deleteConnectionTarget = null;
       this.connectionsToDelete = [];
+      if (this.showConnections) {
+        this.showConnections = false;
+        this.clearSelectedConnection();
+      }
     },
 
     async deleteSingleConnection(connectionId) {
@@ -730,6 +762,9 @@ export const useBuildingStore = defineStore('buildings', {
         await apiService.removeConnection(connectionId);
         // 從本地狀態刪除連線
         this.connections = this.connections.filter(conn => conn.id !== connectionId);
+        if (this.selectedConnectionId === connectionId) {
+          this.clearSelectedConnection();
+        }
         // 更新連線列表
         if (this.deleteConnectionTarget) {
           this.connectionsToDelete = this.getBuildingConnections(

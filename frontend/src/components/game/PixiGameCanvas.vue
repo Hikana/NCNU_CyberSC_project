@@ -135,15 +135,26 @@
       </p>
     </div>
     <div class="connection-list" v-if="buildingStore.connectionsToDelete.length > 0">
+      <p class="connection-hint">點擊連線可在地圖上顯示該連線位置</p>
       <div 
         v-for="conn in buildingStore.connectionsToDelete" 
         :key="conn.id"
         class="connection-item"
+        :class="{ selected: buildingStore.selectedConnectionId === conn.id }"
+        @click="focusConnection(conn)"
       >
         <span>{{ getConnectionDisplayText(conn, buildingStore.deleteConnectionTarget) }}</span>
-        <button @click="deleteSingleConnection(conn.id)" class="delete-connection-btn">
-          刪除
-        </button>
+        <div class="connection-item-actions">
+          <button 
+            class="preview-connection-btn" 
+            @click.stop="focusConnection(conn)"
+          >
+            顯示
+          </button>
+          <button @click.stop="deleteSingleConnection(conn.id)" class="delete-connection-btn">
+            刪除
+          </button>
+        </div>
       </div>
     </div>
     <div class="delete-connection-controls">
@@ -259,6 +270,10 @@ function cancelDeleteConnection() {
 
 async function deleteSingleConnection(connectionId) {
   await buildingStore.deleteSingleConnection(connectionId);
+}
+
+function focusConnection(conn) {
+  buildingStore.focusConnection(conn);
 }
 
 function getConnectionDisplayText(conn, targetPosition) {
@@ -793,18 +808,33 @@ function cancelConnection() {
 .connection-list {
   max-height: 200px;
   overflow-y: auto;
+  overflow-x: hidden;
   margin-bottom: 10px;
+}
+
+.connection-hint {
+  margin: 0 0 8px;
+  color: #8ec5ff;
+  font-size: 14px;
 }
 
 .connection-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
   background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
   padding: 10px 12px;
   border-radius: 10px;
   margin-bottom: 8px;
   border: 1px solid rgba(255,255,255,.2);
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.connection-item.selected {
+  border-color: rgba(34,197,94,.8);
+  box-shadow: 0 0 12px rgba(34,197,94,0.35);
 }
 
 .connection-item span {
@@ -813,11 +843,41 @@ function cancelConnection() {
   flex: 1;
 }
 
+.connection-item-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: 10px;
+  width: 150px;
+}
+
+.preview-connection-btn {
+  background: linear-gradient(135deg, rgba(59,130,246,.95), rgba(37,99,235,.85));
+  color: #fff;
+  border: 1px solid rgba(59,130,246,.6);
+  padding: 6px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 6px 18px rgba(59,130,246,.25);
+  transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.preview-connection-btn:hover {
+  box-shadow: 0 10px 24px rgba(59,130,246,.35);
+}
+
+.connection-item-actions .preview-connection-btn,
+.connection-item-actions .delete-connection-btn {
+  flex: 1;
+  min-width: 0;
+}
+
 .delete-connection-btn {
   background: linear-gradient(135deg, rgba(239,68,68,.95), rgba(220,38,38,.9));
   color: #fff;
   border: 1px solid rgba(239,68,68,.6);
-  padding: 8px 14px;
+  padding: 6px 10px;
   border-radius: 10px;
   cursor: pointer;
   font-size: 14px;

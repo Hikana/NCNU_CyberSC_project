@@ -197,23 +197,33 @@ export class Game {
     // 如果有移動，就更新玩家位置到 store（通常會觸發畫面重繪或狀態同步）
     if (hasMoved) {
         this.playerStore.updatePosition({ x, y });
-        
-        // 檢查公網塔碰撞和離開
-        if (this.grid) {
-          const isInCastle = this.grid.checkCastleCollision(x, y);
-          
-      // 如果現在在公網塔內，且之前不在
-          if (isInCastle && !this.wasInCastle) {
-            this.grid.replaceCastleWithCan1();
-          }
-      // 如果現在不在公網塔內，且之前在
-          else if (!isInCastle && this.wasInCastle) {
-            this.grid.resetCastleImage();
-          }
-          
-          // 更新公網塔狀態
-          this.wasInCastle = isInCastle;
-        }
+    }
+    
+    // 每次遊戲循環都檢查公網塔碰撞和離開（不只在移動時檢查）
+    if (this.grid) {
+      const isInCastle = this.grid.checkCastleCollision(x, y);
+      
+      // 如果現在在公網塔內，且之前不在（進入城堡）
+      if (isInCastle && !this.wasInCastle) {
+        console.log('🎮 檢測到玩家進入城堡，調用 replaceCastleWithCan1()')
+        // 異步調用，不阻塞遊戲循環
+        this.grid.replaceCastleWithCan1().catch(err => {
+          console.error('替換城堡圖片失敗:', err);
+        });
+        // 立即更新狀態，避免重複調用
+        this.wasInCastle = true;
+      }
+      // 如果現在不在公網塔內，且之前在（離開城堡）
+      else if (!isInCastle && this.wasInCastle) {
+        console.log('🎮 檢測到玩家離開城堡，調用 resetCastleImage()')
+        this.grid.resetCastleImage();
+        // 立即更新狀態，避免重複調用
+        this.wasInCastle = false;
+      }
+      // 如果狀態沒有變化，也更新狀態（確保同步）
+      else {
+        this.wasInCastle = isInCastle;
+      }
     }
     
     // 更新玩家所在的格子位置（用於顯示綠色高亮）

@@ -699,10 +699,24 @@ export class IsoGrid {
       castleContainer.x -= offsetX
 
       // 繪製城堡層級（從基礎層到當前等級）
+      // 如果玩家在城堡內（開門狀態），第0層使用 can1.png，否則使用 castle0.png
       let topCastleLayer = null
       for (let level = 0; level <= castleLevel; level++) {
-        if (this.castleTextures[level]) {
-          const castleLayer = new PIXI.Sprite(this.castleTextures[level])
+        let texture
+        if (level === 0) {
+          // 第0層：根據開門狀態選擇圖片
+          if (this.castleHit && this.castleTextures['can1']) {
+            texture = this.castleTextures['can1'] // 開門狀態
+          } else {
+            texture = this.castleTextures[0] // 關門狀態
+          }
+        } else {
+          // 其他層級使用原本的城堡圖片
+          texture = this.castleTextures[level]
+        }
+        
+        if (texture) {
+          const castleLayer = new PIXI.Sprite(texture)
           castleLayer.eventMode = 'none'
           castleLayer.anchor.set(0.5, 0.55)
           const castleScale = 2.5
@@ -1129,17 +1143,42 @@ export class IsoGrid {
   /**
    * 當玩家碰到城堡時，將城堡圖片替換為 can1.png（僅替換 castle0.png 層）
    */
-  replaceCastleWithCan1() {
-    if (this.castleHit || !this.castleContainer || !this.castleTextures['can1']) {
+  async replaceCastleWithCan1() {
+    if (!this.castleContainer) {
+      console.warn('⚠️ 城堡容器不存在，無法替換圖片')
       return
     }
     
-    this.castleHit = true
-    console.log('🏰 玩家碰到城堡！將 castle0.png 替換為 can1.png')
+    // 如果 can1 紋理還沒載入，嘗試載入它
+    if (!this.castleTextures || !this.castleTextures['can1']) {
+      console.log('🔄 can1.png 紋理尚未載入，正在載入...')
+      try {
+        if (!this.castleTextures) {
+          this.castleTextures = {}
+        }
+        this.castleTextures['can1'] = await PIXI.Assets.load(can1Img)
+        console.log('✅ can1.png 紋理載入成功')
+      } catch (e) {
+        console.warn('⚠️ can1.png 載入失敗，使用後備方案:', e)
+        this.castleTextures['can1'] = PIXI.Texture.from(can1Img)
+      }
+    }
     
-    // 播放門開啟音效（前0.5秒）
-    audioService.playDoorOpenSound()
+    // 再次檢查紋理是否存在
+    if (!this.castleTextures['can1']) {
+      console.error('❌ can1.png 紋理載入失敗，無法替換城堡圖片')
+      return
+    }
     
+    // 只在第一次碰到時播放音效
+    if (!this.castleHit) {
+      this.castleHit = true
+      console.log('🏰 玩家碰到城堡！將 castle0.png 替換為 can1.png')
+      // 播放門開啟音效（前0.5秒）
+      audioService.playDoorOpenSound()
+    }
+    
+    // ⭐ 重點：每次都執行圖片更新（移到判斷外面）
     // 清除現有的城堡層級
     this.castleContainer.removeChildren()
     
@@ -1165,11 +1204,9 @@ export class IsoGrid {
         const castleScale = 2.5
         castleLayer.width = this.tileSize * 3 * castleScale
         castleLayer.height = this.tileSize * 2 * castleScale
-        castleLayer.zIndex = 5 + level // 每層級增加 zIndex，確保正確疊加
+        castleLayer.zIndex = 5 + level
         
-        // 讓上層稍微偏移，營造疊加效果
         if (level > 0) {
-          // Y軸稍微向上偏移（讓上層看起來更高）
           castleLayer.y = -level * 112
         }
         this.castleContainer.addChild(castleLayer)
