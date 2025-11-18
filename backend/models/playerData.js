@@ -234,6 +234,19 @@ class PlayerData {
 
   // 添加新連線
   async addConnection(userId, connection) {
+    // 檢查是否已存在相同的連線（雙向檢查）
+    const existingConnections = await this.getPlayerConnections(userId);
+    const connectionExists = existingConnections.some(conn => 
+      (conn.from.x === connection.from.x && conn.from.y === connection.from.y && 
+       conn.to.x === connection.to.x && conn.to.y === connection.to.y) ||
+      (conn.from.x === connection.to.x && conn.from.y === connection.to.y && 
+       conn.to.x === connection.from.x && conn.to.y === connection.from.y)
+    );
+
+    if (connectionExists) {
+      throw new Error('此連線已存在，無法重複建立');
+    }
+
     const docRef = await this.players.doc(userId).collection('connections').add({
       ...connection,
       createdAt: FieldValue.serverTimestamp()

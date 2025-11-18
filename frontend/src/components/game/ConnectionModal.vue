@@ -260,6 +260,7 @@ export default {
   text-align: center;
   text-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
   font-family: 'Courier New', monospace;
+  white-space: pre-line; 
 }
 
 /* 連線規則說明 - 科幻面板 */

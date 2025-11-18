@@ -341,6 +341,7 @@ export const useBuildingStore = defineStore('buildings', {
       // 檢查是否為同一個建築物
       if (this.connectionSource.x === targetPosition.x && this.connectionSource.y === targetPosition.y) {
         console.log('不能連線到同一個建築物');
+        this.showConnectionError('不能連線到同一個建築物');
         this.cancelConnection();
         return;
       }
@@ -373,7 +374,18 @@ export const useBuildingStore = defineStore('buildings', {
         }
       }
 
-      // 檢查連線是否已存在
+      // 使用連線規則模組檢查連線
+      const validator = createConnectionValidator(this.map, this.connections);
+      
+      // 檢查是否已經存在相同的連線
+      if (validator.isConnectionExists(this.connectionSource.x, this.connectionSource.y, normalizedTarget.x, normalizedTarget.y)) {
+        console.log('連線已存在');
+        this.showConnectionError('此連線已存在，無法重複建立');
+        this.cancelConnection();
+        return;
+      }
+
+      // 檢查連線是否已存在（本地檢查，作為備用）
       const connectionExists = this.connections.some(conn => 
         (conn.from.x === this.connectionSource.x && conn.from.y === this.connectionSource.y && 
          conn.to.x === normalizedTarget.x && conn.to.y === normalizedTarget.y) ||
@@ -383,16 +395,7 @@ export const useBuildingStore = defineStore('buildings', {
 
       if (connectionExists) {
         console.log('連線已存在');
-        this.cancelConnection();
-        return;
-      }
-
-      // 使用連線規則模組檢查連線
-      const validator = createConnectionValidator(this.map, this.connections);
-      
-      // 檢查是否已經存在相同的連線
-      if (validator.isConnectionExists(this.connectionSource.x, this.connectionSource.y, normalizedTarget.x, normalizedTarget.y)) {
-        console.log('連線已存在');
+        this.showConnectionError('此連線已存在，無法重複建立');
         this.cancelConnection();
         return;
       }
@@ -487,7 +490,13 @@ export const useBuildingStore = defineStore('buildings', {
         
       } catch (error) {
         console.error('保存連線失敗:', error);
-        this.showConnectionError('保存連線失敗，請重試');
+        // 檢查是否為重複連線錯誤
+        const errorMessage = error?.message || error?.toString() || '';
+        if (errorMessage.includes('已存在') || errorMessage.includes('重複')) {
+          this.showConnectionError('此連線已存在，無法重複建立');
+        } else {
+          this.showConnectionError('保存連線失敗，請重試');
+        }
       }
       
       this.cancelConnection();
@@ -706,10 +715,86 @@ export const useBuildingStore = defineStore('buildings', {
       const fromTypeLabel = fromBuildingType ? ` (${getTypeDisplayName(fromBuildingType)})` : '';
       const toTypeLabel = toBuildingType ? ` (${getTypeDisplayName(toBuildingType)})` : '';
       
+      // 判斷連線類型並提供網路概念說明
+      const getNetworkConcept = (fromType, toType, fromBuildingType, toBuildingType) => {
+        const fromTypeStr = fromBuildingType || fromType?.type || '';
+        const toTypeStr = toBuildingType || toType?.type || '';
+        
+        // Host ↔ Switch: 建立 LAN（區域網路）
+        if ((fromTypeStr === 'host' && toTypeStr === 'switch') || 
+            (fromTypeStr === 'switch' && toTypeStr === 'host')) {
+          return {
+            concept: 'LAN (區域網路)',
+            description: '你建立了一個 LAN！Switch 可以連接多個 Host，形成一個區域網路，讓同一區域內的設備可以互相通訊。'
+          };
+        }
+        
+        // Switch ↔ Router: 連接不同 LAN，形成 WAN 的一部分
+        if ((fromTypeStr === 'switch' && toTypeStr === 'router') || 
+            (fromTypeStr === 'router' && toTypeStr === 'switch')) {
+          return {
+            concept: 'WAN (廣域網路)',
+            description: '你建立了 WAN 連線！Router 連接不同的 LAN，讓不同區域的網路可以互相通訊，形成更大的網路架構。'
+          };
+        }
+        
+        // Router ↔ Public Internet Tower: 建立網際網路連線
+        if ((fromTypeStr === 'router' && toTypeStr === 'castle') || 
+            (fromTypeStr === 'castle' && toTypeStr === 'router')) {
+          return {
+            concept: '網際網路連線',
+            description: '你建立了網際網路連線！Router 連接到 Public Internet Tower，讓你的區域網路可以連接到全球網際網路。'
+          };
+        }
+        
+        // Host ↔ Router: 直接連接到路由器
+        if ((fromTypeStr === 'host' && toTypeStr === 'router') || 
+            (fromTypeStr === 'router' && toTypeStr === 'host')) {
+          return {
+            concept: '直接路由器連線',
+            description: '你建立了直接路由器連線！Host 直接連接到 Router，可以透過路由器訪問其他網路。'
+          };
+        }
+        
+        // Switch ↔ Switch: 擴展 LAN
+        if (fromTypeStr === 'switch' && toTypeStr === 'switch') {
+          return {
+            concept: 'LAN 擴展',
+            description: '你擴展了 LAN！連接多個 Switch 可以擴大區域網路的範圍，讓更多設備加入同一個區域網路。'
+          };
+        }
+        
+        // Host ↔ Host: 點對點連線
+        if (fromTypeStr === 'host' && toTypeStr === 'host') {
+          return {
+            concept: '點對點連線',
+            description: '你建立了點對點連線！兩個 Host 直接連接，可以互相通訊。'
+          };
+        }
+        
+        // Router ↔ Router: 路由器間連線
+        if (fromTypeStr === 'router' && toTypeStr === 'router') {
+          return {
+            concept: '路由器間連線',
+            description: '你建立了路由器間連線！連接多個 Router 可以建立更複雜的網路拓撲，實現不同網路之間的互連。'
+          };
+        }
+        
+        // 預設情況
+        return {
+          concept: '網路連線',
+          description: '你成功建立了網路連線！'
+        };
+      };
+      
+      const networkInfo = getNetworkConcept(fromType, toType, fromBuildingType, toBuildingType);
+      const connectionMessage = `成功建立連線：${fromTypeName}${fromTypeLabel} → ${toTypeName}${toTypeLabel}`;
+      const conceptMessage = `\n\n網路概念：${networkInfo.concept}\n${networkInfo.description}`;
+      
       this.showConnectionModal(
         'success',
         '連線成功！',
-        `成功建立連線：${fromTypeName}${fromTypeLabel} → ${toTypeName}${toTypeLabel}`,
+        connectionMessage + conceptMessage,
         false
       );
       

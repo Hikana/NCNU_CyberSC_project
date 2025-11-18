@@ -234,7 +234,7 @@ class BuildingService {
 
   // 添加連線
   async addConnection(userId, connection) {
-    // 新增連線
+    // 新增連線（內部會檢查重複連線）
     const saved = await playerData.addConnection(userId, connection);
 
     try {
