@@ -1,5 +1,5 @@
 <template>
-  <div v-if="showNpcTip" class="dialog-bottom">想知道遊戲規則及各種資源請點我</div>
+  <div v-if="showNpcTip" class="dialog-bottom">我是小賽，想知道遊戲規則及各種資源請點我喵~</div>
   <div class="controls-hint">
     <div><strong>控制說明:</strong></div>
     <div>↑↓←→ 移動角色</div>

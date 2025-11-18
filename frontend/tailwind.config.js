@@ -7,15 +7,15 @@ export default {
   theme: {
     extend: {
       colors:{
-        bggray: '#DAE1F7',
-        wordcolor: '#352E2A',
+        bggray: '#F2F0F0',
+        wordcolor: '#464655',
         bgg: 'rgba(237, 223, 239, 0)',
-        lightGray:'#FAC6D3',
-        middleGray:'#F2D7E6',
-        blueGray:"#D1BBED",
-        pinkGray:'#F2D7E6',
-        blueGrayPressed: "#AB78BE",
-        pinkGrayPressed: "#F2D7E6",
+        lightGray:'#D5CFE1',
+        middleGray:'#B7B6C1',
+        blueGray:"#7F9EB2",
+        pinkGray:"#A997B8",
+        blueGrayPressed: "#5F7A91",
+        pinkGrayPressed: "#8B7CA3",
       },
       backgroundImage:{
         'can': "url('/src/assets/image/can1.png')",
