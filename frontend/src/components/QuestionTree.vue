@@ -20,7 +20,7 @@
           :key="cat.code"
           @click="setCategory(cat.code)"
           class="cursor-pointer p-2 rounded hover:bg-gray-700"
-          :class="activeCategory === cat.code && !showWrongList ? 'bg-gray-700 text-primary' : ''"
+          :class="activeCategory === cat.code && !showWrongList ? 'bg-gray-700' : ''"
         >
           <div class="flex items-center gap-2 px-1 py-1">
             <span class="material-symbols-outlined">{{ cat.icon }}</span>
@@ -32,8 +32,11 @@
           <div class="flex items-center gap-2 px-1 mt-1">
             <div class="w-full bg-gray-600 rounded-full h-1.5 overflow-hidden">
               <div
-                class="bg-primary h-1.5 rounded-full transition-all duration-500 ease-out"
-                :style="{ width: getProgressPercentage(cat.code) + '%' }"
+                class="h-1.5 rounded-full transition-all duration-500 ease-out"
+                :style="{
+                  width: getProgressPercentage(cat.code) + '%',
+                  backgroundColor: '#22c55e'
+                }"
               ></div>
             </div>
             <span class="text-xs font-medium text-gray-400">
@@ -283,6 +286,29 @@ export default {
       if (!prog || prog.total === 0) return 0
       return Math.round((prog.completed / prog.total) * 100)
     },
+    loadProgressMap() {
+      try {
+        return JSON.parse(localStorage.getItem("questionProgress") || "{}")
+      } catch (e) {
+        return {}
+      }
+    },
+    saveProgressMap(map) {
+      localStorage.setItem("questionProgress", JSON.stringify(map))
+    },
+    updateProgressForQuestion(q) {
+      const map = this.loadProgressMap()
+      map[q.id] = q.status
+      this.saveProgressMap(map)
+    },
+    applySavedProgress() {
+      const map = this.loadProgressMap()
+      this.questions = this.questions.map(q => ({
+        ...q,
+        status: map[q.id] || "unanswered",
+        expanded: false
+      }))
+    },
     toggleExpand(q) {
       q.expanded = !q.expanded
     },
@@ -294,10 +320,12 @@ export default {
         q.status = "wrong"
         this.saveWrongQuestion(q)
       }
+      this.updateProgressForQuestion(q)
       q.expanded = false
     },
     retryQuestion(q) {
       q.status = "unanswered"
+      this.updateProgressForQuestion(q)
       q.expanded = false
     },
     saveWrongQuestion(q) {
@@ -350,6 +378,7 @@ export default {
       status: "unanswered",
       expanded: false
     }))
+    this.applySavedProgress()
     this.loadWrongQuestions()
   }
 }
