@@ -68,9 +68,24 @@ class GameData {
 
   
   async getAllQuestions() {
-    const snapshot = await this.questionsCollection.orderBy('createdAt', 'desc').get();
-    if (snapshot.empty) return [];
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    try {
+      // 嘗試使用 orderBy，如果失敗則回退到不使用排序
+      const snapshot = await this.questionsCollection.orderBy('createdAt', 'desc').get();
+      if (snapshot.empty) return [];
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      // 如果 orderBy 失敗（可能是索引問題或缺少 createdAt 欄位），則不使用排序
+      console.warn('使用 orderBy 失敗，改用無排序查詢:', error.message);
+      const snapshot = await this.questionsCollection.get();
+      if (snapshot.empty) return [];
+      const questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // 手動按 createdAt 排序（如果存在）
+      return questions.sort((a, b) => {
+        const aTime = a.createdAt?.toMillis?.() || a.createdAt || 0;
+        const bTime = b.createdAt?.toMillis?.() || b.createdAt || 0;
+        return bTime - aTime;
+      });
+    }
   }
 
   
