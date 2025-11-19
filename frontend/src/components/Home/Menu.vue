@@ -1,30 +1,21 @@
 <template>
-  <!-- 固定導覽列 -->
-  <div class="fixed top-0 left-0 w-full z-[9999] bg-wordcolor bg-opacity-80 backdrop-blur-md flex justify-between items-center px-10 py-4">
+  <!-- ✅ 固定導覽列 -->
+  <div
+    class="fixed top-0 left-0 w-full z-[99999] bg-bgg shadow-lg backdrop-blur-md flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-4 md:px-10 py-4 h-auto md:h-20"
+  >
 
-    <!-- 左側 logo + 選單 -->
-    <div class="flex items-center space-x-9">
-      <!-- menu.gif / menu2.gif  -->
-      <img
-        :src="isScrolling ? '/src/assets/image/Menu/menu2.gif' : '/src/assets/image/Menu/menu.gif'"
-        class="w-14 h-14 cursor-pointer transition-transform "
-        alt="回到首頁"
-        title="回到首頁"
-        @click="goHome"
-      />
-
-
-      <!-- 動態選單按鈕 -->
-      <div class="flex space-x-7">
+    <!-- 🔹 左側選單 -->
+    <div class="order-2 md:order-1 flex flex-wrap items-center justify-center md:justify-start gap-3 md:gap-5 md:flex-none">
+      <div class="flex flex-wrap justify-center md:justify-start gap-3 md:gap-5">
         <button
           v-for="(item, index) in menuItems"
           :key="index"
           @click="handleClick(item)"
           :class="[
-            'px-6 py-2 font-semibold rounded-xl shadow-md transition',
+            'px-4 md:px-5 py-2 text-sm md:text-base font-semibold rounded-xl shadow-md transition',
             activeSection === item.ref
-              ? 'bg-wordcolor text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-200'
+              ? 'bg-lightGray text-wordcolor'
+              : 'bg-white text-wordcolor hover:bg-middleGray'
           ]"
         >
           {{ item.label }}
@@ -32,26 +23,41 @@
       </div>
     </div>
 
-    <!-- 右側功能按鈕 -->
-    <div class="flex space-x-7">
+    <!-- ✅ 中間網站標題 + 貓 GIF -->
+    <div class="order-1 md:order-2 flex flex-col items-center text-center text-wordcolor md:flex-1 md:flex-row md:justify-center md:space-x-3">
+      <div class="flex flex-col items-center text-center">
+        <div class="text-sm font-medium">資安教育網站</div>
+        <div class="text-base font-bold">Code Fortress：資安築城記</div>
+      </div>
+      <!-- ✅ 貓緊貼標題右側 -->
+      <img
+        :src="isScrolling ? '/src/assets/image/Menu/menu2.gif' : '/src/assets/image/Menu/menu.gif'"
+        class="w-14 h-14 md:w-16 md:h-16 mt-2 md:mt-0 cursor-pointer transition-transform hover:scale-110"
+        @click="scrollToTop"
+      />
+    </div>
+
+
+    <!-- 🔹 右側功能按鈕 -->
+    <div class="order-3 flex flex-wrap justify-center md:justify-end gap-3 md:gap-7 md:flex-none">
       <button
-        class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
+        class="px-5 md:px-6 py-2 bg-white text-wordcolor font-semibold rounded-xl shadow-md hover:bg-middleGray transition"
         @click="goCyberTown"
       >
         資安小鎮
       </button>
       <button
-        class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
+        class="px-5 md:px-6 py-2 bg-white text-wordcolor font-semibold rounded-xl shadow-md hover:bg-middleGray transition"
         @click="goTrainingRoom"
       >
         練功房
       </button>
       <button
-          class="px-6 py-2 bg-white text-gray-700 font-semibold rounded-xl shadow-md hover:bg-gray-200 transition"
-          @click="handleAuthAction"
-        >
-          {{ isLoggedIn ? '登出' : '登入 / 註冊' }}
-        </button>
+        class="px-5 md:px-6 py-2 bg-white text-wordcolor font-semibold rounded-xl shadow-md hover:bg-middleGray transition"
+        @click="handleAuthAction"
+      >
+        {{ isLoggedIn ? '登出' : '登入 / 註冊' }}
+      </button>
     </div>
   </div>
 
@@ -59,17 +65,17 @@
   <transition name="fade-left">
     <div
       v-if="showRightDialog"
-      class="fixed bottom-6 right-6 bg-white shadow-lg rounded-xl p-4 w-[320px] min-h-[40vh] overflow-auto z-50 flex flex-col"
+      class="fixed bottom-6 right-6 bg-white shadow-lg rounded-xl p-4 w-[320px] min-h-[40vh] overflow-auto z-50 flex flex-col text-wordcolor"
     >
-      <h3 class="font-bold text-black text-[17px] mb-2">{{ activeDialog.title }}</h3>
-      <div class="border rounded text-black bg-gray-100 p-3 flex-1 whitespace-pre-wrap" v-html="activeDialog.displayContent"></div>
+      <h3 class="font-bold text-wordcolor text-[17px] mb-2">{{ activeDialog.title }}</h3>
+      <div class="border rounded text-wordcolor bg-bggray p-3 flex-1 whitespace-pre-wrap" v-html="activeDialog.displayContent"></div>
 
       <!-- 功能按鈕 -->
       <div class="flex justify-end items-center mt-3 space-x-2">
         <!-- 加密 -->
         <button
           v-if="activeDialog.title.includes('RSA') || activeDialog.title.includes('AES')"
-          class="px-4 py-2 bg-blueGray text-white rounded hover:bg-blueGrayPressed font-semibold"
+          class="px-4 py-2 bg-blueGray text-wordcolor rounded hover:bg-blueGrayPressed font-semibold"
           @click="showEncryptFull"
         >
           加密
@@ -77,13 +83,13 @@
         <!-- 解密 -->
         <button
           v-if="activeDialog.title.includes('RSA') || activeDialog.title.includes('AES')"
-          class="px-4 py-2 bg-pinkGray text-white rounded hover:bg-pinkGrayPressed font-semibold"
+          class="px-4 py-2 bg-pinkGray text-wordcolor rounded hover:bg-pinkGrayPressed font-semibold"
           @click="showDecryptFull"
         >
           解密
         </button>
         <!-- 關閉 -->
-        <button @click="toggleRightDialog" class="absolute top-1 right-3 text-gray-500 hover:text-gray-800 font-bold text-xl bg-white p-2">
+        <button @click="toggleRightDialog" class="absolute top-1 right-3 text-wordcolor hover:text-blueGrayPressed font-bold text-xl bg-white p-2">
           ✕
         </button>
       </div>
@@ -124,9 +130,11 @@ export default {
 
       /* 導覽列選項，ref 必須與父層 section 對應 */
       menuItems: [
-        { label: "OSI7", ref: "ss" },
-        { label: "密碼學", ref: "crypto" },
-        { label: "OWASP", ref: "top10Section" },
+        { label: "第一章", ref: "ss" },
+        { label: "第二章", ref: "ciaSection" },
+        { label: "第三章", ref: "aaaSection" },
+        { label: "第四章", ref: "top10Section" },
+        { label: "第五章", ref: "crypto" },
       ],
 
       /* 原本你寫的內容流程 */
@@ -293,7 +301,16 @@ export default {
     /* 點選導覽列 → 滾至對應區塊 */
     handleClick(item) {
       const target = this.$parent.$refs[item.ref]?.$el || this.$parent.$refs[item.ref];
-      if (target) target.scrollIntoView({ behavior: "smooth" });
+      if (target) {
+        const offset = 80; // 向上偏移 80px（導覽列高度）
+        const elementPosition = target.getBoundingClientRect().top + window.pageYOffset;
+        const offsetPosition = elementPosition - offset;
+        
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth"
+        });
+      }
     },
 
     /* 顯示 AES/RSA 內容 */
@@ -329,6 +346,10 @@ export default {
         return
       }
       this.$router.push('/questions')
+    },
+
+    scrollToTop() {
+      window.scrollTo({ top: 0, behavior: "smooth" })
     },
 
   }

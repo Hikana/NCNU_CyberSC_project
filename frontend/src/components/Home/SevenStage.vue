@@ -1,13 +1,12 @@
 <template>
   <div
-    ref="containerRef"
     class="bg-bgg relative w-full h-screen overflow-hidden flex justify-center items-center font-sans"
   >
     <div
       class="absolute top-4 left-[320px] px-3 py-2 rounded-md shadow-md transition-all duration-300 z-30 transform scale-125 origin-top-left"
       :style="{
-        backgroundColor: currentColor.dot,
-        color: 'white',
+        backgroundColor: currentColor.bg,
+        color: '#352E2A',
       }"
     >
       <h2 class="text-xl font-bold">{{ currentGroupTitle }}</h2>
@@ -17,8 +16,8 @@
     <div
       class="absolute top-4 right-4 px-7 py-2 rounded-md shadow-md transition-all duration-300 z-30 transform scale-125 origin-top-right"
       :style="{
-        backgroundColor: currentColor.dot,
-        color: 'white',
+        backgroundColor: currentColor.bg,
+        color: '#352E2A',
       }"
     >
       <h2 class="text-xl font-bold">傳輸流程</h2>
@@ -30,7 +29,7 @@
         class="absolute left-[20px] top-0 w-1.5 h-full rounded-full transition-all duration-300 ease-out"
         :style="{
           backgroundColor: '#D5CFE1',
-          height: `${(layerSteps.length - 1) * 61}px`,
+          height: `${(layerSteps.length - 1) * 80}px`,
           transform: 'translateY(10px)',
         }"
       ></div>
@@ -40,7 +39,7 @@
         class="bg-can bg-cover bg-center absolute w-16 h-16 transition-transform duration-300 ease-out"
         :style="{
           left: '-16px',
-          transform: `translate(0, ${activeLayerIndex * 56}px)`,
+          transform: `translate(0, ${activeLayerIndex * 80}px)`,
         }"
       ></div>
 
@@ -50,12 +49,12 @@
         <div
           v-for="(layer, index) in layerSteps"
           :key="index"
-          class="flex items-center transition-all duration-500 ease-out h-14"
+          class="flex items-center transition-all duration-500 ease-out h-20"
         >
           <div
-            class="w-5 h-5 rounded-full transition-all duration-300"
+            class="w-5 h-5 rounded-full transition-all duration-300 border border-wordcolor"
             :style="{
-              backgroundColor: layer.color.dot,
+              backgroundColor: layer.color.bg,
               transform:
                 activeLayerIndex === index ? 'scale(1.2)' : 'scale(1)',
               boxShadow:
@@ -69,9 +68,8 @@
             @click="activeLayerIndex = index; currentPage = 1"
             :style="{
               backgroundColor:
-                activeLayerIndex === index ? layer.color.dot : 'transparent',
-              color:
-                activeLayerIndex === index ? 'white' : normalTextColor,
+                activeLayerIndex === index ? layer.color.bg : 'transparent',
+              color: normalTextColor,
               fontWeight: 'bold',
               fontSize: activeLayerIndex === index ? '16px' : '14px',
               boxShadow:
@@ -87,65 +85,17 @@
     </div>
 
     <div
-      class="content-container absolute left-[22%] top-[58%] -translate-y-[55%] w-[1200px] flex flex-col transition-opacity duration-300 opacity-100"
+      class="content-container absolute left-[22%] top-[50%] -translate-y-[50%] w-[1200px] flex flex-col transition-opacity duration-300 opacity-100"
     >
-      <transition-group
-        name="fade-in"
-        tag="div"
-        class="grid grid-cols-2 gap-x-2 gap-y-6 content-wrapper text-wordcolor"
-      >
-        <div
-          v-for="(step, index) in paginatedSteps"
-          :key="step.base"
-          class="px-4 py-3 rounded-xl shadow-lg text-left transition-all duration-300 ease-out w-[520px] relative overflow-hidden"
-          :style="{
-            backgroundColor: step.color.bg,
-            transform: `translateY(${index * 5}px)`,
-          }"
-        >
-          <div
-            class="flex justify-between items-center cursor-pointer"
-            @click="toggleExpand(index)"
-          >
-            <h3 class="font-bold text-[18px]" v-html="step.base"></h3>
-            <svg
-              class="w-6 h-6 transition-transform duration-300 transform"
-              :style="{
-                transform: expandedIndices.has(index)
-                  ? 'rotate(180deg)'
-                  : 'rotate(0deg)',
-                color: currentColor.dot,
-              }"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </div>
-
-          <transition name="expand">
-            <div
-              v-if="expandedIndices.has(index)"
-              class="mt-2 text-base leading-normal"
-              v-html="step.detail"
-            ></div>
-          </transition>
-        </div>
-      </transition-group>
-    </div>
-
-    <div class="absolute bottom-10 left-[22%] w-[1200px]">
-      <div class="flex justify-center items-center space-x-4">
+      <!-- 換頁功能 - 移到內容框上方 -->
+      <div class="flex justify-center items-center space-x-4 mb-1">
         <button
-          class="px-3 py-1 rounded-lg font-bold shadow"
-          :style="{ backgroundColor: currentColor.dot, color: 'white' }"
+          class="px-3 py-1 rounded-lg font-bold shadow border"
+          :style="{
+            backgroundColor: currentColor.bg,
+            color: '#352E2A',
+            borderColor: currentColor.dot
+          }"
           @click="prevPage"
           :disabled="currentPage === 1"
         >
@@ -157,13 +107,82 @@
         </span>
 
         <button
-          class="px-3 py-1 rounded-lg font-bold shadow"
-          :style="{ backgroundColor: currentColor.dot, color: 'white' }"
+          class="px-3 py-1 rounded-lg font-bold shadow border"
+          :style="{
+            backgroundColor: currentColor.bg,
+            color: '#352E2A',
+            borderColor: currentColor.dot
+          }"
           @click="nextPage"
           :disabled="currentPage === totalPages"
         >
           &gt;
         </button>
+      </div>
+
+      <transition-group
+        name="fade-in"
+        tag="div"
+        class="grid grid-cols-2 gap-x-2 gap-y-2 content-wrapper text-wordcolor"
+      >
+        <div
+          v-for="(step, index) in paginatedSteps"
+          :key="step.base"
+          class="px-4 py-3 rounded-xl shadow-lg text-left transition-all duration-300 ease-out w-[520px] h-[120px] relative overflow-hidden cursor-pointer hover:scale-105"
+          :style="{
+            backgroundColor: step.color.bg,
+            transform: `translateY(${index * 5}px)`,
+          }"
+          @click="showDetail(step)"
+        >
+          <div class="flex justify-between items-center h-full">
+            <h3 class="font-bold text-[18px] line-clamp-3" v-html="step.base"></h3>
+            <svg
+              class="w-6 h-6 flex-shrink-0 ml-2"
+              :style="{
+                color: currentColor.dot,
+              }"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </div>
+        </div>
+      </transition-group>
+    </div>
+
+    <!-- ✅ 詳細說明 Overlay 彈出視窗 -->
+    <div
+      v-if="selectedStep"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+      @click.self="closeDetail"
+    >
+      <div class="relative bg-lightGray rounded-xl p-8 flex flex-col w-[73vw] h-[75vh] overflow-hidden">
+        <h2 class="text-3xl font-bold text-wordcolor text-center mb-4">
+          {{ selectedStep.base }}
+        </h2>
+
+        <button
+          class="absolute top-2 right-2 p-2 text-xl bg-lightGray font-bold text-wordcolor hover:text-blueGrayPressed rounded-full w-10 h-10 flex items-center justify-center"
+          @click="closeDetail"
+        >
+          ✕
+        </button>
+
+        <div class="flex-grow overflow-y-auto mt-4">
+          <div
+            class="bg-blueGray rounded-2xl p-6 shadow-lg text-wordcolor text-lg"
+            v-html="selectedStep.detail"
+          ></div>
+        </div>
       </div>
     </div>
   </div>
@@ -171,17 +190,19 @@
 
 <script setup>
 // ... (script setup 保持不變，因為邏輯與數據沒有調整)
-import { ref, onMounted, onBeforeUnmount, computed } from "vue";
+import { ref, computed } from "vue";
 
-const normalTextColor = ref('#464655')
+const normalTextColor = ref('#352E2A')
+const pastelA = { bg: "#DAE1F7", dot: "#AB78BE" }
+const pastelB = { bg: "#FFE1EF", dot: "#AB78BE" }
 const colorGroups = {
-  group7: { bg: "#D8C7D9", dot: "#A997B8", text: "#2E2B35", title: "應用層", description: "此層是<strong>唯一直接與使用者資料互動的層</strong>，提供應用程式所需的通訊協定。", theStep:"<li>使用者輸入網址，向瀏覽器發送請求。</li><li>瀏覽器向 DNS 伺服器查詢網址IP。</li><li>產生 HTTP/HTTPS 請求。</li>" },
-  group6: { bg: "#C8D7E0", dot: "#7F9EB2", text: "#2E2B35", title: "表示層", description: "此層負責處理資料的<strong>轉譯、加密和壓縮</strong>，<br>以確保應用程式層能夠正確讀取資料。", theStep:"<li>將應用層的資料轉換成可傳輸格式。</li><li>在此層進行加密（SSL/TLS）。</li><li>字符編碼轉換(標準化格式)：如ASCII、Unicode等不同的字符集轉換。</li>" },
-  group5: { bg: "#D8C7D9", dot: "#A997B8", text: "#2E2B35", title: "會話層", description: "此層負責<strong>建立、管理和終止</strong><br>兩個設備之間的通訊「會話」(Session)。", theStep:"<li>建立、管理和終止會話。</li><li>在發生故障時進行數據同步和恢復，確保數據完整。</li><li>設置對話控制，決定哪個終端可以在何時發送數據。</li>" },
-  group4: { bg: "#C8D7E0", dot: "#7F9EB2", text: "#2E2B35", title: "傳輸層", description: "此層負責兩個裝置之間端對端的通訊、<br>流量控制與錯誤控制，<br>將<strong>上層資料分解為「區段」(Segment)</strong>。", theStep:"<li>在網路中的不同主機之間建立、維護和終止數據傳輸連接。</li><li>數據分段和重組，傳輸表頭（TH）加至資料以形成封包。</li><li>錯誤檢測和恢復。</li><li>流量控制和擁塞控制。</li>" },
-  group3: { bg: "#D8C7D9", dot: "#A997B8", text: "#2E2B35", title: "網路層", description: "此層負責在不同網路之間的資料傳輸與路由，<br>將<strong>傳輸層的區段分解為「封包」(Packet)</strong>，<br>並為封包尋找最佳路徑。", theStep:"<li>路徑選擇和封包轉發。</li><li>將網路表頭（NH）加至封包，<br>以形成封包，加上來源與目的IP地址。</li><li>決定路由。</li>" },
-  group2: { bg: "#C8D7E0", dot: "#7F9EB2", text: "#2E2B35", title: "資料鏈結層", description: "此層負責在<strong>同一個網路上的兩個設備之間建立可靠的資料傳輸</strong>，<br>並將來自網路層的封包分割成更小的「訊框」(Frame)。", theStep:"<li>將網路層封包封裝成Frame加入 MAC 地址。</li><li>控制流量傳輸速率，以防止網路擁塞。</li>" },
-  group1: { bg: "#D8C7D9", dot: "#A997B8", text: "#2E2B35", title: "實體層", description: "處理網路中實體的設備和介質，<br/>並<strong>將數據轉換為由 1 和 0 組成的位元流</strong>進行傳輸。", theStep:"<li>Wi-Fi：封包轉成無線電波。</li><li>有線網路：封包轉為電壓信號。</li>" },
+  group7: { bg: pastelA.bg, dot: pastelA.dot, text: "#352E2A", title: "應用層", description: "此層是<strong>唯一直接與使用者資料互動的層</strong>，提供應用程式所需的通訊協定。", theStep:"<li>使用者輸入網址，向瀏覽器發送請求。</li><li>瀏覽器向 DNS 伺服器查詢網址IP。</li><li>產生 HTTP/HTTPS 請求。</li>" },
+  group6: { bg: pastelB.bg, dot: pastelB.dot, text: "#352E2A", title: "表示層", description: "此層負責處理資料的<strong>轉譯、加密和壓縮</strong>，<br>以確保應用程式層能夠正確讀取資料。", theStep:"<li>將應用層的資料轉換成可傳輸格式。</li><li>在此層進行加密（SSL/TLS）。</li><li>字符編碼轉換(標準化格式)：如ASCII、Unicode等不同的字符集轉換。</li>" },
+  group5: { bg: pastelA.bg, dot: pastelA.dot, text: "#352E2A", title: "會話層", description: "此層負責<strong>建立、管理和終止</strong><br>兩個設備之間的通訊「會話」(Session)。", theStep:"<li>建立、管理和終止會話。</li><li>在發生故障時進行數據同步和恢復，確保數據完整。</li><li>設置對話控制，決定哪個終端可以在何時發送數據。</li>" },
+  group4: { bg: pastelB.bg, dot: pastelB.dot, text: "#352E2A", title: "傳輸層", description: "此層負責兩個裝置之間端對端的通訊、<br>流量控制與錯誤控制，<br>將<strong>上層資料分解為「區段」(Segment)</strong>。", theStep:"<li>在網路中的不同主機之間建立、維護和終止數據傳輸連接。</li><li>數據分段和重組，傳輸表頭（TH）加至資料以形成封包。</li><li>錯誤檢測和恢復。</li><li>流量控制和擁塞控制。</li>" },
+  group3: { bg: pastelA.bg, dot: pastelA.dot, text: "#352E2A", title: "網路層", description: "此層負責在不同網路之間的資料傳輸與路由，<br>將<strong>傳輸層的區段分解為「封包」(Packet)</strong>，<br>並為封包尋找最佳路徑。", theStep:"<li>路徑選擇和封包轉發。</li><li>將網路表頭（NH）加至封包，<br>以形成封包，加上來源與目的IP地址。</li><li>決定路由。</li>" },
+  group2: { bg: pastelB.bg, dot: pastelB.dot, text: "#352E2A", title: "資料鏈結層", description: "此層負責在<strong>同一個網路上的兩個設備之間建立可靠的資料傳輸</strong>，<br>並將來自網路層的封包分割成更小的「訊框」(Frame)。", theStep:"<li>將網路層封包封裝成Frame加入 MAC 地址。</li><li>控制流量傳輸速率，以防止網路擁塞。</li>" },
+  group1: { bg: pastelA.bg, dot: pastelA.dot, text: "#352E2A", title: "實體層", description: "處理網路中實體的設備和介質，<br/>並<strong>將數據轉換為由 1 和 0 組成的位元流</strong>進行傳輸。", theStep:"<li>Wi-Fi：封包轉成無線電波。</li><li>有線網路：封包轉為電壓信號。</li>" },
 };
 
 // 名詞內容列表，加入了 `layer` 屬性來對應 colorGroups 的 key
@@ -264,73 +285,7 @@ const currentLayerSteps = computed(() => {
 });
 
 
-const isFullyVisible = ref(false);
-const containerRef = ref(null);
-let scrollTimeout = null;
-
-function handleScroll(e) {
-  // 只有當組件完全可見時才處理滾動鎖定
-  if (!isFullyVisible.value) return;
-
-  // 向下滾且還沒到最後一層時
-  if (e.deltaY > 0 && activeLayerIndex.value < layerSteps.length - 1) {
-    e.preventDefault();
-
-    if (scrollTimeout) {
-      clearTimeout(scrollTimeout);
-    }
-
-    scrollTimeout = setTimeout(() => {
-      activeLayerIndex.value++;
-      scrollTimeout = null;
-    }, 100);
-  }
-  // 向上滾且不在第一層時
-  else if (e.deltaY < 0 && activeLayerIndex.value > 0) {
-    e.preventDefault();
-
-    if (scrollTimeout) {
-      clearTimeout(scrollTimeout);
-    }
-
-    scrollTimeout = setTimeout(() => {
-      activeLayerIndex.value--;
-      scrollTimeout = null;
-    }, 100);
-  }
-}
-
-let observer = null;
-
-onMounted(() => {
-  // 注意：由於罐子是獨立定位的，我們需要調整左側層次點的間隔 (h-14, 60px) 來與罐子移動距離 (60px) 保持一致
-  window.addEventListener("wheel", handleScroll, { passive: false });
-
-  // 使用 Intersection Observer 監測組件是否完全填滿螢幕
-  observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          // 當組件完全可見時(intersectionRatio >= 0.8)
-          isFullyVisible.value = entry.intersectionRatio >= 0.8;
-          // console.log('可見度:', entry.intersectionRatio, '是否鎖定:', isFullyVisible.value);
-        });
-      },
-      {
-        threshold: Array.from({ length: 101 }, (_, i) => i / 100), // 0 到 1 的所有百分比
-      }
-  );
-
-  if (containerRef.value) {
-    observer.observe(containerRef.value);
-  }
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener("wheel", handleScroll);
-  if (observer && containerRef.value) {
-    observer.unobserve(containerRef.value);
-  }
-});
+// 移除滾輪控制功能，只能使用左側按鈕點擊切換層級
 // ✅ 新增分頁邏輯
 const currentPage = ref(1);
 const pageSize = 4;
@@ -352,14 +307,15 @@ function prevPage() {
   if (currentPage.value > 1) currentPage.value--;
 }
 
-// 展開收合
-const expandedIndices = ref(new Set());
-function toggleExpand(index) {
-  if (expandedIndices.value.has(index)) {
-    expandedIndices.value.delete(index);
-  } else {
-    expandedIndices.value.add(index);
-  }
+// 詳細說明 Overlay
+const selectedStep = ref(null);
+
+function showDetail(step) {
+  selectedStep.value = step;
+}
+
+function closeDetail() {
+  selectedStep.value = null;
 }
 
 </script>
@@ -386,19 +342,11 @@ function toggleExpand(index) {
   transition: transform 0.5s;
 }
 
-/* 展開動畫 */
-.expand-enter-active,
-.expand-leave-active {
-  transition: all 0.3s ease;
-}
-.expand-enter-from,
-.expand-leave-to {
-  opacity: 0;
-  max-height: 0;
-}
-.expand-enter-to,
-.expand-leave-from {
-  opacity: 1;
-  max-height: 300px;
+/* 文字截斷 */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>

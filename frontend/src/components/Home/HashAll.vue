@@ -19,22 +19,24 @@
 
       <!-- 左欄 -->
       <div class="text-left self-start">
-        <h2 class="text-5xl font-bold mb-6">雜湊函數 Hash</h2>
-        <div class="text-lg md:text-xl leading-relaxed space-y-4">
-          <h4 class="text-2xl font-bold mb-2">
-            <br/>這不是加密，而是「單向不可逆」的運算。<br/><br/>
-            就像把牛肉放進絞肉機，變成絞肉後無法還原成牛肉。<br/>
-            只要輸入有一點改變，輸出就會完全不同。
-          </h4>
+        <div class="info-card space-y-4">
+          <h2 class="text-5xl font-bold">雜湊函數 Hash</h2>
+          <div class="text-lg md:text-xl leading-relaxed">
+            <h4 class="text-2xl font-bold">
+              這不是加密，而是「單向不可逆」的運算。<br/><br/>
+              就像把牛肉放進絞肉機，變成絞肉後無法還原成牛肉。<br/>
+              只要輸入有一點改變，輸出就會完全不同。
+            </h4>
+          </div>
         </div>
       </div>
 
       <!-- 右欄 -->
       <div class="text-left self-center">
-        <div class="mb-8">
+        <div class="info-card space-y-8">
 
           <!-- 優缺點 -->
-          <div class="grid grid-cols-2 gap-6 text-lg md:text-xl leading-relaxed mb-10">
+          <div class="grid grid-cols-2 gap-6 text-lg md:text-xl leading-relaxed">
             <div>
               <h3 class="text-2xl font-semibold mb-4">優點：</h3>
               <ul class="list-disc pl-6 space-y-1">
@@ -53,7 +55,7 @@
           </div>
 
           <!-- 運作原理 -->
-          <div class="mb-10">
+          <div>
             <h3 class="text-2xl font-semibold mb-4">運作原理：</h3>
             <ul class="list-disc pl-6 space-y-1 text-lg md:text-xl italic">
               <li>輸入任何長度的資料 → 經過雜湊演算法 → 產生固定長度的雜湊值。</li>
@@ -64,7 +66,7 @@
           </div>
 
           <!-- 舉例應用 -->
-          <div class="mb-10">
+          <div>
             <h3 class="text-2xl font-semibold mb-4">舉例應用：</h3>
             <ul class="list-disc pl-6 space-y-1 text-lg md:text-xl italic">
               <li class="font-bold">密碼儲存：</li>

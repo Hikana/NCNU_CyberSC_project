@@ -1,31 +1,17 @@
 <template>
   <div
     ref="sectionRef"
-    class="flex w-full h-screen items-center justify-center bg-bgg overflow-hidden relative"
+    class="flex w-full min-h-screen items-center justify-center bg-bgg overflow-hidden relative px-6"
   >
-    <div class="w-1/2 flex flex-col justify-center items-start px-48">
+    <div class="max-w-5xl w-full flex flex-col justify-center items-start md:items-center gap-4 text-center">
       <p
         v-for="(line, index) in visibleLines"
         :key="index"
-        class="text-2xl md:text-3xl font-semibold text-gray-700 mb-4"
+        class="text-2xl md:text-3xl font-semibold text-wordcolor"
         :class="{ 'typing-active': index === currentTypingIndex }"
       >
         {{ line }}
       </p>
-    </div>
-
-    <div
-      class="w-1/2 flex justify-center items-center transition-transform duration-300"
-      :style="{
-        transform: `translateX(${gifOffset}px)`,
-        opacity: gifOpacity,
-      }"
-    >
-      <img
-        :src="currentGif"
-        alt="section animation"
-        class="w-3/4 h-auto object-contain transition-opacity duration-700"
-      />
     </div>
   </div>
 </template>
@@ -35,8 +21,6 @@ import { ref, onMounted, onUnmounted } from "vue";
 
 const props = defineProps({
   lines: { type: Array, default: () => ["Hello, world!"] },
-  gif1: { type: String, default: "/src/assets/image/Menu/menu.gif" },
-  gif2: { type: String, default: "/src/assets/image/Menu/menu2.gif" },
 });
 
 const sectionRef = ref(null);
@@ -44,33 +28,11 @@ const visibleLines = ref([]);
 const currentTypingIndex = ref(-1);
 const hasPlayed = ref(false);
 
-const currentGif = ref(props.gif1);
-const gifOffset = ref(0);
-const gifOpacity = ref(1);
-
 let observer;
-// let isScrollLocked = false; // 移除滾動鎖定變數
-let menu2Active = false;
-
-// 移除 lockScroll 函式
-// const lockScroll = () => {
-//   if (!isScrollLocked) {
-//     document.body.style.overflow = "hidden";
-//     isScrollLocked = true;
-//   }
-// };
-
-// 移除 unlockScroll 函式
-// const unlockScroll = () => {
-//   document.body.style.overflow = "";
-//   isScrollLocked = false;
-// };
 
 const startAnimation = () => {
   if (hasPlayed.value) return;
   hasPlayed.value = true;
-  // 移除 lockScroll()
-  // lockScroll();
 
   let index = 0;
   const interval = setInterval(() => {
@@ -81,21 +43,8 @@ const startAnimation = () => {
       setTimeout(() => (currentTypingIndex.value = -1), 1000);
     } else {
       clearInterval(interval);
-      // 移除 unlockScroll()
-      // unlockScroll();
-
-      setTimeout(() => {
-        currentGif.value = props.gif2;
-        menu2Active = true;
-      }, 500);
     }
   }, 1500);
-};
-
-const handleWheel = (e) => {
-  if (!menu2Active) return;
-  // 這裡的邏輯是用滑鼠滾動來移動 GIF 圖片
-  if (e.deltaY > 0) gifOffset.value -= 125;
 };
 
 const handleIntersection = (entries) => {
@@ -112,14 +61,10 @@ onMounted(() => {
     threshold: Array.from({ length: 11 }, (_, i) => i / 10),
   });
   if (sectionRef.value) observer.observe(sectionRef.value);
-  window.addEventListener("wheel", handleWheel);
 });
 
 onUnmounted(() => {
   if (observer && sectionRef.value) observer.unobserve(sectionRef.value);
-  // 移除 unlockScroll()
-  // unlockScroll();
-  window.removeEventListener("wheel", handleWheel);
 });
 </script>
 
@@ -130,7 +75,7 @@ p {
   border-right: 2px solid transparent;
 }
 .typing-active {
-  border-right: 2px solid #777;
+  border-right: 2px solid #AB78BE;
   animation: typing 1s steps(30, end), blink 0.75s step-end infinite;
 }
 @keyframes typing {
