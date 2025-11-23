@@ -27,7 +27,7 @@ class BuildingService {
 
           if (isCastle) {
             return {
-              status: 'placed',
+              status: 'developed',
               type: 'castle',
               buildingId: null,
               firewall: (playerTileData && playerTileData.firewall) ? playerTileData.firewall : null,

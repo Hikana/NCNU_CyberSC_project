@@ -212,6 +212,21 @@ export const usePlayerStore = defineStore('player', () => {
       console.log('成就檢查失敗:', error)
     }
   }
+
+  function resetStore() {
+    stopResourceGeneration();
+    userId.value = null;
+    techPoints.value = 0;
+    defense.value = 0;
+    eventResolvedCount.value = 0;
+    correctlyAnsweredCount.value = 0;
+    connectToSwitchCount.value = 0;
+    connectToRouterCount.value = 0;
+    connectToInternetTowerCount.value = 0;
+    castleLevel.value = 0;
+    position.x = 0;
+    position.y = 0;
+  }
   
   // 將所有需要讓外部 (Vue元件或其他 stores) 使用的 state 和 actions 在這裡 return
   return {
@@ -240,5 +255,6 @@ export const usePlayerStore = defineStore('player', () => {
     refreshPlayerData,
     startResourceGeneration,
     stopResourceGeneration,
+    resetStore,
   }
 });

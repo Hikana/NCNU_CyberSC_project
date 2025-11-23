@@ -43,6 +43,8 @@ import tutor3 from '@/assets/tutor3.png'
 import tutor4 from '@/assets/tutor4.png'
 import tutor5 from '@/assets/tutor5.png'
 
+import { useUiStore } from '@/stores/ui'
+
 const props = defineProps({
   trigger: {
     type: Number,
@@ -50,6 +52,7 @@ const props = defineProps({
   }
 })
 
+const uiStore = useUiStore()
 const showNpcTip = ref(false)
 const tutorialVisible = ref(false)
 const tutorialIndex = ref(0)
@@ -70,7 +73,16 @@ watch(
   () => props.trigger,
   () => {
     if (!props.trigger) return
-    showNpcTip.value = true
+    // 如果 skipNpcDialog 為 true，直接顯示 tutorial，不顯示 NPC 提示
+    if (uiStore.skipNpcDialog) {
+      tutorialIndex.value = 0
+      tutorialVisible.value = true
+      showNpcTip.value = false
+      // 重置標記
+      uiStore.skipNpcDialog = false
+    } else {
+      showNpcTip.value = true
+    }
   }
 )
 
@@ -78,15 +90,21 @@ function startTutorial() {
   tutorialIndex.value = 0
   tutorialVisible.value = true
   showNpcTip.value = false
+  // 重置標記
+  uiStore.skipNpcDialog = false
 }
 
 function dismissTutorial() {
   showNpcTip.value = false
+  // 重置標記
+  uiStore.skipNpcDialog = false
 }
 
 function handleNextStep() {
   if (isLastStep.value) {
     tutorialVisible.value = false
+    // 重置標記
+    uiStore.skipNpcDialog = false
     return
   }
   tutorialIndex.value += 1

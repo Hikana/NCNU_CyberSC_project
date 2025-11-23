@@ -143,6 +143,13 @@ export const useInventoryStore = defineStore('inventory', {
         this.unsubscribe();
         this.unsubscribe = null;
       }
+    },
+
+    resetStore() {
+      this.cleanup();
+      this.items = [];
+      this.loading = false;
+      this.isLoaded = false;
     }
   }
 });

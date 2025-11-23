@@ -138,10 +138,20 @@ export const useWallStore = defineStore('wall', {
       console.log(`公網塔等級同步檢查: 防禦值=${currentDefense}, 當前等級=${this.castleLevel}, 目標等級=${targetLevel}`);
       
       if (targetLevel !== this.castleLevel) {
+        // 🔒 如果是第一次同步（剛載入），且是降級到等級 0，不顯示降級通知
+        // 這通常是因為後端初始值錯誤或資料不一致，不應該對新使用者顯示降級訊息
+        const isFirstSync = !this.initialized;
+        const isDowngradeToZero = targetLevel < this.castleLevel && targetLevel === 0;
+        
         if (targetLevel > this.castleLevel) {          
           this.showCastleUpgradeMessage(targetLevel);
-        } else {  
-          this.showCastleDowngradeMessage(targetLevel);
+        } else {
+          // 只有在非首次同步，或不是降級到 0 時，才顯示降級通知
+          if (!(isFirstSync && isDowngradeToZero)) {
+            this.showCastleDowngradeMessage(targetLevel);
+          } else {
+            console.log('⚠️ 首次同步且降級到等級 0，跳過降級通知（可能是資料不一致）');
+          }
         }
         await this.updateCastleLevel(targetLevel);
         

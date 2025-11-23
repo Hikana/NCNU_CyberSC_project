@@ -30,7 +30,7 @@ import buildingSImg from '@/assets/B19.png'
 export const useBuildingStore = defineStore('buildings', {
   state: () => ({
     // map 的初始狀態改為空物件，等待從後端載入
-    map: {},
+    map: [],
     selectedTile: null,
     selectedBuildingId: null,
     isPlacing: false,
@@ -116,6 +116,15 @@ export const useBuildingStore = defineStore('buildings', {
     // 新增：從後端載入地圖狀態的 action
     async loadMap() {
       try {
+        const playerStore = usePlayerStore();
+        const uid = playerStore.userId || playerStore.initFromAuth();
+        
+        if (!uid) {
+          console.warn('⚠️ 無法載入地圖：使用者未登入');
+          this.map = [];
+          return;
+        }
+        
         const mapData = await apiService.getMap();
         
         // 確保 mapData 是正確的二維陣列格式
@@ -138,8 +147,8 @@ export const useBuildingStore = defineStore('buildings', {
         
         // 檢查是否為認證錯誤
         if (error.message.includes('認證失敗') || error.message.includes('No token') || error.message.includes('用戶未登入')) {
-          console.log('🔐 認證錯誤，請重新登入');
-          alert('認證失敗，請重新登入');
+          console.log('認證錯誤，請重新登入');
+          this.map = [];
           return;
         }
         
@@ -228,6 +237,8 @@ export const useBuildingStore = defineStore('buildings', {
         return;
       }
 
+      const playerStore = usePlayerStore();
+
       // 防火牆放置：呼叫後端 API，扣除科技點並持久化 firewall 類型
       if (this.isPlacingFirewall()) {
         const { x, y } = this.selectedTile;
@@ -259,35 +270,34 @@ export const useBuildingStore = defineStore('buildings', {
 
       // 一般建築放置流程
       try {
-        // ✅ 確認前端呼叫方式
         const response = await apiService.placeBuilding(
           this.selectedBuildingId,
           { x: this.selectedTile.x, y: this.selectedTile.y } // 確保傳 position 是物件 {x,y}
         );
     
         if (response) {
-          const playerStore = usePlayerStore();
           await playerStore.refreshPlayerData(); // 更新玩家資料
           this.map = response; // api 直接回傳 map 二維陣列
           this.isPlacing = false;
           this.selectedTile = null;
           this.selectedBuildingId = null;
-          console.log('建築放置成功，更新地圖');
+          
           // 嘗試刷新成就（例如首次建造 Switch/Router）
+          // 使用 checkAllAchievements 而不是 loadAchievements，確保使用最新的 map 資料
           try {
             const { useAchievementStore } = await import('./achievement');
             const achievementStore = useAchievementStore();
-            achievementStore.loadAchievements();
+            // 等待一小段時間確保 map 已完全更新，然後再檢查成就
+            await new Promise(resolve => setTimeout(resolve, 100));
+            await achievementStore.checkAllAchievements();
           } catch (e) {
             console.warn('刷新成就失敗（忽略）:', e);
           }
         } else {
           console.error('建築放置失敗:', response.message || '未知錯誤');
-          alert('建築放置失敗，請稍後再試');
         }
       } catch (err) {
         console.error('建築放置請求失敗:', err);
-        alert('建築放置失敗，請重試');
       }
     },
     
@@ -451,6 +461,10 @@ export const useBuildingStore = defineStore('buildings', {
         this.connections.push(normalizedSavedConnection);
         console.log('本地連線列表已更新');
         
+        // 自動開啟連線顯示模式，讓用戶可以直接看到剛建立好的連線
+        this.showConnections = true;
+        localStorage.setItem('showConnections', 'true');
+        
         // 顯示連線成功提示
         const fromCell = this.map[sourceRow][sourceCol];
         const toCell = targetCell;
@@ -534,7 +548,6 @@ export const useBuildingStore = defineStore('buildings', {
         console.log('連線已刪除:', connectionId);
       } catch (error) {
         console.error('刪除連線失敗:', error);
-        alert('刪除連線失敗，請重試');
       }
     },
 
@@ -865,8 +878,29 @@ export const useBuildingStore = defineStore('buildings', {
         }
       } catch (error) {
         console.error('刪除連線失敗:', error);
-        alert('刪除連線失敗，請重試');
       }
+    },
+
+    resetStore() {
+      // 清除所有狀態，確保登出或切換帳號時不會殘留舊資料
+      this.map = [];
+      this.selectedTile = null;
+      this.selectedBuildingId = null;
+      this.isPlacing = false;
+      this.deleteTarget = null;
+      this.placementMessage = null;
+      this.tileDevelopedMessage = null;
+      this.castleInteraction = null;
+      this.isConnecting = false;
+      this.connectionSource = null;
+      this.connections = [];
+      this.showConnections = false;
+      this.isDeletingConnection = false;
+      this.deleteConnectionTarget = null;
+      this.connectionsToDelete = [];
+      this.shopBuildings = [];
+      // 清除連線顯示的 localStorage 設定（可選，但為了完全清除建議保留）
+      // localStorage.removeItem('showConnections');
     }
   }
 });

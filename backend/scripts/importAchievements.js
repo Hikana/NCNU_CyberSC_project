@@ -32,21 +32,17 @@ const sourceAchievements = [
 
 function deriveCondition(desc, maxProgress) {
   // 從描述推論 condition.field 與 value
-  if (/答對/.test(desc)) {
-    const m = desc.match(/答對(\d+|第一)題/);
-    const value = m ? (m[1] === '第一' ? 1 : Number(m[1])) : maxProgress;
-    return { field: 'answeredCount', value };
+  // ⚠️ 重要：必須先檢查更精確的匹配，再檢查一般匹配，避免誤判
+  
+  // 1. 先檢查最精確的匹配（特定建築類型）
+  if (/首次建造 Switch/i.test(desc)) {
+    return { field: 'switchCount', value: 1 };
   }
-  if (/建造/.test(desc)) {
-    const m = desc.match(/建造(\d+|第一座)建築/);
-    const value = m ? (m[1] === '第一座' ? 1 : Number(m[1])) : maxProgress;
-    return { field: 'itemCount', value };
+  if (/首次建造 Router/i.test(desc)) {
+    return { field: 'routerCount', value: 1 };
   }
-  if (/解決/.test(desc)) {
-    const m = desc.match(/解決(\d+)個資安事件/);
-    const value = m ? Number(m[1]) : maxProgress;
-    return { field: 'eventCount', value };
-  }
+  
+  // 2. 檢查連線相關（精確匹配）
   if (/連線到 Switch/i.test(desc)) {
     return { field: 'connectToSwitchCount', value: 1 };
   }
@@ -56,16 +52,33 @@ function deriveCondition(desc, maxProgress) {
   if (/連線到 Public Internet Tower/i.test(desc)) {
     return { field: 'connectToInternetTowerCount', value: 1 };
   }
-  if (/首次建造 Switch/i.test(desc)) {
-    return { field: 'switchCount', value: 1 };
-  }
-  if (/首次建造 Router/i.test(desc)) {
-    return { field: 'routerCount', value: 1 };
-  }
+  
+  // 3. 檢查公網塔等級
   if (/Public Internet Tower 達到等級/i.test(desc)) {
     const m = desc.match(/Public Internet Tower 達到等級(\d+)/);
     const value = m ? Number(m[1]) : maxProgress;
     return { field: 'castleLevel', value };
+  }
+  
+  // 4. 檢查答題相關
+  if (/答對/.test(desc)) {
+    const m = desc.match(/答對(\d+|第一)題/);
+    const value = m ? (m[1] === '第一' ? 1 : Number(m[1])) : maxProgress;
+    return { field: 'answeredCount', value };
+  }
+  
+  // 5. 檢查一般建築（必須放在特定建築類型之後）
+  if (/建造/.test(desc)) {
+    const m = desc.match(/建造(\d+|第一座)建築/);
+    const value = m ? (m[1] === '第一座' ? 1 : Number(m[1])) : maxProgress;
+    return { field: 'itemCount', value };
+  }
+  
+  // 6. 檢查資安事件
+  if (/解決/.test(desc)) {
+    const m = desc.match(/解決(\d+)個資安事件/);
+    const value = m ? Number(m[1]) : maxProgress;
+    return { field: 'eventCount', value };
   }
 }
 

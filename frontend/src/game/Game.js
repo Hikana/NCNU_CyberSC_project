@@ -511,6 +511,9 @@ export class Game {
 
         // 通過所有檢查，允許選取
         this.buildingStore.selectTile({ x: col, y: row });
+      } else if (cell.status === 'placed') {
+        this.buildingStore.showPlacementMessage('無法重複放置建築!');
+        this.buildingStore.selectTile(null);
       } else if (cell.status === 'developed') {
         this.buildingStore.selectTile({ x: col, y: row });
       } else {

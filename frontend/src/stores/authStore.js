@@ -10,6 +10,8 @@ import {
 import { auth } from '@/firebase/firebase';
 import { useHistoryStore } from '../stores/historyStore.js';
 import{usePlayerStore}from '../stores/player.js'
+import { useBuildingStore } from '../stores/buildings.js';
+import { resetAllStores } from './resetStores';
 
 /**
  * AuthStore
@@ -58,6 +60,9 @@ export const useAuthStore = defineStore('auth', () => {
       
       // 1. Firebase 登入
       await signInWithEmailAndPassword(auth, email, password);
+
+      // 1.5. 清除所有 Pinia 狀態，確保新帳號資料不受舊資料影響
+      resetAllStores();
       
       // 2. 自動載入新帳號的歷史紀錄
       await reloadHistoryData();
@@ -75,6 +80,9 @@ export const useAuthStore = defineStore('auth', () => {
   async function logout() {
     try {
       console.log('🚪 開始登出流程...');
+      
+      // 0. 清除所有 Pinia 狀態
+      resetAllStores();
       
       // 1. 先清空本地紀錄
       await clearOnLogout();
@@ -118,37 +126,44 @@ export const useAuthStore = defineStore('auth', () => {
    * 重新載入歷史紀錄
    */
   async function reloadHistoryData() {
-  try {
-    const historyStore = useHistoryStore();
-    const playerStore = usePlayerStore();
-    
-    console.log('🔄 開始重新載入所有使用者資料...');
-    console.log('🔑 當前登入使用者:', user.value?.uid);
-    
-    // 確保 playerStore 使用正確的使用者 ID
-    if (user.value) {
-      console.log('👤 設定玩家 ID:', user.value.uid);
-      playerStore.setUserId(user.value.uid);
+    try {
+      const historyStore = useHistoryStore();
+      const playerStore = usePlayerStore();
+      const buildingStore = useBuildingStore();
       
-      // 依序載入所有資料
-      if (playerStore.loadUserData) {
-        await playerStore.loadUserData();
-        console.log('✅ 已重新載入玩家資料');
+      console.log('🔄 開始重新載入所有使用者資料...');
+      console.log('🔑 當前登入使用者:', user.value?.uid);
+      
+      // 確保 playerStore 使用正確的使用者 ID
+      if (user.value) {
+        const currentUid = user.value.uid;
+        console.log('👤 設定玩家 ID:', currentUid);
+        playerStore.setUserId(currentUid);
+        
+        // 依序載入所有資料
+        if (playerStore.loadUserData) {
+          await playerStore.loadUserData();
+          console.log('✅ 已重新載入玩家資料');
+        }
+        
+        if (buildingStore.loadMap) {
+          await buildingStore.loadMap();
+          console.log('✅ 已重新載入地圖資料');
+        }
+        
+        if (historyStore.loadUserHistory) {
+          await historyStore.loadUserHistory();
+          console.log('✅ 已重新載入歷史紀錄');
+        }
+              
+      } else {
+        console.warn('⚠️ 沒有登入使用者，跳過資料載入');
       }
       
-      if (historyStore.loadUserHistory) {
-        await historyStore.loadUserHistory();
-        console.log('✅ 已重新載入歷史紀錄');
-      }
-            
-    } else {
-      console.warn('⚠️ 沒有登入使用者，跳過資料載入');
+    } catch (error) {
+      console.error('❌ 重新載入使用者資料失敗:', error);
     }
-    
-  } catch (error) {
-    console.error('❌ 重新載入使用者資料失敗:', error);
   }
-}
 
   /**
    * 安全重新整理頁面，避免 DOM 操作錯誤

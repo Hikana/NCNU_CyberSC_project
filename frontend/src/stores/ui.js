@@ -5,6 +5,8 @@ export const useUiStore = defineStore('ui', () => {
   // --- State ---
   const isWallMenuOpen = ref(false);
   const isNpcMenuOpen = ref(false);
+  const hintTrigger = ref(0); // 用於觸發 ControlsHint 的 tutorial 提示
+  const skipNpcDialog = ref(false); // 是否跳過 NPC 對話框，直接顯示 tutorial
   // 未來還可以增加 isQuestionModalOpen, isSettingsOpen 等等...
 
   // --- Actions ---
@@ -28,11 +30,27 @@ export const useUiStore = defineStore('ui', () => {
     isNpcMenuOpen.value = false;
   }
 
+  function triggerHint(skipDialog = false) {
+    skipNpcDialog.value = skipDialog;
+    hintTrigger.value++;
+  }
+
+  function resetStore() {
+    isWallMenuOpen.value = false;
+    isNpcMenuOpen.value = false;
+    hintTrigger.value = 0;
+    skipNpcDialog.value = false;
+  }
+
   return {
     isWallMenuOpen,
     isNpcMenuOpen,
+    hintTrigger,
+    skipNpcDialog,
     toggleWallMenu,
     toggleNpcMenu,
     closeAllMenus,
+    triggerHint,
+    resetStore,
   };
 });
