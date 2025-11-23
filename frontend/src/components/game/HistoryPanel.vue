@@ -47,7 +47,7 @@
     </div>
 
     <!-- 🔹 解釋彈出視窗 -->
-    <div v-if="selectedExplanation" class="explain-modal">
+    <div v-if="selectedExplanation" class="explain-modal" @click.self="selectedExplanation = null">
       <div class="explain-content">
         <h3>📘 題目解釋</h3>
         <p class="question">{{ selectedExplanation.questionTitle }}</p>
@@ -139,6 +139,20 @@ function showExplanation(entry) {
   background-color: #e2c1b5;
 }
 
+/* ✅ 載入與錯誤訊息 */
+.loading,
+.error,
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-size: 18px;
+}
+
+.error {
+  color: #e74c3c;
+}
+
 /* ✅ 紀錄卡片樣式 */
 .history-list {
   flex-grow: 1;
@@ -165,11 +179,13 @@ function showExplanation(entry) {
 .question {
   font-weight: bold;
   margin-bottom: 8px;
+  color: #2c3e50;
 }
 
 .answer,
 .correct-answer {
   margin: 5px 0;
+  color: #34495e;
 }
 
 /* 查看解釋按鈕 */
@@ -188,8 +204,10 @@ function showExplanation(entry) {
 
 .explain-button:hover {
   transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* ✅ 解釋彈出視窗 */
 .explain-modal {
   position: fixed;
   top: 0;
@@ -200,16 +218,66 @@ function showExplanation(entry) {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
 }
 
 .explain-content {
   background: #fff;
   border-radius: 16px;
   padding: 28px 36px;
-  width: 600px;
+  width: 90%;
+  max-width: 600px;
   max-height: 80vh;
   overflow-y: auto;
   font-size: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.explain-content h3 {
+  color: #333;
+  font-size: 26px;
+  margin-bottom: 20px;
+  border-bottom: 3px solid #d7b19d;
+  padding-bottom: 10px;
+}
+
+.explain-content .question {
+  color: #2c3e50;
+  font-size: 22px;
+  margin-bottom: 20px;
+  background-color: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.answer-section {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 16px 0;
+}
+
+.answer-section p {
+  color: #2c3e50;
+  margin: 12px 0;
+  line-height: 1.6;
+}
+
+.answer-section strong {
+  color: #d7b19d;
+  font-size: 20px;
+}
+
+.explanation-text {
+  background-color: #fff3e0;
+  padding: 16px;
+  border-left: 4px solid #ff9800;
+  border-radius: 6px;
+  margin-top: 16px;
+  color: #333;
+  font-size: 19px;
+  line-height: 1.8;
 }
 
 .close-explain-btn {
@@ -222,5 +290,35 @@ function showExplanation(entry) {
   border-radius: 10px;
   padding: 12px 24px;
   cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s ease;
+}
+
+.close-explain-btn:hover {
+  background: #e85c5c;
+  transform: scale(1.05);
+}
+
+/* ✅ 滾動條美化 */
+.history-list::-webkit-scrollbar,
+.explain-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.history-list::-webkit-scrollbar-track,
+.explain-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.history-list::-webkit-scrollbar-thumb,
+.explain-content::-webkit-scrollbar-thumb {
+  background: #d7b19d;
+  border-radius: 10px;
+}
+
+.history-list::-webkit-scrollbar-thumb:hover,
+.explain-content::-webkit-scrollbar-thumb:hover {
+  background: #c4a088;
 }
 </style>

@@ -6,6 +6,7 @@ const buildingRoutes = require('./routes/buildingRoutes');
 const playerRoutes = require('./routes/playerRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const gameController = require('./controllers/gameController');
 
 const app = express();
 // 中介軟體
@@ -29,6 +30,18 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 app.get('/upload', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'upload.html'));
 });
+
+app.get('/upload.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'upload.html'));
+});
+
+// 管理工具 API 路由（不需要認證，僅供 upload.html 使用）
+// ⚠️ 注意：這些路由僅用於本地開發環境的管理工具
+app.get('/api/admin/questions', gameController.getQuestions);
+app.post('/api/admin/questions', gameController.addQuestion);
+app.delete('/api/admin/questions', gameController.clearAllQuestions);
+app.delete('/api/admin/questions/:id', gameController.deleteQuestion);
+app.put('/api/admin/questions/:id', gameController.updateQuestion);
 
 // API 路由
 app.use('/api/game', gameRoutes);
