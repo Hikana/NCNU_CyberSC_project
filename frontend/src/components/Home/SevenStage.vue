@@ -200,7 +200,7 @@ const colorGroups = {
   group6: { bg: pastelB.bg, dot: pastelB.dot, text: "#352E2A", title: "表示層", description: "此層負責處理資料的<strong>轉譯、加密和壓縮</strong>，<br>以確保應用程式層能夠正確讀取資料。", theStep:"<li>將應用層的資料轉換成可傳輸格式。</li><li>在此層進行加密（SSL/TLS）。</li><li>字符編碼轉換(標準化格式)：如ASCII、Unicode等不同的字符集轉換。</li>" },
   group5: { bg: pastelA.bg, dot: pastelA.dot, text: "#352E2A", title: "會話層", description: "此層負責<strong>建立、管理和終止</strong><br>兩個設備之間的通訊「會話」(Session)。", theStep:"<li>建立、管理和終止會話。</li><li>在發生故障時進行數據同步和恢復，確保數據完整。</li><li>設置對話控制，決定哪個終端可以在何時發送數據。</li>" },
   group4: { bg: pastelB.bg, dot: pastelB.dot, text: "#352E2A", title: "傳輸層", description: "此層負責兩個裝置之間端對端的通訊、<br>流量控制與錯誤控制，<br>將<strong>上層資料分解為「區段」(Segment)</strong>。", theStep:"<li>在網路中的不同主機之間建立、維護和終止數據傳輸連接。</li><li>數據分段和重組，傳輸表頭（TH）加至資料以形成封包。</li><li>錯誤檢測和恢復。</li><li>流量控制和擁塞控制。</li>" },
-  group3: { bg: pastelA.bg, dot: pastelA.dot, text: "#352E2A", title: "網路層", description: "此層負責在不同網路之間的資料傳輸與路由，<br>將<strong>傳輸層的區段分解為「封包」(Packet)</strong>，<br>並為封包尋找最佳路徑。", theStep:"<li>路徑選擇和封包轉發。</li><li>將網路表頭（NH）加至封包，<br>以形成封包，加上來源與目的IP地址。</li><li>決定路由。</li>" },
+  group3: { bg: pastelA.bg, dot: pastelA.dot, text: "#352E2A", title: "網路層", description: "此層負責在不同網路之間的資料傳輸與路由，<br>將<strong>傳輸層的區段封裝為「封包」(Packet)</strong>，<br>並為封包尋找最佳路徑。", theStep:"<li>路徑選擇和封包轉發。</li><li>將網路表頭（NH）加至封包，<br>以形成封包，加上來源與目的IP地址。</li><li>決定路由。</li>" },
   group2: { bg: pastelB.bg, dot: pastelB.dot, text: "#352E2A", title: "資料鏈結層", description: "此層負責在<strong>同一個網路上的兩個設備之間建立可靠的資料傳輸</strong>，<br>並將來自網路層的封包分割成更小的「訊框」(Frame)。", theStep:"<li>將網路層封包封裝成Frame加入 MAC 地址。</li><li>控制流量傳輸速率，以防止網路擁塞。</li>" },
   group1: { bg: pastelA.bg, dot: pastelA.dot, text: "#352E2A", title: "實體層", description: "處理網路中實體的設備和介質，<br/>並<strong>將數據轉換為由 1 和 0 組成的位元流</strong>進行傳輸。", theStep:"<li>Wi-Fi：封包轉成無線電波。</li><li>有線網路：封包轉為電壓信號。</li>" },
 };
@@ -208,13 +208,12 @@ const colorGroups = {
 // 名詞內容列表，加入了 `layer` 屬性來對應 colorGroups 的 key
 const steps = [
   // 第七層：應用層 (Application Layer)
-  {base:"DHCP (Dynamic Host Configuration Protocol) - <br>動態主機設定協定", detail:"網路世界的「自動報到櫃檯」。 當您的設備（如手機）連上Wi-Fi時，它會自動向DHCP伺服器（通常是路由器）請求網路設定。DHCP會<strong>自動分配一個 IP 位址</strong>及相關設定（如閘道器、DNS）給您的設備，讓您無需手動設定就能上網。", color:colorGroups.group7, layer: '應用層'},
+  {base:"DNS (Domain Name System)  - <br>網域名稱系統", detail:"DNS 就像網路世界的「電話簿」，把你輸入的網址翻譯成真正的 IP 位址。當你輸入像<strong> www.google.com</strong>這種名稱時，DNS 會告訴你的電腦它實際的數字地址在哪裡，讓你成功連線。", color:colorGroups.group7, layer: '應用層'},
   {base:"FTP (File Transfer Protocol) - 檔案傳輸協定", detail:"一個古老的、專門用來「傳輸檔案」的協定。 它最大的問題是，您的帳號、密碼和檔案內容全都是「<strong>明文</strong>」傳輸（沒加密），在網路上很容易被偷看，<strong>非常不安全</strong>。", color:colorGroups.group7, layer: '應用層'},
   {base:"HTTP (HyperText Transfer Protocol) - 超文字傳輸協定", detail:"這是瀏覽器用來向網站<strong>要資料</strong>（網頁、圖片）的「語言」。 您的瀏覽器會發出HTTP請求，網站伺服器會回傳HTTP回應。但它也是<strong>明文傳輸</strong>，內容未經加密。", color:colorGroups.group7, layer: '應用層'},
   {base:"HTTPS (HyperText Transfer Protocol Secure) - <br>安全超文字傳輸協定", detail:"<strong>HTTP 的安全加密版</strong>。 它並不是一個全新的協定，而是「<strong>HTTP + SSL/TLS</strong>」的組合。 它透過TLS（第六層）加密，確保您和網站之間的所有通訊都<strong>經過加密</strong>，防止中間人竊聽。", color:colorGroups.group7, layer: '應用層'},
   {base:"POP3 (Post Office Protocol 3) - 郵局協定第3版", detail:"一種「把信件從郵局信箱領回家」的收信協定。 您的Email軟體連上伺服器，把所有信件「<strong>下載</strong>」到您的電腦，然後（通常）會把伺服器上的信件<strong>刪除</strong>。 缺點是您在A電腦收信後，B電腦和手機上就看不到了。", color:colorGroups.group7, layer: '應用層'},
   {base:"SMTP (Simple Mail Transfer Protocol) - <br>簡易郵件傳輸協定", detail:"專門負責「<strong>寄信</strong>」的協定。 無論您用什麼軟體，當您按下「傳送」按鈕時，您的郵件程式就是透過SMTP協定，把信件「<strong>推送</strong>」給郵件伺服器。", color:colorGroups.group7, layer: '應用層'},
-  {base:"DNS (Domain Name System) - 網域名稱系統", detail:"「<strong>網際網路的電話簿</strong>」。 人類只記得住「google.com」這樣的網域名稱，但電腦只看得懂「172.217.26.196」這樣的IP位址。 DNS的工作，就是在您輸入網址時，自動去將易於記憶的<strong>網域名稱轉換為機器可讀的 IP 位址</strong>。", color:colorGroups.group7, layer: '應用層'},
   {base:"SSH (Secure Shell) - 安全殼層協定", detail:"讓管理員能「<strong>安全地遠端遙控</strong>」另一台電腦（通常是Linux伺服器）的方式。 它提供一條<strong>加密的網路通道</strong>，讓使用者能夠安全地遠端登入並管理另一台電腦，所有過程（包含密碼和指令）都受到嚴密保護，不會被竊聽。", color:colorGroups.group7, layer: '應用層'},
 
   // 第六層：表示層 (Presentation Layer)
@@ -223,7 +222,7 @@ const steps = [
   {base:"GIF (Graphics Interchange Format) / <br>JPEG (Joint Photographic Experts Group)", detail:"這些就是常見的<strong>圖片格式標準</strong>。 GIF 是一種使用<strong>無失真壓縮</strong>的點陣圖格式，支援動畫。 JPEG 則是一種<strong>失真壓縮</strong>技術，最適合儲存色彩豐富的照片。 表示層就負責處理這些格式的定義與轉譯。", color:colorGroups.group6, layer: '表示層'},
 
   // 第五層：會話層 (Session Layer)
-  {base:"RPC (Remote Procedure Call) - 遠端程序呼叫", detail:"這是一種允許電腦A「<strong>隔空</strong>」呼叫並執行電腦B上<strong>子程式的技術</strong>。 這個過程就需要會話層來建立和管理一個穩定的會話通道。", color:colorGroups.group5, layer: '會話層'},
+  
 
   // 第四層：傳輸層 (Transport Layer)
   {base:"TCP (Transmission Control Protocol) - 傳輸控制協定", detail:"這像是「掛號信」或「簽收服務」。 它是一種<strong>可靠、連線導向</strong>的協定。 在傳輸前會先「三次交握」建立連線，它會為每個區段編號，接收方收到後必須回傳「確認」，如果沒收到確認（可能遺失了），它就會<strong>重新傳送</strong>。 這能確保資料<strong>完整且有序地送達</strong>，適用於網頁瀏覽、Email等。", color:colorGroups.group4, layer: '傳輸層'},
