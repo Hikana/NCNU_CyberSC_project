@@ -7,73 +7,90 @@
         <div class="event-card" :class="{ flipped: eventStore.flipped }">
           <!-- Front: 事件內容 + 倒數 + 防禦選項 -->
           <section class="card-face front" v-if="eventStore.currentEvent">
-            <!-- 標題區域 -->
-            <div class="card-header">
-              <div class="event-icon">⚔️</div>
-              <div class="title-section">
-                <h2 class="event-title">{{ eventStore.currentEvent.name }}</h2>
-                <p class="event-subtitle">{{ eventStore.currentEvent.shortExplain }}</p>
+            
+            <!-- 主要警報面板 -->
+            <div class="alert-main-panel">
+              <div class="panel-glow"></div>
+              <div class="alert-banner-v3">
+                <div class="alert-icon-large">
+                  <div class="icon-glow"></div>
+                  <div class="icon-box">
+                    <span>⚠️</span>
+                  </div>
+                </div>
+                <div class="alert-content-v3">
+                  <div class="alert-header-v3">
+                    <div class="alert-category">Critical Security Event</div>
+                    <h1 class="alert-title-v3">{{ eventStore.currentEvent.name }}</h1>
+                  </div>
+                  <div class="timer-bar-container compact">
+                    <div class="timer-compact-info">
+                      <span class="timer-value">{{ eventStore.timeLeft }} 秒</span>
+                    </div>
+                    <div class="timer-bar-track compact">
+                      <div class="timer-bar-fill" :style="{ width: percent + '%' }"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="panel-body">
+                <div class="description-card">
+                  <p class="description-text">{{ eventStore.currentEvent.gameDescription }}</p>
+                </div>
+                
+                <button class="info-expand-btn" @click="toggleInfo">
+                  <div class="info-btn-content">
+                    <span class="info-btn-icon">⚡</span>
+                    <span class="info-btn-text">了解這種攻擊</span>
+                  </div>
+                  <span class="info-chevron" :class="{ open: isInfoExpanded }">⌄</span>
+                </button>
+                
+                <transition name="accordion">
+                  <div v-if="isInfoExpanded" class="info-expanded-content">
+                    <p>{{ eventStore.currentEvent.shortExplain }}</p>
+                  </div>
+                </transition>
               </div>
             </div>
 
-            <!-- 倒數計時器 -->
-            <div class="timer-section">
-              <div class="timer-display">
-                <span class="timer-icon">⏰</span>
-                <span class="timer-text">{{ eventStore.timeLeft }} 秒</span>
-              </div>
-              <div class="progress-bar">
-                <div class="progress-fill" :style="{ width: percent + '%' }"></div>
-              </div>
-            </div>
-
-            <!-- 事件描述 -->
-            <div class="event-description">
-              <p>{{ eventStore.currentEvent.gameDescription }}</p>
-            </div>
-
-            <!-- 防禦選項 -->
-            <div class="defense-options">
-              <h3 class="options-title">🛡️ 選擇防禦措施</h3>
-              <div class="options-grid">
+            <!-- 工具選擇面板 -->
+            <div class="defense-section-v3">
+              <div class="defense-glow"></div>
+              <h3 class="defense-title-v3">部署防禦措施</h3>
+              
+              <div class="tool-grid-v3">
                 <button
                   v-for="opt in eventStore.availableDefenses"
                   :key="opt.key"
-                  class="defense-btn"
-                  :class="{ 
-                    'available': eventStore.status === 'pending',
-                    'disabled': eventStore.status !== 'pending'
-                  }"
+                  class="tool-card-v3"
+                  :class="{ disabled: eventStore.status !== 'pending' }"
                   :disabled="eventStore.status !== 'pending'"
                   @click="onDefenseClick(opt.key)"
                 >
-                  <div class="btn-content">
-                    <span class="defense-name">{{ opt.name }}</span>
-                    <span class="defense-description">{{ opt.description }}</span>
-                    <span class="status-badge owned">
-                      ✓ 已取得
-                    </span>
+                  <div class="tool-icon-v3">{{ getToolIcon(opt.key) }}</div>
+                  <div class="tool-info-v3">
+                    <h4 class="tool-name-v3">{{ opt.name }}</h4>
+                    <p class="tool-desc-v3">{{ opt.description }}</p>
                   </div>
                 </button>
               </div>
-            </div>
 
-            <!-- 底部按鈕 -->
-            <div class="card-footer">
-              <button 
-                class="skip-btn" 
-                :disabled="eventStore.status !== 'pending'" 
-                @click="eventStore.chooseDefense('skip')"
-              >
-                <span class="btn-icon">🚫</span>
-                <span class="btn-text">不採取動作</span>
-              </button>
+              <div class="action-row-v3">
+                <button
+                  class="skip-btn-v3"
+                  :disabled="eventStore.status !== 'pending'"
+                  @click="eventStore.chooseDefense('skip')"
+                >
+                  不採取動作
+                </button>
+              </div>
             </div>
           </section>
 
           <!-- Back: 結果 + 失敗後果 + 現實案例 -->
           <section class="card-face back" v-if="eventStore.currentEvent">
-            <!-- 結果標題 -->
             <div class="result-header">
               <div class="result-icon">
                 <span v-if="eventStore.status === 'success'">🏆</span>
@@ -86,7 +103,6 @@
               </div>
             </div>
 
-            <!-- 失敗後果 -->
             <div v-if="eventStore.status === 'fail'" class="penalty-section">
               <div class="section-header">
                 <span class="section-icon">⚠️</span>
@@ -100,7 +116,6 @@
               </div>
             </div>
 
-            <!-- 現實案例 -->
             <div class="real-case-section">
               <div class="section-header">
                 <span class="section-icon">📰</span>
@@ -112,7 +127,6 @@
               </div>
             </div>
 
-            <!-- 關閉按鈕 -->
             <div class="card-footer">
               <button class="close-btn" @click="eventStore.closeModal()">
                 <span class="btn-icon">✕</span>
@@ -125,7 +139,6 @@
     </div>
   </div>
 
-  <!-- 工具提示框 -->
   <ToolNotificationModal 
     :isVisible="toolNotification.visible"
     :type="toolNotification.type"
@@ -136,39 +149,41 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useEventStore } from '@/stores/eventStore'
 import { useInventoryStore } from '@/stores/inventory'
 import ToolNotificationModal from '@/components/game/ToolNotificationModal.vue'
 
-// 狀態管理
 const eventStore = useEventStore()
 const inventoryStore = useInventoryStore()
 
-// 工具提示框狀態
+const TOOL_ICON_MAP = {
+  mfa: '🔐',
+  cdn: '🌐',
+  'prepared_statements': '🧾',
+  'output_encoding': '💬',
+  'code_signing': '🧪',
+  'port_blocking': '🚪',
+  'ip_block': '🛑',
+  backup: '💾'
+}
+
 const toolNotification = ref({
   visible: false,
   type: 'info',
   title: '提示',
   message: ''
 })
+const isInfoExpanded = ref(false)
 
-// 顯示提示框的輔助函數
 function showToolNotification(type, title, message) {
-  toolNotification.value = {
-    visible: true,
-    type,
-    title,
-    message
-  }
+  toolNotification.value = { visible: true, type, title, message }
 }
 
-// 關閉提示框的處理函數
 function closeToolNotification() {
   toolNotification.value.visible = false
 }
 
-// 計算事件剩餘時間百分比
 const percent = computed(() => {
   const ev = eventStore.currentEvent
   if (!ev) return 0
@@ -176,39 +191,38 @@ const percent = computed(() => {
   return Math.max(0, Math.min(100, p))
 })
 
-// 點擊防禦建材
 async function onDefenseClick(key) {
   try {
-    // 檢查背包裡有沒有這個道具
     const owned = inventoryStore.items.find(item => item.id === key)
     if (!owned || owned.qty <= 0) {
       console.warn(`沒有 ${key} 這個防禦工具`)
-      return // 沒有就不能用
+      return
     }
-
     
-    // 先告訴事件系統「我選了這個防禦」
     eventStore.chooseDefense(key)
-    
-    // 無論成功或失敗，都扣除工具數量（因為已經使用了）
     await inventoryStore.useItem(key)
-    
-    
   } catch (error) {
     console.error('❌ 使用防禦工具失敗:', error)
-    // 顯示錯誤訊息給用戶
-    showToolNotification(
-      'error',
-      '使用防禦工具失敗',
-      `使用防禦工具失敗: ${error.message}`
-    )
+    showToolNotification('error', '使用防禦工具失敗', `使用防禦工具失敗: ${error.message}`)
   }
 }
+
+function getToolIcon(key) {
+  return TOOL_ICON_MAP[key] || '🛡️'
+}
+
+function toggleInfo() {
+  isInfoExpanded.value = !isInfoExpanded.value
+}
+
+watch(
+  () => eventStore.currentEvent,
+  () => { isInfoExpanded.value = false }
+)
 </script>
 
-
 <style scoped>
-/* ===== 主要容器 ===== */
+/* ===== 基礎設定 ===== */
 .event-modal {
   position: fixed;
   inset: 0;
@@ -222,15 +236,15 @@ async function onDefenseClick(key) {
 .modal-backdrop {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(20, 20, 40, 0.9));
-  backdrop-filter: blur(8px);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.85), rgba(15, 23, 42, 0.95));
+  backdrop-filter: blur(12px);
   animation: fadeIn 0.3s ease-out;
 }
 
 .modal-container {
   position: relative;
   width: 100%;
-  max-width: 900px;
+  max-width: 1000px;
   max-height: 90vh;
   overflow: hidden;
 }
@@ -257,213 +271,60 @@ async function onDefenseClick(key) {
 .card-face {
   position: absolute;
   inset: 0;
-  background: linear-gradient(145deg, #1a1a2e, #16213e);
-  border: 3px solid #4a5568;
-  border-radius: 24px;
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  border-radius: 32px;
   box-shadow: 
-    0 25px 50px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  padding: 32px;
+    0 25px 60px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  padding: 24px;
   backface-visibility: hidden;
   overflow-y: auto;
   color: #e2e8f0;
-  /* 自定義滾動條樣式 */
-  scrollbar-width: thin;
-  scrollbar-color: #4a5568 #2d3748;
+  border: 1px solid rgba(71, 85, 105, 0.3);
 }
 
-/* 卡片內容區域的滾動條樣式 */
-.card-face::-webkit-scrollbar {
-  width: 14px;
+.card-face::-webkit-scrollbar { width: 12px; }
+.card-face::-webkit-scrollbar-track { background: #1e293b; border-radius: 6px; }
+.card-face::-webkit-scrollbar-thumb { 
+  background: linear-gradient(180deg, #475569, #334155);
+  border-radius: 6px;
+  border: 2px solid #1e293b;
 }
-
-.card-face::-webkit-scrollbar-track {
-  background: #2d3748;
-  border-radius: 7px;
-  border: 2px solid #1a202c;
-  margin: 8px 0;
-}
-
-.card-face::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #4a5568, #2d3748);
-  border-radius: 7px;
-  border: 2px solid #1a202c;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.card-face::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #718096, #4a5568);
-  box-shadow: 0 0 8px rgba(74, 85, 104, 0.3);
-}
-
-.card-face::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(180deg, #2d3748, #1a202c);
-}
-
-.card-face::-webkit-scrollbar-corner {
-  background: #2d3748;
-}
+.card-face::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #64748b, #475569); }
 
 .card-face.back {
   transform: rotateY(180deg);
 }
 
-/* ===== 標題區域 ===== */
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 24px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #4a5568;
-}
-
-.event-icon {
-  font-size: 48px;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-}
-
-.title-section {
-  flex: 1;
-}
-
-.event-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #f7fafc;
-  margin: 0 0 8px 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.event-subtitle {
-  font-size: 16px;
-  color: #a0aec0;
-  margin: 0;
-  line-height: 1.5;
-}
-
-/* ===== 倒數計時器 ===== */
-.timer-section {
-  margin-bottom: 24px;
-}
-
-.timer-display {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.timer-icon {
-  font-size: 24px;
-}
-
-.timer-text {
-  font-size: 24px;
-  font-weight: 700;
-  color: #fbb6ce;
-  font-variant-numeric: tabular-nums;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.progress-bar {
-  height: 12px;
-  background: #2d3748;
-  border-radius: 6px;
+/* ===== 版面3：主要警報面板 ===== */
+.alert-main-panel {
+  position: relative;
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  border-radius: 20px;
+  margin-bottom: 20px;
   overflow: hidden;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px rgba(239, 68, 68, 0.25);
+  border: 2px solid rgba(239, 68, 68, 0.3);
 }
 
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #f56565, #ed8936);
-  border-radius: 6px;
-  transition: width 0.3s linear;
-  box-shadow: 0 0 10px rgba(245, 101, 101, 0.3);
+.panel-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(239, 68, 68, 0.15), transparent 70%);
+  pointer-events: none;
 }
 
-/* ===== 事件描述 ===== */
-.event-description {
-  margin-bottom: 28px;
+.alert-banner-v3 {
+  background: linear-gradient(135deg, #dc2626, #b91c1c, #991b1b);
   padding: 20px;
-  background: rgba(45, 55, 72, 0.3);
-  border-radius: 16px;
-  border-left: 4px solid #4299e1;
-}
-
-.event-description p {
-  font-size: 16px;
-  line-height: 1.6;
-  color: #e2e8f0;
-  margin: 0;
-}
-
-/* ===== 防禦選項 ===== */
-.defense-options {
-  margin-bottom: 28px;
-}
-
-.options-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #f7fafc;
-  margin: 0 0 16px 0;
-  text-align: center;
-}
-
-.options-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-  max-height: 300px;
-  overflow-y: auto;
-  padding: 8px;
-  /* 自定義滾動條樣式 */
-  scrollbar-width: thin;
-  scrollbar-color: #4a5568 #2d3748;
-}
-
-/* Webkit 瀏覽器滾動條樣式 */
-.options-grid::-webkit-scrollbar {
-  width: 12px;
-}
-
-.options-grid::-webkit-scrollbar-track {
-  background: #2d3748;
-  border-radius: 6px;
-  border: 2px solid #1a202c;
-}
-
-.options-grid::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #4a5568, #2d3748);
-  border-radius: 6px;
-  border: 2px solid #1a202c;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.options-grid::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #718096, #4a5568);
-  box-shadow: 0 0 8px rgba(74, 85, 104, 0.3);
-}
-
-.options-grid::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(180deg, #2d3748, #1a202c);
-}
-
-.defense-btn {
   display: flex;
-  flex-direction: column;
-  padding: 16px;
-  border: 2px solid #4a5568;
-  border-radius: 16px;
-  background: linear-gradient(145deg, #2d3748, #1a202c);
-  cursor: pointer;
-  transition: all 0.3s ease;
+  gap: 24px;
+  align-items: center;
   position: relative;
   overflow: hidden;
 }
 
-.defense-btn::before {
+.alert-banner-v3::before {
   content: '';
   position: absolute;
   top: 0;
@@ -471,118 +332,319 @@ async function onDefenseClick(key) {
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  transition: left 0.5s ease;
+  animation: shimmer 3s infinite;
 }
 
-.defense-btn:hover::before {
-  left: 100%;
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
 }
 
-.defense-btn.available {
-  border-color: #48bb78;
-  background: linear-gradient(145deg, #2f855a, #276749);
-  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+.alert-icon-large {
+  position: relative;
+  flex-shrink: 0;
+  transform: scale(0.9);
 }
 
-.defense-btn.available:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(72, 187, 120, 0.4);
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.95); }
+  50% { opacity: 0.8; transform: scale(1.05); }
 }
 
-.defense-btn.locked {
-  opacity: 0.6;
-  border-color: #e53e3e;
-  background: linear-gradient(145deg, #742a2a, #5a2020);
-  cursor: not-allowed;
-}
-
-.defense-btn.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-content {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.defense-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #f7fafc;
-  text-align: center;
-}
-
-.defense-description {
-  font-size: 12px;
-  color: #a0aec0;
-  text-align: center;
-  line-height: 1.4;
-  font-style: italic;
-}
-
-.status-badge {
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 12px;
-  text-align: center;
-  font-weight: 500;
-}
-
-.status-badge.owned {
-  background: #48bb78;
-  color: #f7fafc;
-}
-
-.status-badge.not-owned {
-  background: #e53e3e;
-  color: #f7fafc;
-}
-
-/* ===== 底部按鈕 ===== */
-.card-footer {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 2px solid #4a5568;
-}
-
-.skip-btn, .close-btn {
+.icon-box {
+  position: relative;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  font-size: 48px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border: 2px solid #4a5568;
-  border-radius: 12px;
-  background: linear-gradient(145deg, #2d3748, #1a202c);
+  justify-content: center;
+}
+
+.alert-content-v3 {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-header-v3 {
+  margin-bottom: 20px;
+}
+
+.alert-category {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.alert-title-v3 {
+  color: #ffffff;
+  font-size: 40px;
+  font-weight: 900;
+  margin: 0;
+  line-height: 1.2;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.timer-bar-container {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  padding: 16px 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.timer-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.timer-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.timer-value {
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-bar-track {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.timer-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fef3c7, #fbbf24, #f59e0b);
+  border-radius: inherit;
+  transition: width 1s linear;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+.timer-bar-container.compact {
+  padding: 12px 16px;
+}
+
+.timer-bar-track.compact {
+  height: 6px;
+}
+
+.timer-compact-info {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.timer-compact-info .timer-value {
+  font-size: 24px;
+}
+
+.panel-body {
+  padding: 20px 28px;
+}
+
+.description-card {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 16px;
+  padding: 18px;
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  margin-bottom: 20px;
+}
+
+.description-text {
   color: #e2e8f0;
+  font-size: 17px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.info-expand-btn {
+  width: 100%;
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #fbbf24;
+}
+
+.info-expand-btn:hover {
+  background: linear-gradient(145deg, #334155, #1e293b);
+  border-color: rgba(251, 191, 36, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.info-btn-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
   font-size: 16px;
+}
+
+.info-btn-icon {
+  font-size: 20px;
+}
+
+.info-chevron {
+  font-size: 20px;
+  transition: transform 0.3s ease;
+  font-weight: bold;
+}
+
+.info-chevron.open {
+  transform: rotate(180deg);
+}
+
+.info-expanded-content {
+  margin-top: 16px;
+  padding: 16px 20px;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 16px;
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  color: #cbd5e1;
+  line-height: 1.7;
+}
+
+.accordion-enter-active, .accordion-leave-active {
+  transition: all 0.3s ease;
+}
+
+.accordion-enter-from, .accordion-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* ===== 版面3：工具選擇區 ===== */
+.defense-section-v3 {
+  position: relative;
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+.defense-glow {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.6), transparent);
+  filter: blur(4px);
+}
+
+.defense-title-v3 {
+  text-align: center;
+  color: #f8fafc;
+  font-size: 24px;
+  font-weight: 900;
+  margin: 0 0 32px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tool-grid-v3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.tool-card-v3 {
+  background: linear-gradient(145deg, #334155, #1e293b);
+  border: 2px solid rgba(71, 85, 105, 0.4);
+  border-radius: 18px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tool-card-v3:hover:not(.disabled) {
+  background: linear-gradient(145deg, #475569, #334155);
+  border-color: rgba(59, 130, 246, 0.6);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 16px 40px rgba(59, 130, 246, 0.3);
+}
+
+.tool-card-v3.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tool-icon-v3 {
+  font-size: 36px;
+  text-align: center;
+}
+
+.tool-info-v3 {
+  text-align: center;
+}
+
+.tool-name-v3 {
+  color: #f8fafc;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.tool-desc-v3 {
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.action-row-v3 {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.skip-btn-v3 {
+  padding: 14px 32px;
+  background: rgba(71, 85, 105, 0.2);
+  border: 2px solid rgba(71, 85, 105, 0.4);
+  border-radius: 999px;
+  color: #e2e8f0;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.skip-btn:hover, .close-btn:hover {
-  background: linear-gradient(145deg, #4a5568, #2d3748);
+.skip-btn-v3:hover:not(:disabled) {
+  background: rgba(71, 85, 105, 0.3);
+  border-color: rgba(148, 163, 184, 0.5);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.skip-btn:disabled {
+.skip-btn-v3:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
-}
-
-.btn-icon {
-  font-size: 18px;
-}
-
-.btn-text {
-  font-size: 16px;
 }
 
 /* ===== 結果頁面 ===== */
@@ -667,69 +729,90 @@ async function onDefenseClick(key) {
   margin: 0 0 8px 0;
 }
 
-/* ===== 動畫效果 ===== */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+.card-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 20px;
+  border-top: 2px solid #4a5568;
 }
 
-/* ===== 響應式設計 ===== */
+.close-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: 2px solid #4a5568;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #2d3748, #1a202c);
+  color: #e2e8f0;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  background: linear-gradient(145deg, #4a5568, #2d3748);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-icon {
+  font-size: 18px;
+}
+
+/* ===== 動畫 ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ===== 響應式 ===== */
 @media (max-width: 768px) {
   .modal-container {
     max-width: 95vw;
-    padding: 16px;
+    padding: 12px;
   }
   
-  .card-face {
-    padding: 24px;
-    min-height: 500px;
-  }
-  
-  .event-title {
-    font-size: 24px;
-  }
-  
-  .options-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  
-  .defense-btn {
-    padding: 14px;
-  }
-  
-  .card-header {
-    flex-direction: column;
-    text-align: center;
-    gap: 12px;
-  }
-  
-  .event-icon {
-    font-size: 40px;
-  }
-}
-
-@media (max-width: 480px) {
   .card-face {
     padding: 20px;
   }
   
-  .event-title {
-    font-size: 20px;
+  .alert-banner-v3 {
+    flex-direction: column;
+    padding: 24px;
+    gap: 20px;
   }
   
-  .timer-text {
-    font-size: 20px;
+  .alert-title-v3 {
+    font-size: 28px;
   }
   
-  .defense-name {
-    font-size: 14px;
+  .tool-grid-v3 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .defense-title-v3 {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .alert-title-v3 {
+    font-size: 24px;
+  }
+  
+  .timer-value {
+    font-size: 24px;
+  }
+  
+  .tool-grid-v3 {
+    grid-template-columns: 1fr;
+  }
+  
+  .panel-body {
+    padding: 24px;
   }
 }
 </style>
