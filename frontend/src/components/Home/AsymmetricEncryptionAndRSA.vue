@@ -150,6 +150,9 @@
               Encrypt
             </button>
           </div>
+          <p v-if="encryptError" class="mt-2 text-sm text-red-300">
+            {{ encryptError }}
+          </p>
           <div class="mt-2 text-wordcolor break-all font-mono text-sm">
             {{ encrypted }}
           </div>
@@ -171,6 +174,9 @@
               Decrypt
             </button>
           </div>
+          <p v-if="decryptError" class="mt-2 text-sm text-red-300">
+            {{ decryptError }}
+          </p>
           <div class="mt-2 text-wordcolor break-all font-mono text-sm">
             {{ decrypted }}
           </div>
@@ -192,6 +198,8 @@ export default {
       privateKey: null,
       publicKeyPem: "",
       privateKeyPem: "",
+      encryptError: "",
+      decryptError: "",
     };
   },
   methods: {
@@ -221,6 +229,12 @@ export default {
       return `-----BEGIN ${key.type.toUpperCase()} KEY-----\n${b64}\n-----END ${key.type.toUpperCase()} KEY-----`;
     },
     async encrypt() {
+      this.encryptError = "";
+      this.decryptError = "";
+      if (!this.publicKey) {
+        this.encryptError = "請先產生 RSA 金鑰。";
+        return;
+      }
       try {
         const data = new TextEncoder().encode(this.plain);
         const encryptedBuffer = await crypto.subtle.encrypt(
@@ -232,10 +246,15 @@ export default {
           String.fromCharCode(...new Uint8Array(encryptedBuffer))
         );
       } catch (err) {
-        alert("你沒有產生金鑰！！");
+        this.encryptError = "加密失敗，請重新產生金鑰。";
       }
     },
     async decrypt() {
+      this.decryptError = "";
+      if (!this.privateKey) {
+        this.decryptError = "請先產生 RSA 金鑰。";
+        return;
+      }
       try {
         const encryptedBytes = new Uint8Array(
           atob(this.encrypted)
@@ -249,7 +268,7 @@ export default {
         );
         this.decrypted = new TextDecoder().decode(decryptedBuffer);
       } catch (err) {
-        alert("你的密文錯誤了！！");
+        this.decryptError = "密文錯誤或金鑰不符，請再試一次。";
       }
     },
   },
