@@ -22,7 +22,7 @@
         >
           <div class="card-inner rounded-xl shadow-lg">
             <div class="card-face card-front bg-blueGray text-wordcolor flex flex-col items-center justify-center rounded-xl">
-              <p class="text-4xl font-extrabold tracking-wide">{{ stone.id }}</p>
+              <p class="text-4xl font-extrabold tracking-wide text-center" v-html="stone.id"></p>
             </div>
             <div class="card-face card-back bg-lightGray text-wordcolor rounded-xl">
               <h3 class="text-[26px] font-bold text-center" v-html="stone.title"></h3>
@@ -81,16 +81,16 @@ export default {
 
       // ✅ A01～A10 方塊的顯示資料（寬度可改）
       specialStones: [
-              { id: "A01", width:"410px", height:"360px", title:"A01 Broken Access Control", text: "應用程式未能正確限制使用者的行為，<br>導致未經授權的存取或操作。<br>可能導致敏感資訊的洩露、<br>數據的修改或刪除，<br>甚至執行超出預期的業務功能。" },
-              { id: "A02", width:"430px", height:"360px", title:"A02 Cryptographic Failures", text: "指在使用加密技術保護資料時，<br>因為設計或配置不當，<br>導致加密的資料未能受到保護，<br>而產生資安漏洞，<br>這些漏洞能夠讓攻擊者繞過加密，<br>從而獲得敏感的資料或破壞系統的安全。" },
-              { id: "A03", width:"660px", height:"360px", title:"A03 Injection", text: "指攻擊者透過未經適當驗證或處理的使用者輸入，<br>將惡意程式碼或指令注入到應用程式中，使其被系統錯誤地執行。<br>這類攻擊通常利用應用程式與後端系統之間的互動漏洞，<br>可能導致資料外洩、系統控制權喪失，甚至服務完全中斷。常見的注入攻擊包括 SQL Injection、Command Injection、<br>LDAP Injection 等。" },
-              { id: "A04", width:"430px", height:"360px", title:"A04 Insecure Design", text: "應用程式在設計階段未考慮安全性，<br>導致系統邏輯無法有效防止攻擊。<br>不安全的設計無法透過後期修補來解決，<br>因為所需的安全控制從未被創建。" },
-              { id: "A05", width:"560px", height:"360px", title:"A05 Security Misconfiguration", text: "指程式設計及系統架構上的不當設計與設定，<br>例如不必要的 Port、帳號或權限、沒有按時更新系統、<br>未改掉預設帳號密碼、忘了設定安全參數、<br>錯誤訊息曝露 Stacktrace 程式檔資訊、<br>未移除具安全缺陷的預設範例程式，<br>可能會發生在資料庫、伺服器、應用程式或網路設備。" },
-              { id: "A06", width:"520px", height:"360px", title:"A06 Vulnerable and <br>Outdated Components", text: "使用過時、未修補的軟體元件，如第三方函式庫、<br>框架、開源套件，甚至是作業系統的組件。<br>這些元件可能包含已知的漏洞，若未更新或移除，<br>攻擊者可以利用它們發動攻擊，<br>從而入侵系統或竊取機密資訊。" },
-              { id: "A07", width:"450px", height:"360px", title:"A07 Identification and Authentication Failures", text: "此類別涵蓋身份識別和認證過程中的弱點，<br>例如使用弱密碼、缺乏多因素認證等。<br>這些問題可能使攻擊者繞過身份驗證機制，<br>進而獲取未經授權的存取權限。" },
-              { id: "A08", width:"580px", height:"360px", title:"A08 Software and <br>Data Integrity Failures", text: "指軟體未能正確保護其代碼、數據或 CI/CD流程，<br>導致攻擊者可以篡改、破壞或利用漏洞來執行惡意行為。<br>這類攻擊可能會影響應用程式的完整性，<br>導致未經授權的行為、數據損毀，甚至供應鏈的攻擊。" },
-              { id: "A09", width:"360px", height:"360px", title:"A09 Security Logging <br>and Monitoring Failures", text: "缺乏適當的記錄與監控機制，<br>導致無法偵測攻擊、<br>延遲回應安全事件，<br>甚至無法追蹤攻擊行為。" },
-              { id: "A10", width:"700px", height:"360px", title:"A10 Server-Side Request Forgery", text: "發生於 Web 應用程式允許用戶端提供的 URL 來發送請求，<br>卻未對該 URL 進行適當的驗證與限制。<br>攻擊者可以利用 SSRF 讓伺服器向內部或外部的未授權資源發送請求，<br>可能導致內部網路偵察、數據洩露、甚至遠端代碼執行（RCE）。" },
+              { id: "A01 <br> Broken Access Control<br>", width:"410px", height:"360px", title:"A01 Broken Access Control", text: "應用程式未能正確限制使用者的行為，<br>導致未經授權的存取或操作。<br>可能導致敏感資訊的洩露、<br>數據的修改或刪除，<br>甚至執行超出預期的業務功能。" },
+              { id: "A02 <br>Cryptographic Failures<br>", width:"430px", height:"360px", title:"A02 Cryptographic Failures", text: "指在使用加密技術保護資料時，<br>因為設計或配置不當，<br>導致加密的資料未能受到保護，<br>而產生資安漏洞，<br>這些漏洞能夠讓攻擊者繞過加密，<br>從而獲得敏感的資料或破壞系統的安全。" },
+              { id: "A03 <br>Injection<br>", width:"660px", height:"360px", title:"A03 Injection", text: "指攻擊者透過未經適當驗證或處理的使用者輸入，<br>將惡意程式碼或指令注入到應用程式中，使其被系統錯誤地執行。<br>這類攻擊通常利用應用程式與後端系統之間的互動漏洞，<br>可能導致資料外洩、系統控制權喪失，甚至服務完全中斷。常見的注入攻擊包括 SQL Injection、Command Injection、<br>LDAP Injection 等。" },
+              { id: "A04 <br>Insecure Design<br>", width:"430px", height:"360px", title:"A04 Insecure Design", text: "應用程式在設計階段未考慮安全性，<br>導致系統邏輯無法有效防止攻擊。<br>不安全的設計無法透過後期修補來解決，<br>因為所需的安全控制從未被創建。" },
+              { id: "A05 <br>Security Misconfiguration<br>", width:"560px", height:"360px", title:"A05 Security Misconfiguration", text: "指程式設計及系統架構上的不當設計與設定，<br>例如不必要的 Port、帳號或權限、沒有按時更新系統、<br>未改掉預設帳號密碼、忘了設定安全參數、<br>錯誤訊息曝露 Stacktrace 程式檔資訊、<br>未移除具安全缺陷的預設範例程式，<br>可能會發生在資料庫、伺服器、應用程式或網路設備。" },
+              { id: "A06 <br>Vulnerable and <br>Outdated Components<br>", width:"520px", height:"360px", title:"A06 Vulnerable and <br>Outdated Components", text: "使用過時、未修補的軟體元件，如第三方函式庫、<br>框架、開源套件，甚至是作業系統的組件。<br>這些元件可能包含已知的漏洞，若未更新或移除，<br>攻擊者可以利用它們發動攻擊，<br>從而入侵系統或竊取機密資訊。" },
+              { id: "A07 <br>Identification and Authentication Failures<br>", width:"450px", height:"360px", title:"A07 Identification and Authentication Failures", text: "此類別涵蓋身份識別和認證過程中的弱點，<br>例如使用弱密碼、缺乏多因素認證等。<br>這些問題可能使攻擊者繞過身份驗證機制，<br>進而獲取未經授權的存取權限。" },
+              { id: "A08 <br>Software and <br>Data Integrity Failures<br>", width:"580px", height:"360px", title:"A08 Software and <br>Data Integrity Failures", text: "指軟體未能正確保護其代碼、數據或 CI/CD流程，<br>導致攻擊者可以篡改、破壞或利用漏洞來執行惡意行為。<br>這類攻擊可能會影響應用程式的完整性，<br>導致未經授權的行為、數據損毀，甚至供應鏈的攻擊。" },
+              { id: "A09 <br>Security Logging <br>and Monitoring Failures<br>", width:"360px", height:"360px", title:"A09 Security Logging <br>and Monitoring Failures", text: "缺乏適當的記錄與監控機制，<br>導致無法偵測攻擊、<br>延遲回應安全事件，<br>甚至無法追蹤攻擊行為。" },
+              { id: "A10 <br>Server-Side Request Forgery<br>", width:"700px", height:"360px", title:"A10 Server-Side Request Forgery", text: "發生於 Web 應用程式允許用戶端提供的 URL 來發送請求，<br>卻未對該 URL 進行適當的驗證與限制。<br>攻擊者可以利用 SSRF 讓伺服器向內部或外部的未授權資源發送請求，<br>可能導致內部網路偵察、數據洩露、甚至遠端代碼執行（RCE）。" },
             ],
 
       selectedStone: null,
