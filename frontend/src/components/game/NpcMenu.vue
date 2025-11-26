@@ -877,8 +877,9 @@ function closeMenu() {
   grid-template-rows: auto 1fr; /* 標題固定，內容滾動 */
 }
 .records-content {
-  overflow-y: auto;
+  overflow-y: auto; /* 恢復滾動功能 */
   padding: 20px;
+  position: relative; /* 確保 modal 定位正確 */
 }
 
 .inventory-container h2 {

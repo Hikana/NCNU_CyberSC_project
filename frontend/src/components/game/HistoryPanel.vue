@@ -1,6 +1,5 @@
 <template>
   <div class="history-panel">
-    <!-- ✅ 類別切換按鈕 -->
     <div class="filter-buttons">
       <button
         :class="{ active: filterType === 'correct' }"
@@ -46,23 +45,25 @@
       </div>
     </div>
 
-    <!-- 🔹 解釋彈出視窗 -->
-    <div v-if="selectedExplanation" class="explain-modal" @click.self="selectedExplanation = null">
-      <div class="explain-content">
-        <h3>📘 題目解釋</h3>
-        <p class="question">{{ selectedExplanation.questionTitle }}</p>
+    <!-- 🔹 解釋彈出視窗 - 內嵌在 NPC Menu 中 -->
+    <transition name="slide-up">
+      <div v-if="selectedExplanation" class="explain-overlay">
+        <div class="explain-content">
+          <h3>📘 題目解釋</h3>
+          <p class="question">{{ selectedExplanation.questionTitle }}</p>
 
-        <div class="answer-section">
-          <p><strong>你的答案：</strong> {{ selectedExplanation.yourAnswer }}</p>
-          <p><strong>正確答案：</strong> {{ selectedExplanation.correctAnswer }}</p>
-          <p class="explanation-text">{{ selectedExplanation.description }}</p>
+          <div class="answer-section">
+            <p><strong>你的答案：</strong> {{ selectedExplanation.yourAnswer }}</p>
+            <p><strong>正確答案：</strong> {{ selectedExplanation.correctAnswer }}</p>
+            <p class="explanation-text">{{ selectedExplanation.description }}</p>
+          </div>
+
+          <button class="close-explain-btn" @click="selectedExplanation = null">
+            關閉
+          </button>
         </div>
-
-        <button class="close-explain-btn" @click="selectedExplanation = null">
-          關閉
-        </button>
       </div>
-    </div>
+    </transition>
   </div>
 </template>
 
@@ -72,7 +73,7 @@ import { useHistoryStore } from '@/stores/historyStore';
 
 const historyStore = useHistoryStore();
 const selectedExplanation = ref(null);
-const filterType = ref('correct'); // ✅ 初始顯示正確紀錄
+const filterType = ref('correct'); 
 
 onMounted(() => {
   if (historyStore.history.length === 0) {
@@ -80,7 +81,6 @@ onMounted(() => {
   }
 });
 
-// 根據選擇篩選資料
 const filteredHistory = computed(() => {
   if (filterType.value === 'correct') {
     return historyStore.history.filter((h) => h.isCorrect);
@@ -107,9 +107,11 @@ function showExplanation(entry) {
   display: flex;
   flex-direction: column;
   font-size: 20px;
+  position: relative; 
+  min-height: 0; 
 }
 
-/* ✅ 篩選按鈕區 */
+/* 篩選按鈕區 */
 .filter-buttons {
   display: flex;
   justify-content: center;
@@ -139,7 +141,7 @@ function showExplanation(entry) {
   background-color: #e2c1b5;
 }
 
-/* ✅ 載入與錯誤訊息 */
+/* 載入與錯誤訊息 */
 .loading,
 .error,
 .empty {
@@ -153,7 +155,7 @@ function showExplanation(entry) {
   color: #e74c3c;
 }
 
-/* ✅ 紀錄卡片樣式 */
+/* 紀錄卡片樣式 */
 .history-list {
   flex-grow: 1;
   overflow-y: auto;
@@ -207,31 +209,29 @@ function showExplanation(entry) {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* ✅ 解釋彈出視窗 */
-.explain-modal {
+/* 解釋彈出視窗 */
+.explain-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(30, 30, 30, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 600;
+  padding: 20px;
+  pointer-events: none;
 }
 
 .explain-content {
   background: #fff;
   border-radius: 16px;
   padding: 28px 36px;
-  width: 90%;
-  max-width: 600px;
-  max-height: 80vh;
+  width: 90vw;
+  max-width: 550px;
+  max-height: 60vh;
   overflow-y: auto;
   font-size: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  position: relative;
+  pointer-events: auto;
 }
 
 .explain-content h3 {
@@ -297,6 +297,22 @@ function showExplanation(entry) {
 .close-explain-btn:hover {
   background: #e85c5c;
   transform: scale(1.05);
+}
+
+/* ✅ 滑入動畫 */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.95);
 }
 
 /* ✅ 滾動條美化 */
