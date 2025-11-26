@@ -1,5 +1,6 @@
 const gameData = require('../models/gameData');
 const playerData = require('../models/playerData');
+const eventService = require('./eventService');
 const { FieldValue } = require('../config/firebase');
 
 // 與前端 IsoGrid 對齊的城堡座標（以 row,col = y,x）
@@ -196,8 +197,8 @@ class GameService {
       await playerData.updateTile(userId, position.x, position.y, { status: 'developed' });
       await playerData.updatePlayer(userId, { developedCount: FieldValue.increment(1) });
       
-      // 🎲 檢查是否觸發隨機事件
-      const eventResult = await this.checkForRandomEvent(userId, position);
+      // 🎲 檢查是否觸發隨機事件（委託給 eventService）
+      const eventResult = await eventService.checkForRandomEvent(userId, position);
       
       // 返回解鎖後的狀態（簡化版本，不包含建築資訊）
       const landData = await playerData.getPlayerLand(userId);
@@ -223,55 +224,13 @@ class GameService {
   }
 
   /**
-   * 檢查是否觸發隨機事件
-   * @param {string} userId - 玩家 ID
-   * @param {object} position - 解鎖位置 { x, y }
-   * @returns {object|null} - 觸發的事件資訊或 null
-   */
-  async checkForRandomEvent(userId, position) {
-    try {
-      const { x, y } = position;
-      
-      // 🚫 避免在 0-4*0-4 區域觸發事件
-      if (x >= 0 && x <= 4 && y >= 0 && y <= 4) {
-        return null;
-      }
-      
-      // 🎲 固定觸發機率（每一格都是相同的機率）
-      const triggerChance = 0.3; // 30% 固定機率
-      const randomValue = Math.random();
-      
-      
-      if (randomValue < triggerChance) {
-        // 觸發事件 - 完全隨機選擇事件類型
-        const eventType = this.selectRandomEventType();
-        const eventId = Date.now(); // 使用時間戳作為唯一ID
-        
-        
-        return {
-          id: eventId,
-          type: eventType,
-          position: { x, y },
-          timestamp: new Date().toISOString()
-        };
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('檢查隨機事件失敗:', error);
-      return null;
-    }
-  }
-
-  /**
-   * 隨機選擇事件類型
+   * 隨機選擇事件類型（保留此方法以維持向後相容性）
    * @returns {string} - 事件類型
    */
   selectRandomEventType() {
-    // 所有可用的事件類型
+    // 此方法已棄用，現在使用基於權重的選擇（在 eventService 中）
+    // 保留此方法僅為了向後相容
     const eventTypes = ['ddos', 'sql_injection', 'xss', 'brute_force', 'supply_chain', 'unauthorized_access'];
-    
-    // 完全隨機選擇
     return eventTypes[Math.floor(Math.random() * eventTypes.length)];
   }
   
