@@ -244,10 +244,26 @@ export const useBuildingStore = defineStore('buildings', {
         const { x, y } = this.selectedTile;
         try {
           const firewallKind = this.getSelectedFirewallKind?.();
-          const updated = await apiService.placeFirewall(this.selectedBuildingId, { x, y });
-          if (Array.isArray(updated) && Array.isArray(updated[0])) {
-            this.map = updated;
+          const response = await apiService.placeFirewall(this.selectedBuildingId, { x, y });
+
+          if (response?.success && Array.isArray(response.updatedTiles)) {
+            response.updatedTiles.forEach(tile => {
+              const { position, ...tileData } = tile;
+              if (position && this.map?.[position.y]) {
+                this.map[position.y][position.x] = {
+                  ...(this.map[position.y][position.x] || {}),
+                  ...tileData
+                };
+              }
+            });
+
+            if (typeof response.remainingTechPoints === 'number') {
+              playerStore.updatePlayerDataLocal({ techPoints: response.remainingTechPoints });
+            } else {
+              await playerStore.refreshPlayerData();
+            }
           }
+
           // 重置 UI 狀態
           this.isPlacing = false;
           this.selectedTile = null;
@@ -272,29 +288,38 @@ export const useBuildingStore = defineStore('buildings', {
       try {
         const response = await apiService.placeBuilding(
           this.selectedBuildingId,
-          { x: this.selectedTile.x, y: this.selectedTile.y } // 確保傳 position 是物件 {x,y}
+          { x: this.selectedTile.x, y: this.selectedTile.y }
         );
-    
-        if (response) {
-          await playerStore.refreshPlayerData(); // 更新玩家資料
-          this.map = response; // api 直接回傳 map 二維陣列
+
+        if (response?.success && response.updatedTile) {
+          const { position, ...tileData } = response.updatedTile;
+          if (Array.isArray(this.map) && this.map[position.y]) {
+            this.map[position.y][position.x] = {
+              ...(this.map[position.y][position.x] || {}),
+              ...tileData
+            };
+          }
+
+          if (typeof response.remainingTechPoints === 'number') {
+            playerStore.updatePlayerDataLocal({ techPoints: response.remainingTechPoints });
+          } else {
+            await playerStore.refreshPlayerData();
+          }
+
           this.isPlacing = false;
           this.selectedTile = null;
           this.selectedBuildingId = null;
-          
-          // 嘗試刷新成就（例如首次建造 Switch/Router）
-          // 使用 checkAllAchievements 而不是 loadAchievements，確保使用最新的 map 資料
+
           try {
             const { useAchievementStore } = await import('./achievement');
             const achievementStore = useAchievementStore();
-            // 等待一小段時間確保 map 已完全更新，然後再檢查成就
             await new Promise(resolve => setTimeout(resolve, 100));
             await achievementStore.checkAllAchievements();
           } catch (e) {
             console.warn('刷新成就失敗（忽略）:', e);
           }
         } else {
-          console.error('建築放置失敗:', response.message || '未知錯誤');
+          console.error('建築放置失敗:', response?.message || '未知錯誤');
         }
       } catch (err) {
         console.error('建築放置請求失敗:', err);
@@ -312,13 +337,36 @@ export const useBuildingStore = defineStore('buildings', {
     // 清除特定位置的建築
     async clearBuildingAt(x, y) {
       try {
-        const newMap = await apiService.clearBuilding({ x, y });
-        
-        // 確保是二維陣列格式
-        if (Array.isArray(newMap) && Array.isArray(newMap[0])) {
-          this.map = newMap;
+        const response = await apiService.clearBuilding({ x, y });
+        let updatedPositions = [];
+        if (response?.success) {
+          if (response.updatedTile) {
+            const { position, ...tileData } = response.updatedTile;
+            if (position && this.map?.[position.y]) {
+              this.map[position.y][position.x] = {
+                ...(this.map[position.y][position.x] || {}),
+                ...tileData
+              };
+              updatedPositions.push(position);
+            }
+          } else if (Array.isArray(response.updatedTiles)) {
+            response.updatedTiles.forEach(tile => {
+              const { position, ...tileData } = tile;
+              if (position && this.map?.[position.y]) {
+                this.map[position.y][position.x] = {
+                  ...(this.map[position.y][position.x] || {}),
+                  ...tileData
+                };
+                updatedPositions.push(position);
+              }
+            });
+          }
+
+          if (this.isoGrid && typeof this.isoGrid.updateMapData === 'function') {
+            this.isoGrid.updateMapData(this.map, updatedPositions);
+          }
         } else {
-          console.error('清除建築後的地圖資料格式不正確:', newMap);
+          console.error('清除建築後的資料結構不正確:', response);
         }
         
         // 清除與該建築相關的所有連線

@@ -68,43 +68,43 @@ class BuildingService {
   async placeBuilding(userId, buildingId, position) {
     try {
       const { x, y } = position;
-      console.log('放置建築請求:', { userId, buildingId, position });
-  
-      // 1. 檢查建築是否存在（改從 Firestore 讀取）
-      const buildingInfo = await shopData.getById(buildingId);
+      const now = Date.now();
+
+      const [buildingInfo, player, mapData] = await Promise.all([
+        shopData.getById(buildingId),
+        playerData.getPlayer(userId),
+        this.getMapState(userId)
+      ]);
+
       if (!buildingInfo) throw new Error('找不到指定的建築');
-  
-      // 2. 取得玩家資料
-      const player = await playerData.getPlayer(userId);
-      console.log('玩家科技點:', player.techPoints, '建築需求:', buildingInfo.techCost);
-  
       if (player.techPoints < buildingInfo.techCost) throw new Error('科技點不足');
-  
-      // 3. 取得地圖資料
-      const mapData = await this.getMapState(userId);
+
       const targetTile = mapData[y]?.[x];
-      console.log('目標 tile 狀態:', targetTile);
-  
       if (!targetTile) throw new Error('無效的位置');
       if (targetTile.status !== 'developed') throw new Error('該位置無法放置建築');
-  
-      // 4. 公網塔區域限制
-      if (this.isCastleTile(y, x)) throw new Error('此區域為 Public Internet Tower，無法放置建築');``
-  
-      // 5. 扣除科技點
-      await playerData.updatePlayer(userId, { techPoints: player.techPoints - buildingInfo.techCost });
-  
-      // 6. 更新地圖（同時寫入建築類型，前端可直接依據 type 顯示圖片）
-      await playerData.updateTile(userId, x, y, {
+      if (this.isCastleTile(y, x)) throw new Error('此區域為 Public Internet Tower，無法放置建築');
+
+      const updatedTile = {
         status: 'placed',
         buildingId,
         type: buildingInfo.type || 'host',
-        placedAt: Date.now()
-      });
-  
-      // 7. 返回更新後地圖
-      return await this.getMapState(userId);
-  
+        placedAt: now
+      };
+
+      await Promise.all([
+        playerData.updatePlayer(userId, { techPoints: player.techPoints - buildingInfo.techCost }),
+        playerData.updateTile(userId, x, y, updatedTile)
+      ]);
+
+      return {
+        success: true,
+        updatedTile: {
+          position: { x, y },
+          ...updatedTile
+        },
+        remainingTechPoints: player.techPoints - buildingInfo.techCost
+      };
+
     } catch (error) {
       console.error('❌ placeBuilding 錯誤:', error.message);
       throw error;
@@ -115,6 +115,7 @@ class BuildingService {
   // 移除建築
   async removeBuilding(userId, position) {
     const { x, y } = position;
+    const now = Date.now();
     
     // 檢查建築是否存在
     const mapData = await this.getMapState(userId);
@@ -127,15 +128,24 @@ class BuildingService {
     // 刪除與該建築相關的所有連線
     await playerData.removeConnectionsByBuilding(userId, x, y);
     
-    // 更新地圖狀態為 developed
-    await playerData.updateTile(userId, x, y, {
+    const updatedTile = {
       status: 'developed',
       buildingId: null,
-      removedAt: Date.now()
-    });
+      type: 'empty',
+      firewall: null,
+      removedAt: now,
+      updatedAt: now
+    };
     
-    // 返回更新後的地圖
-    return await this.getMapState(userId);
+    await playerData.updateTile(userId, x, y, updatedTile);
+    
+    return {
+      success: true,
+      updatedTile: {
+        position: { x, y },
+        ...updatedTile
+      }
+    };
   }
 
   // 架設防火牆（依商店 item 判斷種類並扣點）
@@ -183,13 +193,13 @@ class BuildingService {
       }
     }
 
-    // 扣除科技點
-    await playerData.updatePlayer(userId, { techPoints: player.techPoints - (shopItem.techCost ?? 0) });
+    const cost = shopItem.techCost ?? 0;
+    const remainingTechPoints = player.techPoints - cost;
+    const now = Date.now();
+    const updatedTiles = [];
 
-    // 寫入地塊 firewall 類型（持久化）
     // 特例：WAF → 同步整個城堡 3x3 狀態，且禁止重複架設
     if (kind === 'waf') {
-      // 若任一城堡格已有 waf，禁止重複
       let castleHasWaf = false;
       for (let ry = 0; ry < 20; ry++) {
         for (let rx = 0; rx < 20; rx++) {
@@ -206,24 +216,41 @@ class BuildingService {
       if (castleHasWaf) {
         throw new Error('此建築已架設防火牆，不能重複架設');
       }
-      // 同步九格
-      const updates = [];
+
+      const updatePromises = [];
       for (let ry = 0; ry < 20; ry++) {
         for (let rx = 0; rx < 20; rx++) {
           if (this.isCastleTile(ry, rx)) {
-            updates.push(playerData.updateTile(userId, rx, ry, { firewall: 'waf', updatedAt: Date.now() }));
+            const tileUpdate = { firewall: 'waf', updatedAt: now };
+            updatePromises.push(playerData.updateTile(userId, rx, ry, tileUpdate));
+            updatedTiles.push({
+              position: { x: rx, y: ry },
+              ...tileUpdate
+            });
           }
         }
       }
-      await Promise.all(updates);
+      await Promise.all([
+        playerData.updatePlayer(userId, { techPoints: remainingTechPoints }),
+        ...updatePromises
+      ]);
     } else {
-      // 其他種類：僅更新目標格
-      await playerData.updateTile(userId, x, y, { firewall: kind, updatedAt: Date.now() });
+      const tileUpdate = { firewall: kind, updatedAt: now };
+      await Promise.all([
+        playerData.updatePlayer(userId, { techPoints: remainingTechPoints }),
+        playerData.updateTile(userId, x, y, tileUpdate)
+      ]);
+      updatedTiles.push({
+        position: { x, y },
+        ...tileUpdate
+      });
     }
 
-    // 回傳最新地圖
-    const updatedMap = await this.getMapState(userId);
-    return updatedMap;
+    return {
+      success: true,
+      updatedTiles,
+      remainingTechPoints
+    };
   }
 
   // --- 連線相關方法 ---

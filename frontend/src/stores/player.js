@@ -108,6 +108,34 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   /**
+   * 直接更新本地玩家資料（不調用 API）
+   * 用於答題後根據後端返回的結果直接更新，減少 API 調用
+   * @param {object} playerData - 包含 techPoints, defense, answeredCount 等欄位
+   */
+  function updatePlayerDataLocal(playerData) {
+    if (playerData.techPoints !== undefined) {
+      techPoints.value = playerData.techPoints;
+    }
+    if (playerData.defense !== undefined) {
+      defense.value = playerData.defense;
+    }
+    if (playerData.answeredCount !== undefined) {
+      correctlyAnsweredCount.value = playerData.answeredCount;
+    }
+    if (playerData.eventResolvedCount !== undefined) {
+      eventResolvedCount.value = playerData.eventResolvedCount;
+    }
+    if (playerData.castleLevel !== undefined) {
+      castleLevel.value = playerData.castleLevel;
+    }
+    console.log('本地玩家資料已更新:', { 
+      techPoints: techPoints.value, 
+      defense: defense.value, 
+      answeredCount: correctlyAnsweredCount.value 
+    });
+  }
+
+  /**
    * 更新玩家在地圖上的座標
    * @param {{ x: number, y: number }} newPosition - 包含新 x 和 y 座標的物件
    */
@@ -253,6 +281,7 @@ export const usePlayerStore = defineStore('player', () => {
     hasEnoughTechPoints,
     loadPlayerData,
     refreshPlayerData,
+    updatePlayerDataLocal,
     startResourceGeneration,
     stopResourceGeneration,
     resetStore,

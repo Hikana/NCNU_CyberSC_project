@@ -11,6 +11,7 @@
           v-for="(item, index) in menuItems"
           :key="index"
           @click="handleClick(item)"
+          :title="item.title"
           :class="[
             'px-4 md:px-5 py-2 text-sm md:text-base font-semibold rounded-xl shadow-md transition',
             activeSection === item.ref
@@ -130,11 +131,11 @@ export default {
 
       /* 導覽列選項，ref 必須與父層 section 對應 */
       menuItems: [
-        { label: "第一章", ref: "ss" },
-        { label: "第二章", ref: "ciaSection" },
-        { label: "第三章", ref: "aaaSection" },
-        { label: "第四章", ref: "top10Section" },
-        { label: "第五章", ref: "crypto" },
+        { label: "第一章", ref: "ss", title: "第一章：信件為什麼會寄丟？" },
+        { label: "第二章", ref: "ciaSection", title: "第二章：三封被偷看的信（CIA 三元組）" },
+        { label: "第三章", ref: "aaaSection", title: "第三章：誰是假郵差？（AAA 模型）" },
+        { label: "第四章", ref: "top10Section", title: "第四章：BugBug 郵件風暴！（OWASP Top 10）" },
+        { label: "第五章", ref: "crypto", title: "第五章：祕密信封的魔法（密碼學）" },
       ],
 
       /* 原本你寫的內容流程 */
