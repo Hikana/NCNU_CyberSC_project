@@ -19,17 +19,13 @@
                   </div>
                 </div>
                 <div class="alert-content-v3">
-                  <div class="alert-header-v3">
-                    <div class="alert-category">Critical Security Event</div>
+                  <p class="alert-category">資安事件警報</p>
+                  <div class="alert-title-row">
                     <h1 class="alert-title-v3">{{ eventStore.currentEvent.name }}</h1>
+                    <span class="timer-value compact">{{ eventStore.timeLeft }} 秒</span>
                   </div>
-                  <div class="timer-bar-container compact">
-                    <div class="timer-compact-info">
-                      <span class="timer-value">{{ eventStore.timeLeft }} 秒</span>
-                    </div>
-                    <div class="timer-bar-track compact">
-                      <div class="timer-bar-fill" :style="{ width: percent + '%' }"></div>
-                    </div>
+                  <div class="timer-bar-track compact">
+                    <div class="timer-bar-fill" :style="{ width: percent + '%' }"></div>
                   </div>
                 </div>
               </div>
@@ -353,11 +349,11 @@ watch(
 
 .icon-box {
   position: relative;
-  background: rgba(0, 0, 0, 0.3);
+  background: transparent;
   padding: 20px;
   border-radius: 20px;
   backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  
   font-size: 48px;
   display: flex;
   align-items: center;
@@ -367,19 +363,24 @@ watch(
 .alert-content-v3 {
   flex: 1;
   min-width: 0;
-}
-
-.alert-header-v3 {
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .alert-category {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  margin-bottom: 8px;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  margin: 0;
+}
+
+.alert-title-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
 }
 
 .alert-title-v3 {
@@ -391,32 +392,15 @@ watch(
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
-.timer-bar-container {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 16px;
-  padding: 16px 20px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.timer-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.timer-label {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
-  font-weight: 600;
-}
-
 .timer-value {
   color: #ffffff;
   font-size: 28px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+.timer-value.compact {
+  font-size: 24px;
 }
 
 .timer-bar-track {
@@ -434,22 +418,8 @@ watch(
   box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
 }
 
-.timer-bar-container.compact {
-  padding: 12px 16px;
-}
-
 .timer-bar-track.compact {
   height: 6px;
-}
-
-.timer-compact-info {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 8px;
-}
-
-.timer-compact-info .timer-value {
-  font-size: 24px;
 }
 
 .panel-body {

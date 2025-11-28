@@ -19,7 +19,7 @@
       
       <StatusBar />
       <img :src="npcImage" alt="NPC" class="npc" @click="onNpcClick" />
-      <ControlsHint :trigger="hintTrigger" /> 
+      <ControlsHint :trigger="uiStore.hintTrigger" /> 
       <NpcMenu @close="uiStore.closeAllMenus()" />
       <QuizPanel />
     </div>
@@ -96,7 +96,6 @@ const gameStore = useGameStore();
 const isLoading = ref(true);
 const loadingProgress = ref(0);
 const gameEngineReady = ref(false); // 遊戲引擎是否準備完成
-const hintTrigger = ref(0); // 用於觸發八秒提示
 
 // 遊戲準備完成回調
 function onGameReady() {
@@ -122,8 +121,7 @@ function checkAllReady() {
 // 玩家確認已了解故事
 function onStoryReady() {
   isLoading.value = false;
-  // 使用者點「我已了解」進入遊戲後，觸發 8 秒提示
-  hintTrigger.value++;
+  uiStore.triggerHint();
 }
 
 // 初始化玩家資料、成就系統和城堡系統

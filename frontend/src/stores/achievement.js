@@ -48,6 +48,22 @@ export const useAchievementStore = defineStore('achievement', {
       const playerStore = usePlayerStore();
       const buildingStore = useBuildingStore();
 
+      const uid = playerStore.userId || playerStore.initFromAuth();
+      if (!uid) {
+        console.warn('⚠️ 尚未登入，無法檢查成就');
+        return;
+      }
+
+      // 如果地圖為空，需要重新載入（後端會確保回傳當前使用者的資料）
+      if (!Array.isArray(buildingStore.map) || !buildingStore.map.length) {
+        try {
+          await buildingStore.loadMap?.();
+        } catch (error) {
+          console.warn('載入地圖以檢查成就失敗:', error);
+          return;
+        }
+      }
+
       const answeredCount = playerStore.correctlyAnsweredCount || 0;
 
       let itemCount = 0;
@@ -82,11 +98,6 @@ export const useAchievementStore = defineStore('achievement', {
       const gameStats = { answeredCount, itemCount, eventCount, connectToSwitchCount, connectToRouterCount, connectToInternetTowerCount, switchCount, routerCount, castleLevel };
       
       try {
-        const uid = playerStore.userId || playerStore.initFromAuth();
-        if (!uid) {
-          console.warn('⚠️ 尚未登入，無法載入成就資料');
-          return;
-        }
         // 透過 API 檢查並更新成就進度
         const updatedAchievements = await apiService.checkAchievements(uid, gameStats);
         this.achievements = updatedAchievements.map(a => ({ ...a, _applied: false }));

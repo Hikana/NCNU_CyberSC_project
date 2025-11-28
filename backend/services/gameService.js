@@ -66,10 +66,10 @@ class GameService {
         answeredCount: FieldValue.increment(1)
       });
       
-      // 🎁 發放獎勵：科技點 +50，防禦值 +10
+      // 🎁 發放獎勵：科技點 +15，防禦值 +15
       await this.giveRewards(userId, {
-        techPoints: 50,
-        defense: 10
+        techPoints: 15,
+        defense: 15
       });
       
       // 🛡️ 隨機獲得防禦工具

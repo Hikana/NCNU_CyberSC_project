@@ -50,7 +50,7 @@
         class="px-5 md:px-6 py-2 bg-white text-wordcolor font-semibold rounded-xl shadow-md hover:bg-middleGray transition"
         @click="goTrainingRoom"
       >
-        練功房
+        練功坊
       </button>
       <button
         class="px-5 md:px-6 py-2 bg-white text-wordcolor font-semibold rounded-xl shadow-md hover:bg-middleGray transition"

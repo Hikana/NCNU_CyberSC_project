@@ -20,7 +20,7 @@ class PlayerData {
 
     if (!doc.exists) {
       const newPlayerData = {
-        castleLevel: 1,
+        castleLevel: 0, // 初始等級為 0，與 defense 0 對應（每 150 防禦值 = 1 等級）
         defense: 0,
         techPoints: 0,
 
@@ -142,9 +142,9 @@ class PlayerData {
           buildingId: null,
         };
         
-        // 設置城堡區域 (0,0)-(2,2) 為已放置狀態
+        // 設置城堡區域 (0,0)-(2,2) 為已開發狀態
         if (y <= 2 && x <= 2) {
-          tileData.status = 'placed';
+          tileData.status = 'developed';
           tileData.type = 'castle';
           tileData.buildingId = null;
         }

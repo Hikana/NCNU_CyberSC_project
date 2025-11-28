@@ -149,6 +149,10 @@ export const useEventStore = defineStore('event', () => {
     flipped.value = false;
   }
 
+  function resetStore() {
+    closeModal();
+  }
+
   // 元件卸載保險
   onUnmounted(() => {
     clearTimer();
@@ -171,5 +175,6 @@ export const useEventStore = defineStore('event', () => {
     startEvent,
     chooseDefense,
     closeModal,
+    resetStore,
   };
 });

@@ -87,6 +87,11 @@ export class Player {
       this.sprite.addChild(this.idleSprite);
       this.sprite.addChild(this.walkSprite);
 
+      // 設置玩家角色不攔截點擊事件，讓點擊可以穿透到下面的格子
+      this.sprite.eventMode = 'none';
+      if (this.idleSprite) this.idleSprite.eventMode = 'none';
+      if (this.walkSprite) this.walkSprite.eventMode = 'none';
+
       container.addChild(this.sprite);
       
       this.update();

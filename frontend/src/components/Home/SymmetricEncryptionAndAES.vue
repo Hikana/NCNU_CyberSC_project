@@ -131,6 +131,9 @@
             Encrypt
           </button>
         </div>
+        <p v-if="encryptError" class="mt-2 text-sm text-red-300">
+          {{ encryptError }}
+        </p>
         <div id="encText" class="mt-2 text-wordcolor break-all">
           {{ encrypted }}
         </div>
@@ -152,6 +155,9 @@
             Decrypt
           </button>
         </div>
+        <p v-if="decryptError" class="mt-2 text-sm text-red-300">
+          {{ decryptError }}
+        </p>
         <div id="decText" class="mt-2 text-wordcolor break-all">
           {{ decrypted }}
         </div>
@@ -172,6 +178,8 @@ export default {
     const plain = ref("Hello World!");
     const encrypted = ref("QfKvmv2wlAMhqXYM1c5gzLcrf24x+qnMXIwHpNqO4Os=");
     const decrypted = ref("");
+    const encryptError = ref("");
+    const decryptError = ref("");
 
     const createCryptoKey = async (keyStr, keyUsage) => {
       const hashBuffer = await window.crypto.subtle.digest(
@@ -218,18 +226,21 @@ export default {
     };
 
     const encrypt = async () => {
+      encryptError.value = "";
+      decryptError.value = "";
       try {
         encrypted.value = await encryptData(plain.value, key.value);
       } catch (err) {
-        alert("你的Key錯誤了！！");
+        encryptError.value = "Key 無效，請再次確認。";
       }
     };
 
     const decrypt = async () => {
+      decryptError.value = "";
       try {
         decrypted.value = await decryptData(encrypted.value, key.value);
       } catch (err) {
-        alert("Decryption Error: " + err.message);
+        decryptError.value = "解密失敗，請檢查密文或 Key。";
       }
     };
 
@@ -238,6 +249,8 @@ export default {
       plain,
       encrypted,
       decrypted,
+      encryptError,
+      decryptError,
       encrypt,
       decrypt,
     };

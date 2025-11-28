@@ -639,22 +639,8 @@ export class IsoGrid {
         groundTileContainer.on('pointerover', () => { tile.tint = 0xdddddd; });
         groundTileContainer.on('pointerout', () => { tile.tint = 0xffffff; });
 
-        // 如果是選中的瓦片（建築放置），添加綠色邊框
-        if (isSelected) {
-          const highlight = new PIXI.Graphics();
-          highlight
-            .moveTo(0, -halfH)
-            .lineTo(halfW, 0)
-            .lineTo(0, halfH)
-            .lineTo(-halfW, 0)
-            .closePath()
-            .stroke({ width: 3, color: 0x00ff00, alpha: 1 });
-          
-          highlight.zIndex = 10;
-          groundTileContainer.addChild(highlight);
-        }
-        
         // 如果是玩家所在的瓦片，添加藍色描邊（與建築放置的綠色相同風格，單層）
+        // 先添加藍色框框，確保它在綠色框框下面
         if (isPlayerTile) {
           const playerHighlight = new PIXI.Graphics();
           playerHighlight
@@ -666,6 +652,22 @@ export class IsoGrid {
             .stroke({ width: 3, color: 0x60a5fa, alpha: 1 });
           playerHighlight.zIndex = 10;
           groundTileContainer.addChild(playerHighlight);
+        }
+        
+        // 如果是選中的瓦片（建築放置），添加綠色邊框
+        // 後添加綠色框框並設置更高的 zIndex，確保它顯示在藍色框框上面
+        if (isSelected) {
+          const highlight = new PIXI.Graphics();
+          highlight
+            .moveTo(0, -halfH)
+            .lineTo(halfW, 0)
+            .lineTo(0, halfH)
+            .lineTo(-halfW, 0)
+            .closePath()
+            .stroke({ width: 3, color: 0x00ff00, alpha: 1 });
+          
+          highlight.zIndex = 11; // 設置更高的 zIndex，確保綠色框框在藍色框框上面
+          groundTileContainer.addChild(highlight);
         }
 
         this.groundContainer.addChild(groundTileContainer);

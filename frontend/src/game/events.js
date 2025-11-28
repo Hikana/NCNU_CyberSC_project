@@ -16,7 +16,7 @@ export const EVENTS = {
       body: '美國一名 22 歲男子涉嫌建立「Rapper Bot」機器人網絡，控制將近 100,000 部設備，於 2025 年 4 月至 8 月間對全球 18,000 名不同受害者發動 370,000 次以上的 DDoS 攻擊，有些攻擊強度達每秒 6Tbps。',
     },
     correctDefenses: ['cdn'],
-    timerSeconds: 60,
+    timerSeconds: 120,
   },
 
   sql_injection: {
@@ -35,7 +35,7 @@ export const EVENTS = {
       body: '攻擊者利用 SQL 注入漏洞入侵 7-Eleven 支付系統，竊取超過 1.3 億筆信用卡資料，成為當時最嚴重的大規模資料外洩之一。',
     },
     correctDefenses: ['prepared_statements'],
-    timerSeconds: 60,
+    timerSeconds: 120,
   },
 
   xss: {
@@ -55,7 +55,7 @@ export const EVENTS = {
       body: 'Magecart 組織利用 Feedify JavaScript 函式庫中的 XSS 漏洞，竊取約 380,000 筆旅客付款資訊，成為重大隱私洩露案件。',
     },
     correctDefenses: ['output_encoding'],
-    timerSeconds: 60,
+    timerSeconds: 120,
   },
 
   brute_force: {
@@ -75,7 +75,7 @@ export const EVENTS = {
       body: '駭客利用先前洩露的憑證清單進行暴力破解，攻破約 19,715 個 Dunkin\' Donuts 客戶忠誠度帳戶，偷取數萬元奖励金，導致公司支付高額罰款並強制重設用戶密碼與加強安全措施。',
     },
     correctDefenses: ['mfa'],
-    timerSeconds: 60,
+    timerSeconds: 120,
   },
 
   supply_chain: {
@@ -95,7 +95,7 @@ export const EVENTS = {
       body: '駭客於 SolarWinds Orion 軟體更新中植入 Sunburst 後門，導致超過 18,000 名客戶下載受到感染的更新，進而造成數個美國聯邦機構與企業遭全面滲透。',
     },
     correctDefenses: ['code_signing'],
-    timerSeconds: 60,
+    timerSeconds: 120,
   },
 
   unauthorized_access: {
@@ -103,7 +103,7 @@ export const EVENTS = {
     name: '未授權連線 / 開放埠入侵',
     shortExplain: '某個使用者或系統在未經允許的情況下，嘗試或成功進入某個資源、系統或網路的行為',
     gameDescription:
-      '流氓貓發現貓城的路由器旁有幾個「沒關好的小洞」。\n牠們從沒鎖住的通訊埠鑽進來，偷偷接上自己的小線路，企圖進入貓城的內部網路！',
+      '流氓貓發現貓城的路由器旁有幾個「沒關好的小洞」。牠們從沒鎖住的通訊埠鑽進來，偷偷接上自己的小線路，企圖進入貓城的內部網路！',
     failureConsequence: '流氓貓成功入侵貓城內部網路，竊取了大量的資料，包括居民的個人資料、貓城的機密文件等。',
     toolresistancedescription:
       'Port Blocking 工具也自動關閉所有沒用到的小通道，就像把洞穴入口一個個封起來。流氓貓找不到入口，只能在外面乾瞪眼最後悵然離去。整座貓城的內部網路恢復安靜，路由器貓甚至還有空睡了個午覺。',
@@ -115,7 +115,7 @@ export const EVENTS = {
       body: '駭客成功入侵美國海軍的網路系統，竊取了大量的敏感資料，包括艦艇的航行路線、艦艇的航行速度、艦艇的航行方向等。',
     },
     correctDefenses: ['port_blocking'],
-    timerSeconds: 60,
+    timerSeconds: 120,
   },
 };
 

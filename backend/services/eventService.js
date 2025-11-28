@@ -289,7 +289,7 @@ class EventService {
       
       // 🎲 固定觸發機率（每一格都是相同的機率）
       // 「觸發哪個事件」由後續的權重系統決定
-      const triggerChance = 1.0; // 100% 固定機率（測試用，可改回 0.3 = 30%）
+      const triggerChance = 0.2; // 100% 固定機率（測試用，可改回 0.3 = 30%）
       const randomValue = Math.random();
       
       if (randomValue < triggerChance) {

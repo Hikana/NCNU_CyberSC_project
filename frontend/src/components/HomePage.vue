@@ -8,45 +8,45 @@
 
     <!-- 網路七層 -->
     <div ref="ss">
-      <header class="relative w-screen bg-bgg py-32">
-        <div class="absolute top-14 left-8 text-wordcolor px-8">
-          <h2 class="text-4xl md:text-5xl font-bold">第一章：信件為什麼會寄丟？</h2>
+      <header class="w-full bg-bgg py-12">
+        <div class="max-w-7xl mx-auto px-8 text-wordcolor">
+          <h2 class="text-3xl md:text-4xl font-bold">第一章：信件為什麼會寄丟？</h2>
         </div>
       </header>
       <ChapterIntroduction1 />
-      <header class="w-screen bg-bgg py-10"></header>
+      <header class="w-full bg-bgg py-6"></header>
       <SevenStage />
     </div>
     <!-- 第二章：CIA 三元組 -->
     <div ref="ciaSection">
-      <header class="relative w-screen bg-bgg py-32">
-        <div class="absolute top-14 left-8 text-wordcolor px-8">
-          <h2 class="text-4xl md:text-5xl font-bold">第二章：三封被偷看的信（CIA 三元組）</h2>
+      <header class="w-full bg-bgg py-12">
+        <div class="max-w-7xl mx-auto px-8 text-wordcolor">
+          <h2 class="text-3xl md:text-4xl font-bold">第二章：三封被偷看的信（CIA 三元組）</h2>
         </div>
       </header>
       <ChapterIntroduction2 />
-      <header class="w-screen bg-bgg py-10"></header>
+      <header class="w-full bg-bgg py-6"></header>
       <CIABar />
     </div>
 
     <!-- 第三章：AAA 模型 -->
     <div ref="aaaSection">
-      <header class="relative w-screen bg-bgg py-32">
-        <div class="absolute top-14 left-8 text-wordcolor px-8">
-          <h2 class="text-4xl md:text-5xl font-bold">第三章：誰是假郵差？（AAA 模型）</h2>
+      <header class="w-full bg-bgg py-12">
+        <div class="max-w-7xl mx-auto px-8 text-wordcolor">
+          <h2 class="text-3xl md:text-4xl font-bold">第三章：誰是假郵差？（AAA 模型）</h2>
         </div>
       </header>
       <ChapterIntroduction3 />
-      <header class="w-screen bg-bgg py-10"></header>
+      <header class="w-full bg-bgg py-6"></header>
       <AAA />
     </div>
 
     <!-- 第四章：OWASP -->
     <div ref="top10Section">
-        <header class="w-screen bg-bgg py-10"></header>
-        <header class="relative w-screen bg-bgg py-32">
-          <div class="absolute top-14 left-8 text-wordcolor px-8">
-            <h2 class="text-4xl md:text-5xl font-bold">第四章：BugBug 郵件風暴！（OWASP Top 10）</h2>
+        <header class="w-full bg-bgg py-6"></header>
+        <header class="w-full bg-bgg py-12">
+          <div class="max-w-7xl mx-auto px-8 text-wordcolor">
+            <h2 class="text-3xl md:text-4xl font-bold">第四章：BugBug 郵件風暴！（OWASP Top 10）</h2>
           </div>
         </header>
         <ChapterIntroduction4 />
@@ -60,12 +60,12 @@
 
     <!-- 第五章：密碼學 -->
     <div ref="crypto">
-        <header class="relative w-screen bg-bgg py-32">
-          <div class="absolute top-14 left-8 text-wordcolor px-8 z-10">
-            <h2 class="text-4xl md:text-5xl font-bold">第五章：祕密信封的魔法（密碼學）</h2>
+        <header class="w-full bg-bgg py-12">
+          <div class="max-w-7xl mx-auto px-8 text-wordcolor z-10">
+            <h2 class="text-3xl md:text-4xl font-bold">第五章：祕密信封的魔法（密碼學）</h2>
           </div>
         </header>
-        <header class="w-screen bg-bgg py-10"></header>
+        <header class="w-full bg-bgg py-6"></header>
 
         <ChapterIntroduction5 />
         <WhyCrypto />

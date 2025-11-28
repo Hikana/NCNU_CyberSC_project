@@ -16,8 +16,6 @@ export const useGameStore = defineStore('game', () => {
   const userId = ref(null); // 將從 playerStore 獲取真實的 userId
   const showBingoAnimation = ref(false); // 控制 bingo 動畫顯示
 
-  // --- Actions ---
-
   /**
    * 開始解鎖流程
    * @param {object} coords - 要解鎖的地塊座標 { x, y }
@@ -45,7 +43,6 @@ export const useGameStore = defineStore('game', () => {
       const authStore = useAuthStore();
       if (!authStore.user) {
         console.error('用戶未登入，無法獲取題目');
-        alert('請先登入後再進行遊戲');
         return;
       }
 
@@ -57,10 +54,7 @@ export const useGameStore = defineStore('game', () => {
     } catch (err) {
       console.error('獲取題目失敗:', err);
       if (err.message.includes('認證失敗') || err.message.includes('No token')) {
-        alert('認證失敗，請重新登入');
-      } else {
-        alert('獲取題目時發生錯誤，請稍後再試');
-      }
+      } 
       // 失敗時恢復狀態，允許再次嘗試
       isAnswering.value = false;
     }
@@ -73,7 +67,6 @@ export const useGameStore = defineStore('game', () => {
   async function submitAnswer(userAnswerIndex) {
     if (!currentQuestion.value) return;
     if (typeof userAnswerIndex !== 'number' || Number.isNaN(userAnswerIndex)) {
-      alert('請選擇一個選項');
       return;
     }
 
@@ -94,20 +87,20 @@ export const useGameStore = defineStore('game', () => {
       
       console.log('後端回應:', result);
 
-      // ✅ 檢查必要屬性
+      // 檢查必要屬性
       if (result.isCorrect === undefined) {
         throw new Error('後端回應缺少 isCorrect 屬性');
       }
 
       if (result.newHistory) {
           historyStore.addUserHistoryEntry(result.newHistory);
-          console.log("✅ 歷史記錄已即時更新:", result.newHistory);
+          console.log("歷史記錄已即時更新:", result.newHistory);
       } else {
           console.warn('後端未回傳 newHistory 物件');
       }
 
 
-      // 處理答題結果（不使用 alert，改由呼叫端決定顯示方式）
+      // 處理答題結果
       // 無論答對答錯都要更新玩家數值（後端已經自動處理獎勵/懲罰）
       const playerStore = usePlayerStore();
       await playerStore.refreshPlayerData();
@@ -168,7 +161,7 @@ export const useGameStore = defineStore('game', () => {
               const eventStore = useEventStore();
               
               // 觸發事件（使用事件類型）
-              eventStore.startEvent(responseData.triggeredEvent.type, 30);
+              eventStore.startEvent(responseData.triggeredEvent.type);
             }
           }
         }
@@ -196,6 +189,14 @@ export const useGameStore = defineStore('game', () => {
     showBingoAnimation.value = false;
   }
 
+  function resetStore() {
+    currentQuestion.value = null;
+    isAnswering.value = false;
+    tileToUnlock.value = null;
+    userId.value = null;
+    showBingoAnimation.value = false;
+  }
+
   return {
     currentQuestion,
     isAnswering,
@@ -205,6 +206,7 @@ export const useGameStore = defineStore('game', () => {
     fetchRandomQuestion,
     submitAnswer,
     closeQuestion,
-    closeBingoAnimation
+    closeBingoAnimation,
+    resetStore,
   };
 });

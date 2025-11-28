@@ -44,7 +44,7 @@
           <div v-if="result?.isCorrect" class="reward-section">
             <div class="reward-title">獲得獎勵：</div>
             <div class="reward-items">
-              <div class="reward-item positive inline"><span class="material-symbols-outlined">currency_bitcoin</span> +15 科技點、<span class="material-symbols-outlined">security</span> +10 防禦值</div>
+              <div class="reward-item positive inline"><span class="material-symbols-outlined">currency_bitcoin</span> +15 科技點、<span class="material-symbols-outlined">security</span> +15 防禦值</div>
               <div v-if="result?.defenseTool?.success" class="reward-item positive">獲得防禦工具：<br>{{ result.defenseTool.tool.name }}</div>
             </div>
           </div>
