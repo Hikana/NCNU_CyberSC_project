@@ -338,13 +338,32 @@ export const useBuildingStore = defineStore('buildings', {
     async clearBuildingAt(x, y) {
       try {
         const response = await apiService.clearBuilding({ x, y });
-        if (response?.success && response.updatedTile) {
-          const { position, ...tileData } = response.updatedTile;
-          if (position && this.map?.[position.y]) {
-            this.map[position.y][position.x] = {
-              ...(this.map[position.y][position.x] || {}),
-              ...tileData
-            };
+        let updatedPositions = [];
+        if (response?.success) {
+          if (response.updatedTile) {
+            const { position, ...tileData } = response.updatedTile;
+            if (position && this.map?.[position.y]) {
+              this.map[position.y][position.x] = {
+                ...(this.map[position.y][position.x] || {}),
+                ...tileData
+              };
+              updatedPositions.push(position);
+            }
+          } else if (Array.isArray(response.updatedTiles)) {
+            response.updatedTiles.forEach(tile => {
+              const { position, ...tileData } = tile;
+              if (position && this.map?.[position.y]) {
+                this.map[position.y][position.x] = {
+                  ...(this.map[position.y][position.x] || {}),
+                  ...tileData
+                };
+                updatedPositions.push(position);
+              }
+            });
+          }
+
+          if (this.isoGrid && typeof this.isoGrid.updateMapData === 'function') {
+            this.isoGrid.updateMapData(this.map, updatedPositions);
           }
         } else {
           console.error('清除建築後的資料結構不正確:', response);
