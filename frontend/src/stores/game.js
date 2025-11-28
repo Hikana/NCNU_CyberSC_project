@@ -72,6 +72,9 @@ export const useGameStore = defineStore('game', () => {
 
     const buildingStore = useBuildingStore();
     const historyStore = useHistoryStore();
+    const targetTile = tileToUnlock.value
+      ? { x: tileToUnlock.value.x, y: tileToUnlock.value.y }
+      : null;
     
 
     try {
@@ -84,87 +87,73 @@ export const useGameStore = defineStore('game', () => {
         ...apiResult,
         ...(apiResult?.gameData || {})
       };
-      
-      console.log('後端回應:', result);
 
       // 檢查必要屬性
       if (result.isCorrect === undefined) {
         throw new Error('後端回應缺少 isCorrect 屬性');
       }
 
+      // 更新歷史記錄（不阻塞主流程）
       if (result.newHistory) {
-          historyStore.addUserHistoryEntry(result.newHistory);
-          console.log("歷史記錄已即時更新:", result.newHistory);
-      } else {
-          console.warn('後端未回傳 newHistory 物件');
+        historyStore.addUserHistoryEntry(result.newHistory);
       }
 
-
-      // 處理答題結果
-      // 無論答對答錯都要更新玩家數值（後端已經自動處理獎勵/懲罰）
+      // 處理答題結果：根據後端返回的結果直接更新本地狀態，減少 API 調用
       const playerStore = usePlayerStore();
-      await playerStore.refreshPlayerData();
-      
-      // 同步城堡等級（因為防禦值可能已經改變）
-      try {
-        const { useWallStore } = await import('./wall');
-        const wallStore = useWallStore();
-        await wallStore.syncCastleLevel();
-      } catch (error) {
-        console.warn('同步城堡等級失敗:', error);
-      }
-      
-      try {
-        const { audioService } = await import('@/services/audioService');
-        if (!result.isCorrect) {
-          await audioService.playWrongAnswerSound();
-        }
-      } catch (error) {
-        console.warn('播放答題音效失敗:', error);
-      }
-
-      if (result.isCorrect) {
-        
-        // 更新玩家數值（後端已經自動發放獎勵，這裡只需要重新載入資料）
-        const playerStore = usePlayerStore();
+      if (result.updatedPlayerData) {
+        playerStore.updatePlayerDataLocal(result.updatedPlayerData);
+      } else {
+        // 後備方案：如果後端沒有返回更新資料，則重新載入（理論上不會執行）
         await playerStore.refreshPlayerData();
-        
-        // 更新背包資料（如果有獲得防禦工具）
-        if (result.defenseTool && result.defenseTool.success) {
-          const inventoryStore = useInventoryStore();
-          await inventoryStore.refreshInventory();
-        }
+      }
 
-        if (tileToUnlock.value) {
-          const currentUserId = playerStore.playerId || userId.value || 'test-user';
-     
-          const unlockResponse = await apiService.unlockTile(tileToUnlock.value, currentUserId);
-          if (unlockResponse.success) {
-            const responseData = unlockResponse.data;
-            
-            // 處理地圖更新
-            if (responseData.map && Array.isArray(responseData.map)) {
-              // 後端已回傳 2D 陣列，直接套用
-              buildingStore.map = responseData.map;
-            } else if (responseData.map && typeof responseData.map === 'object') {
-              // 保險：若回傳為物件(以 y_x 為鍵)，轉成 20x20 陣列
-              const size = 20;
-              buildingStore.map = Array.from({ length: size }, (_, y) =>
-                Array.from({ length: size }, (_, x) => responseData.map[y]?.[x] || { status: 'locked' })
-              );
-            }
-            
-            // 🎲 處理觸發的事件
-            if (responseData.triggeredEvent) {
-              // 導入事件store並觸發事件
-              const { useEventStore } = await import('./eventStore');
-              const eventStore = useEventStore();
+      // 非關鍵操作：完全異步執行，不阻塞主流程
+      // 1. 更新背包（如果獲得防禦工具）
+      if (result.isCorrect && result.defenseTool && result.defenseTool.success) {
+        const inventoryStore = useInventoryStore();
+        inventoryStore.refreshInventory().catch(() => {}); // 靜默失敗，不影響主流程
+      }
+      
+      // 2. 同步城堡等級（因為防禦值可能已經改變）
+      import('./wall').then(({ useWallStore }) => {
+        const wallStore = useWallStore();
+        wallStore.syncCastleLevel().catch(() => {}); // 靜默失敗
+      }).catch(() => {}); // 靜默失敗
+      
+      // 3. 播放音效
+      if (!result.isCorrect) {
+        import('@/services/audioService').then(({ audioService }) => {
+          audioService.playWrongAnswerSound().catch(() => {});
+        }).catch(() => {}); // 靜默失敗
+      }
+
+      if (result.isCorrect && targetTile) {
+        (async () => {
+          try {
+            const currentUserId = playerStore.playerId || userId.value || 'test-user';
+            const unlockResponse = await apiService.unlockTile(targetTile, currentUserId);
+            if (unlockResponse.success) {
+              const responseData = unlockResponse.data;
               
-              // 觸發事件（使用事件類型）
-              eventStore.startEvent(responseData.triggeredEvent.type, 30);
+              if (responseData.map && Array.isArray(responseData.map)) {
+                buildingStore.map = responseData.map;
+              } else if (responseData.map && typeof responseData.map === 'object') {
+                const size = 20;
+                buildingStore.map = Array.from({ length: size }, (_, y) =>
+                  Array.from({ length: size }, (_, x) => responseData.map[y]?.[x] || { status: 'locked' })
+                );
+              }
+              
+              if (responseData.triggeredEvent) {
+                const { useEventStore } = await import('./eventStore');
+                const eventStore = useEventStore();
+                eventStore.startEvent(responseData.triggeredEvent.type, 30);
+              }
             }
+          } catch (error) {
+            console.error('解鎖地塊或觸發事件失敗:', error);
           }
-        }
+        })();
       }
       // 將結果回傳給呼叫端（例如 QuizPanel 用於翻面顯示）
       return result;

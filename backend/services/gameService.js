@@ -38,13 +38,18 @@ class GameService {
   }
 
   /**
-   * 驗證玩家的答案，並更新所有相關狀態
+   * 驗證玩家的答案，並更新所有相關狀態（優化版：合併資料庫操作）
    * @param {string} userId - 玩家 ID
    * @param {string} questionId - 題目 ID
    * @param {number} userAnswerIndex - 玩家選擇的答案索引
    */
   async validateAnswer(userId, questionId, userAnswerIndex) {
-    const question = await gameData.getQuestionById(questionId);
+    // 並行讀取題目和玩家資料，減少等待時間
+    const [question, player] = await Promise.all([
+      gameData.getQuestionById(questionId),
+      playerData.getPlayer(userId)
+    ]);
+
     if (!question) {
       throw new Error('找不到該題目');
     }
@@ -56,109 +61,25 @@ class GameService {
     }
 
     const isCorrect = question.answer === userAnswerIndex;
-    let randomDefenseTool = null; // 初始化防禦工具變數
+    const description = question.description;
+    const correctAnswerText = question.options[question.answer] || '未知';
+    let randomDefenseTool = null;
+
+    // 準備批量更新的資料
+    const updateData = {};
     
     if (isCorrect) {
-      // 答對了，更新玩家的答題進度
-      await playerData.addCorrectlyAnsweredId(userId, questionId);
-      // 同時更新玩家的總答對題數
-      await playerData.updatePlayer(userId, {
-        answeredCount: FieldValue.increment(1)
-      });
+      // 答對了：準備所有更新資料
+      updateData.correctlyAnsweredIds = FieldValue.arrayUnion(questionId);
+      updateData.answeredCount = FieldValue.increment(1);
       
-      // 🎁 發放獎勵：科技點 +15，防禦值 +15
-      await this.giveRewards(userId, {
-        techPoints: 15,
-        defense: 15
-      });
+      // 計算獎勵（科技點 +15，防禦值 +15）
+      const newTechPoints = Math.max(0, (player.techPoints || 0) + 15);
+      const newDefense = Math.max(0, (player.defense || 0) + 15);
+      updateData.techPoints = newTechPoints;
+      updateData.defense = newDefense;
       
-      // 🛡️ 隨機獲得防禦工具
-      randomDefenseTool = await this.giveRandomDefenseTool(userId);
-    } else {
-      // 答錯了，扣除懲罰：科技點 -5，防禦值 -5
-      await this.giveRewards(userId, {
-        techPoints: -5,
-        defense: -5
-      });
-    }
-    const description=question.description;
-    const correctAnswerText = question.options[question.answer] || '未知';
-    // 無論對錯，都建立一筆歷史紀錄
-    const newHistory = await gameData.addHistoryEntry({
-        userId,
-        questionId,
-        description,
-        correctAnswer: correctAnswerText,
-        questionTitle: question.question,
-        userAnswer: question.options[userAnswerIndex] || '無效選擇',
-        isCorrect
-    });
-
-    // 將包含新紀錄的完整結果回傳給前端
-    return { 
-      isCorrect, 
-      correctAnswer: question.options[question.answer], 
-      userAnswer: question.options[userAnswerIndex],
-      yourAnswer: question.options[userAnswerIndex], // 為了相容性
-      question: question.question,
-      description, // 回傳題目詳解
-      newHistory,
-      defenseTool: isCorrect ? randomDefenseTool : null // 只有答對時才包含防禦工具資訊
-    };
-  }
-
-  // --- 獎勵系統 ---
-
-  /**
-   * 發放獎勵給玩家（支援正負數）
-   * @param {string} userId - 玩家 ID
-   * @param {object} rewards - 獎勵內容 
-   */
-  async giveRewards(userId, rewards) {
-    try {
-      console.log(`🎁 發放獎勵給玩家 ${userId}:`, rewards);
-      
-      // 先獲取玩家當前數值，確保不會扣除到負數
-      const player = await playerData.getPlayer(userId);
-      const updateData = {};
-      
-      // 處理科技點獎勵（支援正負數，但不會低於 0）
-      if (rewards.techPoints !== undefined && rewards.techPoints !== 0) {
-        const newTechPoints = Math.max(0, player.techPoints + rewards.techPoints);
-        updateData.techPoints = newTechPoints;
-        const sign = rewards.techPoints > 0 ? '+' : '';
-        console.log(`  ${sign}${rewards.techPoints} 科技點 (當前: ${player.techPoints} → ${newTechPoints})`);
-      }
-      
-      // 處理防禦值獎勵（支援正負數，但不會低於 0）
-      if (rewards.defense !== undefined && rewards.defense !== 0) {
-        const newDefense = Math.max(0, player.defense + rewards.defense);
-        updateData.defense = newDefense;
-        const sign = rewards.defense > 0 ? '+' : '';
-        console.log(`  ${sign}${rewards.defense} 防禦值 (當前: ${player.defense} → ${newDefense})`);
-      }
-      
-      // 更新玩家資料
-      if (Object.keys(updateData).length > 0) {
-        await playerData.updatePlayer(userId, updateData);
-        console.log(`✅ 獎勵發放成功`);
-      }
-      
-      return updateData;
-    } catch (error) {
-      console.error('❌ 發放獎勵失敗:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 隨機給予防禦工具
-   * @param {string} userId - 玩家 ID
-   * @returns {object} - 獲得的防禦工具資訊
-   */
-  async giveRandomDefenseTool(userId) {
-    try {
-      // 防禦工具清單
+      // 隨機選擇防禦工具（先選擇，稍後一起更新）
       const defenseTools = [
         { id: 'cdn', name: 'CDN 分流雲網' },
         { id: 'prepared_statements', name: 'Prepared Statements（參數化查詢）' },
@@ -167,28 +88,70 @@ class GameService {
         { id: 'code_signing', name: 'Code Signing（軟體簽章驗證）' },
         { id: 'port_blocking', name: 'Port Blocking（封鎖未用埠口）' },
       ];
-
-      // 隨機選擇一個防禦工具
       const randomIndex = Math.floor(Math.random() * defenseTools.length);
       const selectedTool = defenseTools[randomIndex];
-      
-
-      // 簡化：只存儲數量到玩家資料中
-      await playerData.updatePlayer(userId, {
-        [`defenseTools.${selectedTool.id}`]: FieldValue.increment(1)
-      });
-
-      
-      return {
+      updateData[`defenseTools.${selectedTool.id}`] = FieldValue.increment(1);
+      randomDefenseTool = {
         success: true,
         tool: selectedTool,
         message: `獲得防禦工具：${selectedTool.name}`
       };
-    } catch (error) {
-      console.error('❌ 發放防禦工具失敗:', error);
-      throw error;
+      
+    } else {
+      // 答錯了：計算懲罰（科技點 -5，防禦值 -5）
+      const newTechPoints = Math.max(0, (player.techPoints || 0) - 5);
+      const newDefense = Math.max(0, (player.defense || 0) - 5);
+      updateData.techPoints = newTechPoints;
+      updateData.defense = newDefense;
+      
     }
+
+    // 使用批量寫入：一次性更新所有玩家資料
+    await playerData.updatePlayer(userId, updateData);
+
+    // 歷史記錄異步寫入（不阻塞主流程）
+    const historyPromise = gameData.addHistoryEntry({
+      userId,
+      questionId,
+      description,
+      correctAnswer: correctAnswerText,
+      questionTitle: question.question,
+      userAnswer: question.options[userAnswerIndex] || '無效選擇',
+      isCorrect
+    }).catch(err => {
+      console.error('❌ 寫入歷史記錄失敗（不影響答題結果）:', err);
+      return null; // 返回 null 表示失敗，但不影響主流程
+    });
+
+    // 等待歷史記錄完成（但已經不阻塞主流程了）
+    const newHistory = await historyPromise;
+
+    // 計算更新後的答對題數（用於前端顯示）
+    const newAnsweredCount = isCorrect 
+      ? (player.answeredCount || 0) + 1 
+      : (player.answeredCount || 0);
+
+    // 將包含新紀錄的完整結果回傳給前端
+    // 優化：直接返回更新後的玩家數值，減少前端需要再次調用 API
+    return { 
+      isCorrect, 
+      correctAnswer: question.options[question.answer], 
+      userAnswer: question.options[userAnswerIndex],
+      yourAnswer: question.options[userAnswerIndex], // 為了相容性
+      question: question.question,
+      description, // 回傳題目詳解
+      newHistory,
+      defenseTool: isCorrect ? randomDefenseTool : null, // 只有答對時才包含防禦工具資訊
+      // 新增：返回更新後的玩家數值，讓前端可以直接更新本地狀態
+      updatedPlayerData: {
+        techPoints: updateData.techPoints,
+        defense: updateData.defense,
+        answeredCount: newAnsweredCount
+      }
+    };
   }
+
+  // 注意：giveRewards 和 giveRandomDefenseTool 已整合到 validateAnswer 中，不再需要單獨的函數
 
   // --- 地圖解鎖相關 ---
 
