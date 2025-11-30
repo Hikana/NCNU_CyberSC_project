@@ -311,6 +311,12 @@ function handleToggleConnections(event) {
     return
   }
   toggleConnections()
+  // 點擊後移除焦點，確保鍵盤事件能正確傳遞到遊戲
+  if (event.target) {
+    event.target.blur()
+  }
+  // 將焦點返回到 window，確保遊戲能接收鍵盤事件
+  window.focus()
 }
 
 function toggleConnections() {

@@ -84,6 +84,12 @@ const handleBgmClick = (event) => {
     return
   }
   toggleBgm()
+  // 點擊後移除焦點，確保鍵盤事件能正確傳遞到遊戲
+  if (event.target) {
+    event.target.blur()
+  }
+  // 將焦點返回到 window，確保遊戲能接收鍵盤事件
+  window.focus()
 }
 
 const toggleBgm = () => {
@@ -91,6 +97,11 @@ const toggleBgm = () => {
     console.log('🎵 點擊 BGM 按鈕')
     audioService.toggleBgmMute()
     updateStatus()
+    if (event.target) {
+    event.target.blur()
+  }
+  // 將焦點返回到 window，確保遊戲能接收鍵盤事件
+  window.focus()
   } catch (error) {
     console.error('BGM 切換失敗:', error)
   }
@@ -105,6 +116,12 @@ const handleSoundEffectsClick = (event) => {
     return
   }
   toggleSoundEffects()
+  // 點擊後移除焦點，確保鍵盤事件能正確傳遞到遊戲
+  if (event.target) {
+    event.target.blur()
+  }
+  // 將焦點返回到 window，確保遊戲能接收鍵盤事件
+  window.focus()
 }
 
 const toggleSoundEffects = () => {

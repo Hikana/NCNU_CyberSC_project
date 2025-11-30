@@ -1,6 +1,6 @@
 // src/stores/game.js
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { apiService } from '@/services/apiService';
 import { useBuildingStore } from './buildings';
 import { useHistoryStore } from './historyStore';
@@ -146,9 +146,27 @@ export const useGameStore = defineStore('game', () => {
               }
               
               if (responseData.triggeredEvent) {
+                // 等待答題 UI 完全關閉後 5 秒再顯示資安事件
                 const { useEventStore } = await import('./eventStore');
                 const eventStore = useEventStore();
-                eventStore.startEvent(responseData.triggeredEvent.type, 30);
+                
+                // 如果答題 UI 已經關閉，直接等待 5 秒
+                if (!isAnswering.value) {
+                  setTimeout(() => {
+                    eventStore.startEvent(responseData.triggeredEvent.type, 30);
+                  }, 1000);
+                } else {
+                  // 如果還在答題中，監聽 isAnswering 的變化
+                  const stopWatcher = watch(isAnswering, (newValue) => {
+                    if (!newValue) {
+                      // 答題 UI 已關閉，停止監聽並等待 5 秒後顯示事件
+                      stopWatcher();
+                      setTimeout(() => {
+                        eventStore.startEvent(responseData.triggeredEvent.type, 30);
+                      }, 1000);
+                    }
+                  });
+                }
               }
 
             }
