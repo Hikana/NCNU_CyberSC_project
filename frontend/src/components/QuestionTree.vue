@@ -13,6 +13,15 @@
         <span>首頁</span>
       </router-link>
 
+      <!-- 返回遊戲 -->
+      <router-link
+        to="/game"
+        class="flex items-center gap-2 p-2 rounded hover:bg-gray-700"
+      >
+        <span class="material-symbols-outlined">sports_esports</span>
+        <span>遊戲</span>
+      </router-link>
+
       <!-- 分類 -->
       <ul class="space-y-3 mt-4">
         <li
