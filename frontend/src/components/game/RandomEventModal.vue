@@ -23,9 +23,9 @@
                   <div class="alert-title-row">
                     <h1 class="alert-title-v3">{{ eventStore.currentEvent.name }}</h1>
                     <span class="timer-value compact">{{ eventStore.timeLeft }} 秒</span>
-                  </div>
-                  <div class="timer-bar-track compact">
-                    <div class="timer-bar-fill" :style="{ width: percent + '%' }"></div>
+                    </div>
+                    <div class="timer-bar-track compact">
+                      <div class="timer-bar-fill" :style="{ width: percent + '%' }"></div>
                   </div>
                 </div>
               </div>

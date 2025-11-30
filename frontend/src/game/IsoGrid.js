@@ -13,27 +13,6 @@ import wafIconImg from '@/assets/WAF.png'
 import nwfIconImg from '@/assets/NWF.png'
 import hfIconImg from '@/assets/HF.png'
 
-function refreshCastleFirewallBadge(mapData, connectionWorld, tileSize, rows, cols) {
-  if (!mapData) return;
-  let castleFwKind = null;
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const cell = mapData[r]?.[c];
-      if (cell && cell.type === 'castle') {
-        const kind = String(cell.firewall || '').toLowerCase();
-        if (kind) {
-          castleFwKind = kind;
-          break;
-        }
-      }
-    }
-    if (castleFwKind) break;
-  }
-  if (!castleFwKind && connectionWorld) {
-    connectionWorld.removeChildren();
-  }
-}
-
 const CASTLE_TILES = new Set([
   '0,0','0,1','0,2',
   '1,0','1,1','1,2',
@@ -522,16 +501,10 @@ export class IsoGrid {
 
 
 
-  updateMapData(newMapData, updatedPositions = null) { 
+  updateMapData(newMapData) { 
     if (!newMapData || Object.keys(newMapData).length === 0) return;
     this.mapData = newMapData;
-    if (Array.isArray(updatedPositions) && updatedPositions.length > 0) {
-      updatedPositions.forEach(({ x, y }) => {
-        if (this.mapData[y] && this.mapData[y][x] && this.mapData[y][x].type === 'castle') {
-          refreshCastleFirewallBadge(this.mapData, this.connectionWorld, this.tileSize, this.rows, this.cols);
-        }
-      });
-    }
+    // 嘗試補載任何缺失的建築紋理，再重繪
     this.ensureBuildingTexturesForMap()
       .then(() => this.drawGrid())
       .catch(() => this.drawGrid());
@@ -563,6 +536,11 @@ export class IsoGrid {
     this.groundContainer.removeChildren()
     this.objectContainer.removeChildren()
     this.connectionContainer.removeChildren()
+    
+    // 清除連線世界中的防火牆徽章（如果存在）
+    if (this.connectionWorld) {
+      this.connectionWorld.removeChildren()
+    }
 
     // 重置徽章動畫列表（避免保留已被移除的引用）
     this.firewallBadgeAnimations = []
@@ -859,17 +837,17 @@ export class IsoGrid {
               const kind = String(cell.firewall || '').toLowerCase();
               const fwBadge = this.createFirewallBadge(kind);
               // 若有連線世界，將徽章畫在連線層（高於蒙版）
-          if (this.connectionWorld) {
-            const badgeContainer = new PIXI.Container();
-            badgeContainer.x = x + this.tileSize * 0.05;
-            badgeContainer.y = y - this.tileSize * 0.35;
-            badgeContainer.addChild(fwBadge);
-            this.connectionWorld.addChild(badgeContainer);
-          } else {
-            fwBadge.x = this.tileSize * 0.05;
-            fwBadge.y = -this.tileSize * 0.35;
-            buildingContainer.addChild(fwBadge);
-          }
+              if (this.connectionWorld) {
+                fwBadge.x = x + this.tileSize * 0.05;
+                fwBadge.y = y - this.tileSize * 0.35;
+                fwBadge.zIndex = 999;
+                this.connectionWorld.addChild(fwBadge);
+              } else {
+                // 否則就貼在建築容器上
+                fwBadge.x = this.tileSize * 0.05;
+                fwBadge.y = -this.tileSize * 0.35;
+                buildingContainer.addChild(fwBadge);
+              }
               // 加入徽章動畫池（alpha 脈衝）
               this.firewallBadgeAnimations.push({
                 time: Math.random() * 1.5,

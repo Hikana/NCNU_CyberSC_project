@@ -6,6 +6,7 @@ import { usePlayerStore } from '../stores/player';
 import { useGameStore } from '../stores/game';
 import { useBuildingStore } from '../stores/buildings';
 import { useWallStore } from '../stores/wall';
+import { useEventStore } from '../stores/eventStore';
 
 /**
  * 遊戲主引擎類別
@@ -19,6 +20,7 @@ export class Game {
     this.gameStore = useGameStore();   
     this.buildingStore = useBuildingStore();
     this.wallStore = useWallStore();
+    this.eventStore = useEventStore();
  
     // 初始化所有遊戲相關的屬性
     this.app = null;
@@ -316,6 +318,10 @@ export class Game {
         if (isInteractKey) {
             // 題目開啟期間忽略互動鍵，避免重複顯示
             if (this.gameStore?.isAnswering === true) return;
+            
+            // 檢查是否有模態框打開（如事件彈窗），如果有則不處理 Enter 鍵
+            if (this.eventStore?.isModalOpen === true) return;
+            
             // 節流：避免短時間連按
             const now = Date.now();
             if (now - this.lastInteractAt < 400) return;

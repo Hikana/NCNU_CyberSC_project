@@ -343,6 +343,7 @@ export const useBuildingStore = defineStore('buildings', {
           if (response.updatedTile) {
             const { position, ...tileData } = response.updatedTile;
             if (position && this.map?.[position.y]) {
+              // 使用展開運算符更新，firewall: null 會被正確設置
               this.map[position.y][position.x] = {
                 ...(this.map[position.y][position.x] || {}),
                 ...tileData
@@ -353,6 +354,7 @@ export const useBuildingStore = defineStore('buildings', {
             response.updatedTiles.forEach(tile => {
               const { position, ...tileData } = tile;
               if (position && this.map?.[position.y]) {
+                // 使用展開運算符更新，firewall: null 會被正確設置
                 this.map[position.y][position.x] = {
                   ...(this.map[position.y][position.x] || {}),
                   ...tileData
