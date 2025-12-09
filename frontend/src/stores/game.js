@@ -152,18 +152,25 @@ export const useGameStore = defineStore('game', () => {
                 
                 // 如果答題 UI 已經關閉，直接等待 5 秒
                 if (!isAnswering.value) {
-                  setTimeout(() => {
-                    eventStore.startEvent(responseData.triggeredEvent.type, 30);
-                  }, 1000);
+                    setTimeout(() => {
+                      // 使用事件配置的預設倒數（或後端給的 timerSeconds），不要強制 30 秒
+                      eventStore.startEvent(
+                        responseData.triggeredEvent.type,
+                        responseData.triggeredEvent?.timerSeconds
+                      );
+                    }, 500);
                 } else {
                   // 如果還在答題中，監聽 isAnswering 的變化
                   const stopWatcher = watch(isAnswering, (newValue) => {
                     if (!newValue) {
-                      // 答題 UI 已關閉，停止監聽並等待 5 秒後顯示事件
+                      // 答題 UI 已關閉，停止監聽並等待 ? 秒後顯示事件
                       stopWatcher();
                       setTimeout(() => {
-                        eventStore.startEvent(responseData.triggeredEvent.type, 30);
-                      }, 1000);
+                        eventStore.startEvent(
+                          responseData.triggeredEvent.type,
+                          responseData.triggeredEvent?.timerSeconds
+                        );
+                      }, 500);
                     }
                   });
                 }

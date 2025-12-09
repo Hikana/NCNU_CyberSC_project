@@ -1,6 +1,21 @@
 <template>
   <div class="help-container">
     <div class="help-content">
+
+    <!-- 介面提示 -->
+      <div class="help-block">
+        <button class="help-header" @click="open.ui = !open.ui">
+          <span>💡 介面提示</span>
+          <span class="chevron" :class="{ open: open.ui }">﹀</span>
+        </button>
+        <div class="help-body" v-show="open.ui">
+          <p>點擊下方按鈕可以再次顯示操作提示：</p>
+          <button class="tutorial-btn" @click="showTutorial">
+            📺 顯示操作提示
+          </button>
+        </div>
+      </div>
+      
       <!-- 資源系統 -->
       <div class="help-block">
         <button class="help-header" @click="open.resources = !open.resources">
@@ -23,11 +38,10 @@
           <span class="chevron" :class="{ open: open.unlock }">﹀</span>
         </button>
         <div class="help-body" v-show="open.unlock">
-          <p>走到未解鎖的地塊並回答選擇題。答對可解鎖土地並獲得獎勵；答錯會有小額懲罰。</p>
           <ul>
+            <li>走到未解鎖的地塊並回答選擇題。答對題目後可以解鎖新的地塊，用於建造建築。</li>
             <li><strong>答對</strong>：+15 科技點、+15 防禦值，並 100% 隨機獲得 1 個防禦工具</li>
             <li><strong>答錯</strong>：-5 科技點、-5 防禦值</li>
-            <li>答對題目後可以解鎖新的地塊，用於建造建築</li>
           </ul>
         </div>
       </div>
@@ -42,8 +56,8 @@
           <ul>
             <li>只能在<strong>已開發</strong>的地塊上建造建築</li>
             <li>建造建築需要消耗<strong>科技點</strong>（不同建築消耗不同）</li>
-            <li><strong>公網塔區域</strong>（中央 3x3 區域）無法放置其他建築</li>
-            <li>可以移除已建造的建築（會同時刪除相關連線）</li>
+            <li><strong>公網塔區域</strong>無法放置其他建築</li>
+            <li>可以移除已建造的建築（會同時刪除相關連線及對應之防火牆）</li>
           </ul>
         </div>
       </div>
@@ -56,9 +70,9 @@
         </button>
         <div class="help-body" v-show="open.firewall">
           <ul>
-            <li><strong>WAF</strong>：只能架設在<strong>公網塔</strong>上</li>
-            <li><strong>NWF</strong>：只能架設在<strong>路由器 (Router)</strong>上</li>
-            <li><strong>HF</strong>：只能架設在<strong>主機 (Host)</strong>上</li>
+            <li><strong>Web Application Firewall</strong>：只能架設在<strong>公網塔(Public Network)</strong>上</li>
+            <li><strong>Network Firewall</strong>：只能架設在<strong>路由器 (Router)</strong>上</li>
+            <li><strong>Host Firewall</strong>：只能架設在<strong>主機 (Host)</strong>上</li>
             <li>每個建築只能架設一個防火牆，不能重複架設</li>
           </ul>
         </div>
@@ -67,15 +81,14 @@
       <!-- 連線系統 -->
       <div class="help-block">
         <button class="help-header" @click="open.connections = !open.connections">
-          <span>🔗 連線系統</span>
+          <span>🔗 連線規則</span>
           <span class="chevron" :class="{ open: open.connections }">﹀</span>
         </button>
         <div class="help-body" v-show="open.connections">
           <ul>
-            <li>可以連接不同的建築物，建立網路架構</li>
-            <li>連線有特定的規則限制（詳見連線提示）</li>
-            <li>移除建築時會自動刪除相關連線</li>
-            <li>可以手動刪除不需要的連線</li>
+            <li>Host（貓屋）：只能連 1 個設備（一張網卡概念），不能連Public Internet</li>
+            <li>Switch（郵筒）：最多連線 6 條，不能連Public Internet</li>
+            <li>Router（郵局）：可連任何設備</li>
           </ul>
         </div>
       </div>
@@ -87,14 +100,11 @@
           <span class="chevron" :class="{ open: open.events }">﹀</span>
         </button>
         <div class="help-body" v-show="open.events">
-          <p>解鎖土地時可能觸發資安事件。請在 NPC 菜單的「資安事件紀錄」使用合適工具處理。</p>
           <ul>
-            <li>需要使用<strong>正確的防禦工具</strong>來抵擋攻擊</li>
+            <li>解鎖土地時可能觸發資安事件。請在事件到來前部屬相對應的防禦。</li>
             <li><strong>成功抵擋</strong>：獲得獎勵，維持資源</li>
-            <li><strong>失敗</strong>：扣除科技點和防禦值（通常為 -10）</li>
-            <li>安全區域 (x,y 在 0~4) 不會觸發事件</li>
-            <li>距離越遠、邊界地帶觸發機率越高（最高 80%）</li>
-            <li>每個事件有<strong>冷卻時間</strong>，不會連續觸發相同事件</li>
+            <li><strong>失敗</strong>：若一直不修復會每兩分鐘持續扣除科技點和防禦值</li>
+            <li>失敗的事件會記錄在資安事件記錄裡，可去背包選擇相對應的工具解決事件</li>
           </ul>
         </div>
       </div>
@@ -110,7 +120,6 @@
             <li>答對題目保證掉落 1 個工具，存在於背包中</li>
             <li>可用於處理特定資安事件</li>
             <li>使用錯誤的工具仍會消耗，但無法解決事件</li>
-            <li>在 NPC 選單的「資安事件紀錄」中可以查看並處理事件</li>
           </ul>
         </div>
       </div>
@@ -125,25 +134,11 @@
           <ul>
             <li>公網塔可以升級，最高等級為 <strong>10 級</strong></li>
             <li>每升一級需要 <strong>150 防禦值</strong></li>
-            <li>升級公式：等級 N 需要 N × 150 防禦值</li>
-            <li>公網塔等級會影響遊戲進度和成就解鎖</li>
           </ul>
         </div>
       </div>
 
-      <!-- 介面提示 -->
-      <div class="help-block">
-        <button class="help-header" @click="open.ui = !open.ui">
-          <span>💡 介面提示</span>
-          <span class="chevron" :class="{ open: open.ui }">﹀</span>
-        </button>
-        <div class="help-body" v-show="open.ui">
-          <p>點擊下方按鈕可以再次顯示操作提示：</p>
-          <button class="tutorial-btn" @click="showTutorial">
-            📺 顯示操作提示
-          </button>
-        </div>
-      </div>
+      
 
     </div>
   </div>
