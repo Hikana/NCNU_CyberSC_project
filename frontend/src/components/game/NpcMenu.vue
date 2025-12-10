@@ -455,33 +455,27 @@ async function useItem(item) {
     const eventsNeedingTool = eventLogStore.getEventsNeedingTool(item.id)
     
     if (eventsNeedingTool.length > 0) {
-      // 如果有需要該工具的事件，讓玩家選擇要處理哪個事件
-      const eventNames = eventsNeedingTool.map(e => e.eventName).join('\n')
-      const shouldResolve = confirm(`這個工具可以處理以下事件：\n${eventNames}\n\n是否要使用 ${item.name} 來處理這些事件？`)
-      
-      if (shouldResolve) {
-        // 處理所有需要該工具的事件
-        for (const event of eventsNeedingTool) {
-          await eventLogStore.resolveSecurityEvent(event.id, item.id)
-        }
-        
-        // 使用物品（會扣掉數量）
-        await inventoryStore.useItem(item.id)
-        
-        showToolNotification(
-          'success',
-          '成功處理事件！',
-          `成功使用 ${item.name} 處理了 ${eventsNeedingTool.length} 個資安事件！`
-        )
-        
-        // 更新玩家防禦值
-        const playerStore = usePlayerStore()
-        await playerStore.refreshPlayerData()
-        
-        // 清除選中狀態
-        selectedItem.value = null
-        return
+      // 如果有需要該工具的事件，直接處理所有事件
+      for (const event of eventsNeedingTool) {
+        await eventLogStore.resolveSecurityEvent(event.id, item.id)
       }
+      
+      // 使用物品（會扣掉數量）
+      await inventoryStore.useItem(item.id)
+      
+      showToolNotification(
+        'success',
+        '使用成功！',
+        `成功使用 ${item.name} 處理了 ${eventsNeedingTool.length} 個資安事件！`
+      )
+      
+      // 更新玩家防禦值
+      const playerStore = usePlayerStore()
+      await playerStore.refreshPlayerData()
+      
+      // 清除選中狀態
+      selectedItem.value = null
+      return
     }
     
     // 如果沒有需要該工具的事件，或玩家選擇不處理，則正常使用物品
@@ -491,7 +485,7 @@ async function useItem(item) {
     showToolNotification(
       'success',
       '使用成功',
-      `成功使用 ${item.name}！`
+      `成功使用 ${item.name}！但沒有處理任何資安事件!`
     )
     
     // 更新玩家防禦值
